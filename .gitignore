@@ -6,6 +6,8 @@ mcp.json
 .env
 .env.*
 !.env.example
+gcp-service-account.json
+mcp-config.json
 
 # Dependencies and build output
 node_modules/
@@ -13,6 +15,11 @@ dist/
 build/
 .next/
 .vercel/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.firebase/
 
 # OS and editor
 .DS_Store
