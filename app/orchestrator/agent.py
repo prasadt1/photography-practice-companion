@@ -16,8 +16,7 @@
 """
 Practice Companion Orchestrator Agent
 
-Phase 1 stub: routing-only instruction, no tools yet.
-Phase 2 will add: MongoDB MCP, Data Store grounding, Atlas Search, sub-agents.
+Phase 2: MongoDB MCP (optional) + memory/principles FunctionTools + Coach upload tool.
 """
 
 import os
@@ -30,9 +29,20 @@ from google.adk.models import Gemini
 from google.genai import types
 from dotenv import load_dotenv
 
+from orchestrator.tool_registry import build_orchestrator_tools
+
 # Load environment variables from .env file (look in parent directory if not found)
-env_path = Path(__file__).parent.parent.parent / ".env"
+project_root = Path(__file__).parent.parent.parent
+env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
+
+creds_rel = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if creds_rel:
+    creds_path = Path(creds_rel)
+    if not creds_path.is_absolute():
+        creds_path = project_root / creds_rel.lstrip("./")
+    if creds_path.is_file():
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(creds_path.resolve())
 
 # Set up GCP environment
 # Use application default credentials (already authenticated via gcloud)
@@ -44,20 +54,22 @@ except Exception:
 
 os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
 
-# Read from .env with defaults
-# VERTEX_AI_REGION from .env (us-central1 per spec)
-vertex_region = os.getenv("VERTEX_AI_REGION", "us-central1")
-os.environ["GOOGLE_CLOUD_LOCATION"] = vertex_region
+# Gemini 3.x uses the global Vertex endpoint (ADR-010). Embeddings stay regional.
+gemini_location = os.getenv(
+    "VERTEX_AI_GEMINI_LOCATION",
+    os.getenv("GEMINI_VERTEX_REGION", "global"),
+)
+os.environ["GOOGLE_CLOUD_LOCATION"] = gemini_location
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-# Model from .env (gemini-3-pro per spec, with fallback to available models)
-gemini_model = os.getenv("GEMINI_MODEL", "gemini-pro")
+# Default: Gemini 3.1 Pro preview (successor to gemini-3-pro-preview on Vertex)
+gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
 
 # Load orchestrator instruction from prompts/orchestrator.txt
 prompts_dir = Path(__file__).parent.parent / "prompts"
 orchestrator_instruction = (prompts_dir / "orchestrator.txt").read_text()
 
-# Practice Companion Orchestrator (Phase 1 stub)
+# Practice Companion Orchestrator
 root_agent = Agent(
     name="practice_companion_orchestrator",
     model=Gemini(
@@ -65,7 +77,7 @@ root_agent = Agent(
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=orchestrator_instruction,
-    tools=[],  # Phase 2: will add MongoDB MCP, Data Store, Atlas Search, sub-agents
+    tools=build_orchestrator_tools(),
 )
 
 app = App(

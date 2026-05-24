@@ -16,11 +16,18 @@ export interface PriorityFix {
   issue: string;
 }
 
+export interface GroundingCitation {
+  id: string;
+  title: string;
+  excerpt: string;
+}
+
 export interface GlassBox {
   observations: string[];
   reasoning_steps: string[];
   priority_fixes: PriorityFix[];
-  grounding_principles?: string[];  // Which Data Store principles were used
+  grounding_principles?: string[];
+  grounding_citations?: GroundingCitation[];
 }
 
 export interface BoundingBox {
@@ -75,12 +82,34 @@ export interface PortfolioEntry {
   created_at: string;
 }
 
+export interface CritiqueBreakdown {
+  composition: string;
+  lighting: string;
+  technique: string;
+  overall: string;
+}
+
 export interface AnalysisResult {
   portfolioEntryId: string;
+  assignmentId?: string;
+  /** LENS-style observational “what I see” (no critique) */
+  sceneDescription?: string;
+  colourNotes?: string | null;
   scores: AnalysisScores;
   glassBox: GlassBox;
   spatialMetadata: SpatialMetadata;
   aestheticTags: string[];
+  /** UI fields (from Coach agent / mock) */
+  critique?: CritiqueBreakdown;
+  strengths?: string[];
+  improvements?: string[];
+  learningPath?: string[];
+  settingsEstimate?: {
+    focalLength: string;
+    aperture: string;
+    shutterSpeed: string;
+    iso: string;
+  };
 }
 
 // Assignment types (spec §7.2)

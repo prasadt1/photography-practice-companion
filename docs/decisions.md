@@ -109,3 +109,27 @@ MVP includes HITL via assignment status flow:
 - Template is basic ADK (not specifically `adk_live` multimodal RAG), but provides identical foundation for customization
 - All Phase 2+ implementation proceeds as planned with ADK agents, tools, and sub-agents
 - Document in implementation-plan.md as verified approach
+
+---
+
+## ADR-009: Studio UI from gemma4 (L.E.N.S.), not gemini3 wireframe
+
+**Status:** Accepted (May 24, 2026)  
+**Context:** Initial Phase 1.3 used inline-style rewrites, not real source ports. gemma4 Studio UX (tabs, spatial pins, evidence panel, sage palette) is stronger for demo.  
+**Decision:** `frontend/src/components/studio/*` adapted from `photography-coach-gemma4`. `mapAnalysisResult.ts` bridges spec §7.2 `AnalysisResult` to studio view model. gemini3 supplies Coach prompts only (Phase 2).
+
+---
+
+## ADR-010: Gemini 3.1 Pro on Vertex `global`; embeddings stay `us-central1`
+
+**Status:** Accepted (May 24, 2026)  
+**Context:** `.env` used `GEMINI_MODEL=gemini-3-pro` and `VERTEX_AI_REGION=us-central1`, which returns 404 — that model ID/region pair does not exist on Vertex. The project already has access; configuration was wrong.  
+**Decision:**
+
+| Workload | Location | Model ID |
+|----------|----------|----------|
+| Coach / orchestrator (Gemini 3.x) | `global` (`VERTEX_AI_GEMINI_LOCATION`) | `gemini-3.1-pro-preview` (preferred) or `gemini-3-pro-preview` if still enabled |
+| Multimodal embeddings | `us-central1` (`VERTEX_AI_REGION`) | `multimodalembedding@001` |
+
+**Judge narrative:** “Gemini 3.1 Pro on Vertex” — not the invalid shorthand `gemini-3-pro` in `us-central1`.  
+**Consequences:** ADK agents set `GOOGLE_CLOUD_LOCATION=global`. Embedding/upload code must call `vertexai.init(..., location=us-central1)` explicitly when generating vectors.

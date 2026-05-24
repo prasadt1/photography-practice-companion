@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "practice-companion-hackathon",
     "public": "frontend/dist",
     "ignore": [
       "firebase.json",

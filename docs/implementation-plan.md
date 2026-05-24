@@ -4,7 +4,7 @@
 
 **Version:** 1.1
 **Date:** May 24, 2026
-**Status:** Phase 0 partial → Phase 1 next
+**Status:** Phase 1 gate passed (automated) → Phase 2 next
 **Timeline:** Phase 4 target June 11, 2026
 
 ---
@@ -83,8 +83,8 @@ Use [`mongodb-setup.md`](mongodb-setup.md) and [`decisions.md`](decisions.md) fo
 | `python3 scripts/bootstrap-mongodb.py` | ✅ Run |
 | Vector index `portfolio_embedding_vector` | ✅ READY on `portfolio_entries` |
 | Atlas Search index `glass_box_search` | ✅ READY on `portfolio_entries` |
-| GCS bucket `practice-companion-portfolio` | ❌ Create in Phase 1 |
-| ADK / Agent Starter Pack scaffold | ❌ Phase 1 |
+| GCS bucket `practice-companion-portfolio` | ✅ `us-central1` |
+| ADK scaffold (`google-agents-cli`) | ✅ `app/orchestrator/` |
 | Design docs committed to GitHub | ⚠️ Commit `docs/`, `scripts/`, `principles/` |
 
 **Artifacts present locally**:
@@ -134,22 +134,11 @@ uv run python -c "from orchestrator.agent import app, root_agent; print(root_age
 ```
 Result: `practice_companion_orchestrator` ✅ (uses gemini-3-pro, us-central1, no tools yet)
 
-### 1.2 Frontend Scaffold
+### 1.2 Frontend Scaffold ✅
 
-**Command**:
-```bash
-mkdir frontend && cd frontend
-npm create vite@latest . -- --template react-ts
-npm install
-```
+Vite + React + TS + Tailwind v4. `npm run dev` / `npm run build` pass.
 
-**Verification**:
-```bash
-npm run dev
-```
-Basic page renders at `http://localhost:5173` → ✅
-
-### 1.3 Port Frontend Files from Source Repos
+### 1.3 Port Frontend Files from Source Repos ✅
 
 **Source A (photography-coach-ai-gemini3)**:
 
@@ -205,19 +194,24 @@ npm install zod ajv react-router-dom date-fns
 
 ### 1.6 Phase 1 Verification Gate
 
+**Run:** `make verify-phase1` · Details: [`phase1-gate.md`](phase1-gate.md)
+
 **Checklist**:
-- [ ] Agent Starter Pack scaffold generated successfully
-- [ ] `make playground` boots, base agent responds to test prompt
-- [ ] All frontend files from Source A and B ported, Ollama/Electron stripped
-- [ ] Frontend `npm run dev` succeeds, basic page renders
-- [ ] New components/services created (stubs OK, full implementation in Phase 3)
-- [ ] MongoDB MCP Server tested via Claude Code (can query empty cluster)
-- [ ] Repo pushed to GitHub with proper `.gitignore`
+- [x] ADK scaffold generated (`google-agents-cli`, ADR-008)
+- [x] Orchestrator imports; `make playground` for interactive test (manual send prompt)
+- [x] Studio UI from gemma4 layout + gemini3 theme; utilities ported; Ollama/Electron stripped
+- [x] `npm run build` succeeds; upload → mock analysis flow works
+- [x] `PracticeTab`, `MemoryTab`, `ModeToggle`, `agentClient.ts` stubs present
+- [x] MongoDB bootstrap + indexes; MCP config template `mcp.json.example`
+- [x] GCS `gs://practice-companion-portfolio` (`us-central1`)
+- [ ] Agent Builder Data Store + `DATA_STORE_ID` — confirm in console (Phase 2 uses it)
+- [ ] `make vertex-check` exit 0 on your GCP project (exit 2 = embedding only until Gemini enabled)
+- [ ] Repo pushed to GitHub (local branch may be ahead; no secrets in commit)
 
 **Outputs**:
-- Working ADK agent scaffold (base agent only, no sub-agents yet)
-- Working React frontend scaffold with ported files
-- Clean git history
+- Working ADK orchestrator stub (no sub-agents yet)
+- Working React frontend with Studio mock path
+- `scripts/verify-phase1-gate.sh`, `Makefile` targets
 
 ---
 

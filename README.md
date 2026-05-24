@@ -12,7 +12,11 @@ Adaptive AI photography mentor: multimodal critique, personalized practice plans
 | [`docs/mongodb-setup.md`](docs/mongodb-setup.md) | Atlas + MCP setup |
 | [`docs/claude-code-handoff.md`](docs/claude-code-handoff.md) | Latest doc review for Claude Code |
 
-**Build status:** Phase 0 partial → Phase 1 (Agent Starter Pack) next. See [`docs/implementation-plan.md`](docs/implementation-plan.md).
+**Build status:** Studio · Memory · Practice · Field · Reflection live locally. See [`docs/phase4-started.md`](docs/phase4-started.md).
+
+**Deploy (judges):** [`docs/deploy.md`](docs/deploy.md) — Firebase Hosting + Cloud Run API.
+
+**Implementation summary:** [`docs/implementation-and-hackathon-mapping.md`](docs/implementation-and-hackathon-mapping.md) — features, GCP/agents/MongoDB, hackathon rules mapping.
 
 ## Quick start (developers)
 
@@ -21,6 +25,12 @@ Adaptive AI photography mentor: multimodal critique, personalized practice plans
 3. Bootstrap DB: `python3 -m pip install pymongo python-dotenv && python3 scripts/bootstrap-mongodb.py`
 4. GCP key: `gcp-service-account.json` (gitignored) per spec §0.2.
 5. Verify Vertex: `python3 test_vertex_ai.py` (uses `GEMINI_MODEL` from `.env`).
+6. Run locally:
+   ```bash
+   make api-dev          # :8081
+   make frontend-dev     # :5173
+   make playground       # :8080 ADK UI
+   ```
 
 ## Prior work
 

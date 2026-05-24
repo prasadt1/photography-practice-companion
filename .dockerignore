@@ -1,0 +1,16 @@
+.git
+.cursor
+frontend
+node_modules
+**/__pycache__
+**/.venv
+.env
+.env.*
+mcp-config.json
+gcp-service-account.json
+Ideation- Research
+docs
+scripts/seed-demo-data.py
+test_vertex_ai.py
+*.md
+.DS_Store

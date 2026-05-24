@@ -45,14 +45,14 @@ The Gemma 4 / L.E.N.S. evolution. Source for XMP, voice, LiveCameraCapture, iOS 
 
 **From Source A (gemini3):**
 - Photography analysis system prompts → migrate into ADK Coach agent instructions and the Agent Builder Data Store (see [§0.7](#07-agent-builder-data-store-for-photography-principles)).
-- `components/AnalysisResults.tsx` → adapt for Practice Companion UI.
-- `components/SpatialOverlay.tsx` → port as-is.
-- `components/PhotoUploader.tsx` → port as-is.
-- `src/types/index.ts` → port and extend.
-- 5-axis scoring JSON schema definitions.
+- Types and scoring semantics reference only (see ADR-009).
 
-**From Source B (gemma4):**
-- `services/xmpService.ts` → port as-is. Lightroom XMP sidecar export.
+**From Source B (gemma4) — Studio UI (ADR-009, implemented in `frontend/src/components/studio/`):**
+- `AnalysisResults.tsx` → `StudioAnalysisResults.tsx` (adapted).
+- `SpatialOverlay.tsx`, `PhotoUploader.tsx`, `EvidencePanel.tsx` (adapted).
+- `services/xmpService.ts` (tiered star ratings + IPTC keywords).
+
+**From Source B (gemma4) — later phases:**
 - `services/voiceCoach.ts` → port as-is. Field Mode TTS.
 - `services/voiceService.ts` → port as-is.
 - `services/validationService.ts` → port as-is. Zod + AJV validation.
@@ -221,7 +221,8 @@ See [`mongodb-setup.md`](mongodb-setup.md) for cluster host and MCP env mapping.
 GOOGLE_CLOUD_PROJECT=practice-companion-hackathon
 GOOGLE_APPLICATION_CREDENTIALS=./gcp-service-account.json
 VERTEX_AI_REGION=us-central1
-GEMINI_MODEL=gemini-3-pro
+VERTEX_AI_GEMINI_LOCATION=global
+GEMINI_MODEL=gemini-3.1-pro-preview
 EMBEDDING_MODEL=multimodalembedding@001
 
 # MongoDB Atlas

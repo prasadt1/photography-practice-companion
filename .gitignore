@@ -29,3 +29,10 @@ __pycache__/
 
 # Claude local settings (machine-specific)
 .claude/settings.local.json
+
+# Firebase / deploy debug (may contain tokens in verbose logs)
+firebase-debug.log
+firebase-debug.*.log
+
+# Cursor / local IDE (personal)
+.cursor/

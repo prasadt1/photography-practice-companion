@@ -1,31 +1,41 @@
-/**
- * Mode Toggle Component
- *
- * Phase 1 stub: switches between hobbyist and working-pro modes
- * Full implementation in Phase 3
- */
+import React from 'react';
+import type { UserMode } from '../types/practice';
 
-import React, { useState } from 'react';
+interface Props {
+  mode: UserMode;
+  onModeChange: (mode: UserMode) => void;
+}
 
-type Mode = 'hobbyist' | 'working_pro';
-
-export const ModeToggle: React.FC = () => {
-  const [mode, setMode] = useState<Mode>('hobbyist');
+export const ModeToggle: React.FC<Props> = ({ mode, onModeChange }) => {
 
   return (
-    <div style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
-      <label>
-        <strong>Mode:</strong>{' '}
-        <select
-          value={mode}
-          onChange={(e) => setMode(e.target.value as Mode)}
-        >
-          <option value="hobbyist">Hobbyist (Skill Growth)</option>
-          <option value="working_pro">Working Pro (Consistency)</option>
-        </select>
-      </label>
-      <p style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-        Phase 1 Stub - Mode switching will affect practice planning and critique focus in Phase 3.
+    <div className="py-3 flex flex-wrap items-center gap-4">
+      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        Routing (HITL)
+      </span>
+      <div className="flex p-1 bg-slate-800 rounded-lg border border-slate-700">
+        {(
+          [
+            { id: 'hobbyist' as const, label: 'Hobbyist' },
+            { id: 'working_pro' as const, label: 'Working pro' },
+          ] as const
+        ).map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onModeChange(m.id)}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              mode === m.id
+                ? 'bg-brand-500 text-slate-900'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-slate-500">
+        Affects planner tone and assignment focus (Phase 3).
       </p>
     </div>
   );
