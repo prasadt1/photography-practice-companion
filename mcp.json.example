@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mongodb-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "mongodb-mcp-server@latest"],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb+srv://<user>:<password>@<cluster-host>/?appName=<app-name>",
+        "MDB_MCP_API_CLIENT_ID": "mdb_sa_id_<your-client-id>",
+        "MDB_MCP_API_CLIENT_SECRET": "mdb_sa_sk_<your-client-secret>"
+      }
+    }
+  }
+}

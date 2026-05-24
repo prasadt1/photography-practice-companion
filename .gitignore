@@ -1,0 +1,24 @@
+# Local MCP config (contains Atlas credentials — use mcp.json.example as template)
+mcp.json
+.cursor/mcp.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+
+# OS and editor
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Claude local settings (machine-specific)
+.claude/settings.local.json
