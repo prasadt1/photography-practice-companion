@@ -19,6 +19,7 @@ import DimensionOverlay from './DimensionOverlay';
 import GlassBoxPanel from './GlassBoxPanel';
 import { LearningInsights } from './LearningInsights';
 import { PortfolioTrendInsights } from './PortfolioTrendInsights';
+import { ScoreBreakdownPanel } from './ScoreBreakdownPanel';
 import { exportXMPSidecar } from '../../services/xmpService';
 
 type TabId = 'overview' | 'glass-box' | 'fix';
@@ -96,41 +97,63 @@ const StudioAnalysisResults: React.FC<Props> = ({
   return (
     <div className="w-full max-w-7xl mx-auto animate-fadeIn mt-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: image */}
+        {/* Left: photo + (on Overview) score breakdown directly underneath */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="relative rounded-2xl bg-photo-black border border-warm shadow-2xl flex justify-center p-4">
-            <div className="relative inline-block max-w-full">
-              <img
-                src={imageSrc}
-                alt={analysis.critique.overall.slice(0, 120)}
-                className="block max-w-full max-h-[55vh] rounded-lg"
-              />
-              <DimensionOverlay
-                dimension={hoveredDimension}
-                analysis={analysis}
-              />
-              <SpatialOverlay
-                boundingBoxes={analysis.boundingBoxes}
-                show={showOverlays && !hoveredDimension}
-                activeIndex={activeBoxIndex}
-                onHover={setActiveBoxIndex}
-                onPinClick={(idx) => {
-                  setActiveTab('fix');
-                  setActiveBoxIndex(idx);
-                }}
-              />
+          <div className="space-y-3">
+            <div className="relative rounded-2xl bg-photo-black border border-warm shadow-2xl flex justify-center p-4">
+              <div className="relative inline-block max-w-full w-full">
+                <img
+                  src={imageSrc}
+                  alt={analysis.critique.overall.slice(0, 120)}
+                  className="block w-full max-h-[min(50vh,420px)] object-contain rounded-lg mx-auto"
+                />
+                <DimensionOverlay dimension={hoveredDimension} analysis={analysis} />
+                <SpatialOverlay
+                  boundingBoxes={analysis.boundingBoxes}
+                  show={showOverlays && !hoveredDimension}
+                  activeIndex={activeBoxIndex}
+                  onHover={setActiveBoxIndex}
+                  onPinClick={(idx) => {
+                    setActiveTab('fix');
+                    setActiveBoxIndex(idx);
+                  }}
+                />
+              </div>
+              {analysis.boundingBoxes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowOverlays((s) => !s)}
+                  className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-canvas-elevated/90 text-white border border-warm backdrop-blur-md"
+                >
+                  <ScanEye className="w-3.5 h-3.5" />
+                  {showOverlays ? 'Hide pins' : 'Show pins'}
+                </button>
+              )}
             </div>
-            {analysis.boundingBoxes.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowOverlays((s) => !s)}
-                className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-canvas-elevated/90 text-white border border-warm backdrop-blur-md"
+
+            {focusDimension && (
+              <p
+                className="text-center text-xs text-brand-400 font-medium animate-fadeIn"
+                role="status"
               >
-                <ScanEye className="w-3.5 h-3.5" />
-                {showOverlays ? 'Hide pins' : 'Show pins'}
-              </button>
+                Highlighting {focusDimension} on photo
+              </p>
             )}
           </div>
+
+          {activeTab === 'overview' && (
+            <ScoreBreakdownPanel
+              rows={chartData}
+              hoveredDimension={hoveredDimension}
+              selectedDimension={selectedDimension}
+              onHoverDimension={setHoveredDimension}
+              onSelectDimension={(subject) => {
+                setSelectedDimension(subject);
+                setHoveredDimension(subject);
+              }}
+              onWhyClick={focusScoreDimension}
+            />
+          )}
 
           {(analysis.sceneDescription || analysis.colourNotes) && (
             <div className="space-y-3 rounded-2xl bg-surface-1 border border-warm p-4">
@@ -248,83 +271,6 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 <p className="text-sm text-muted leading-relaxed border-l-2 border-warm pl-4">
                   {analysis.critique.overall}
                 </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-surface-1 rounded-2xl p-5 border border-warm">
-                  <h3 className="text-xs font-semibold text-muted uppercase mb-4">
-                    Score breakdown
-                  </h3>
-                  <div className="space-y-3">
-                    {chartData.map((item) => {
-                      const isActive =
-                        hoveredDimension === item.subject || selectedDimension === item.subject;
-                      const barColor =
-                        item.score >= 8 ? 'bg-amber-500' : item.score >= 5 ? 'bg-amber-500/70' : 'bg-rose-500';
-                      return (
-                        <button
-                          key={item.subject}
-                          type="button"
-                          onClick={() => focusScoreDimension(item.subject)}
-                          onMouseEnter={() => setHoveredDimension(item.subject)}
-                          onMouseLeave={() => setHoveredDimension(null)}
-                          onFocus={() => setHoveredDimension(item.subject)}
-                          onBlur={() => setHoveredDimension(null)}
-                          className={`w-full flex items-center gap-3 text-left p-2 -m-2 rounded-lg transition-all ${
-                            isActive ? 'bg-brand-500/10 ring-1 ring-brand-500/30' : 'hover:bg-surface-3/40'
-                          }`}
-                          title={`Preview ${item.subject} on photo`}
-                        >
-                          <span
-                            className={`w-24 text-xs truncate ${
-                              isActive ? 'text-brand-400 font-semibold' : 'text-muted'
-                            }`}
-                          >
-                            {item.subject}
-                          </span>
-                          <div className="flex-1 h-2.5 bg-surface-3 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${barColor}`}
-                              style={{ width: `${item.score * 10}%` }}
-                            />
-                          </div>
-                          <span className="w-8 text-sm font-bold text-stone-100">
-                            {item.score.toFixed(1)}
-                          </span>
-                          <span
-                            role="link"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              focusScoreDimension(item.subject);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                focusScoreDimension(item.subject);
-                              }
-                            }}
-                            className="text-xs text-brand-400 hover:text-brand-300 shrink-0 cursor-pointer"
-                          >
-                            Why?
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="bg-surface-1 rounded-2xl p-5 border border-warm min-h-[200px]">
-                  {selectedDimension ? (
-                    <p className="text-sm text-stone-100 leading-relaxed">
-                      {chartData.find((c) => c.subject === selectedDimension)?.critique}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted text-center mt-12">
-                      Hover a score to highlight that area on the photo, or click for detail
-                    </p>
-                  )}
-                </div>
               </div>
 
               {analysis.learningPath.length > 0 && (

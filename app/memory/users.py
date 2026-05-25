@@ -8,6 +8,7 @@ from typing import Any, Literal
 from bson import ObjectId
 
 from memory.db import get_db
+from memory.user_ids import to_mongo_user_id
 
 Persona = Literal["hobbyist", "working_pro", "vision_impairment"]
 VALID_PERSONAS: tuple[str, ...] = ("hobbyist", "working_pro", "vision_impairment")
@@ -15,7 +16,7 @@ VALID_PERSONAS: tuple[str, ...] = ("hobbyist", "working_pro", "vision_impairment
 
 def resolve_user_id(user_id: str | None = None) -> ObjectId | None:
     if user_id:
-        return ObjectId(user_id)
+        return to_mongo_user_id(user_id)
     demo = os.environ.get("DEMO_USER_ID")
     if demo:
         return ObjectId(demo)

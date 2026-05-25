@@ -4,39 +4,42 @@ import { BRAND } from '../config/brand';
 interface Props {
   size?: 'sm' | 'md' | 'lg';
   showWordmark?: boolean;
+  /** Full horizontal lockup image (icon + wordmark baked in). Best for onboarding hero. */
+  variant?: 'icon' | 'lockup';
   className?: string;
 }
 
-const SIZES = { sm: 32, md: 40, lg: 48 } as const;
+const ICON_SIZES = { sm: 32, md: 40, lg: 48 } as const;
 
-/** Aperture-inspired mark (photography-native, not generic camera glyph). */
 export const BrandLogo: React.FC<Props> = ({
   size = 'md',
   showWordmark = true,
+  variant = 'icon',
   className = '',
 }) => {
-  const px = SIZES[size];
+  const px = ICON_SIZES[size];
+
+  if (variant === 'lockup' && showWordmark) {
+    return (
+      <img
+        src="/iris-lockup.png"
+        alt={`${BRAND.name} — ${BRAND.tagline}`}
+        className={`h-auto max-w-full object-contain ${className}`}
+        style={{ maxHeight: size === 'lg' ? 72 : size === 'md' ? 56 : 44 }}
+      />
+    );
+  }
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div
-        className="relative shrink-0 rounded-xl bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 p-2 shadow-lg shadow-brand-500/25 ring-1 ring-brand-400/30"
-        style={{ width: px, height: px }}
+      <img
+        src="/iris-icon.png"
+        alt=""
+        width={px}
+        height={px}
+        className="shrink-0 rounded-xl object-cover ring-1 ring-brand-400/25 shadow-lg shadow-brand-500/20"
         aria-hidden
-      >
-        <svg viewBox="0 0 24 24" className="w-full h-full text-on-brand" fill="none">
-          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" opacity="0.35" />
-          <circle cx="12" cy="12" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="12" cy="12" r="2" fill="currentColor" />
-          <path
-            d="M12 3v4M12 17v4M3 12h4M17 12h4"
-            stroke="currentColor"
-            strokeWidth="1.25"
-            strokeLinecap="round"
-            opacity="0.5"
-          />
-        </svg>
-      </div>
+      />
       {showWordmark && (
         <div className="min-w-0">
           <p className="font-extrabold text-white text-sm leading-tight tracking-tight">

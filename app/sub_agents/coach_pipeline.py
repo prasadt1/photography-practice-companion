@@ -169,7 +169,9 @@ def analyze_photo(
     effective = resolve_effective_user_id(user_id)
     if not effective:
         raise ValueError("Pass user_id from session or configure demo user in .env")
-    uid = ObjectId(effective)
+    from memory.user_ids import to_mongo_user_id
+
+    uid = to_mongo_user_id(effective)
     sid = ObjectId(shoot_id) if shoot_id else ObjectId()
     assignment_oid: ObjectId | None = None
 

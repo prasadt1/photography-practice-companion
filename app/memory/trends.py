@@ -8,6 +8,8 @@ from typing import Any
 
 from bson import ObjectId
 
+from memory.user_ids import to_mongo_user_id
+
 from memory.db import get_db
 from memory.portfolio import _avg_score
 
@@ -27,7 +29,7 @@ def _user_query(user_id: str | None) -> dict[str, Any]:
     query: dict[str, Any] = {}
     demo_user = os.environ.get("DEMO_USER_ID")
     if user_id:
-        query["user_id"] = ObjectId(user_id)
+        query["user_id"] = to_mongo_user_id(user_id)
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
     return query

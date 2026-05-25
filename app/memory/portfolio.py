@@ -9,6 +9,8 @@ from typing import Any
 
 from bson import ObjectId
 
+from memory.user_ids import to_mongo_user_id
+
 from memory.db import get_db
 from tools.gcs import signed_https_url
 
@@ -91,7 +93,7 @@ def list_portfolio_entries(
     query: dict[str, Any] = {}
     demo_user = os.environ.get("DEMO_USER_ID")
     if user_id:
-        query["user_id"] = ObjectId(user_id)
+        query["user_id"] = to_mongo_user_id(user_id)
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
 
@@ -118,7 +120,7 @@ def compute_aesthetic_summary(
     query: dict[str, Any] = {}
     demo_user = os.environ.get("DEMO_USER_ID")
     if user_id:
-        query["user_id"] = ObjectId(user_id)
+        query["user_id"] = to_mongo_user_id(user_id)
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
 
@@ -165,7 +167,7 @@ def compute_aesthetic_summary(
 
     stored = None
     if demo_user or user_id:
-        uid = ObjectId(user_id) if user_id else ObjectId(demo_user)
+        uid = to_mongo_user_id(user_id) if user_id else ObjectId(demo_user)
         stored = get_db().aesthetic_profile.find_one({"user_id": uid})
 
     return {

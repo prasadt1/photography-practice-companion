@@ -9,6 +9,7 @@ from typing import Any
 from bson import ObjectId
 
 from memory.db import get_db
+from memory.user_ids import to_mongo_user_id
 
 
 def _resolve_user_id(user_id: str | None) -> ObjectId | None:
@@ -16,7 +17,7 @@ def _resolve_user_id(user_id: str | None) -> ObjectId | None:
 
     effective = resolve_effective_user_id(user_id)
     if effective:
-        return ObjectId(effective)
+        return to_mongo_user_id(effective)
     latest = get_db().portfolio_entries.find_one(
         sort=[("created_at", -1)],
         projection={"user_id": 1},

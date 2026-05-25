@@ -8,6 +8,8 @@ from typing import Any
 
 from bson import ObjectId
 
+from memory.user_ids import to_mongo_user_id
+
 from memory.db import get_db
 from memory.portfolio import compute_aesthetic_summary
 
@@ -19,7 +21,7 @@ UPSERT_VERSION = "v3-library-photo-count"
 
 def upsert_aesthetic_profile(*, user_id: str | ObjectId) -> dict[str, Any]:
     """Recompute from recent portfolio and upsert aesthetic_profile collection."""
-    uid = ObjectId(user_id) if isinstance(user_id, str) else user_id
+    uid = to_mongo_user_id(user_id) if isinstance(user_id, str) else user_id
     summary = compute_aesthetic_summary(user_id=str(uid))
     total_photos = get_db().portfolio_entries.count_documents({"user_id": uid})
     now = datetime.now(timezone.utc)
