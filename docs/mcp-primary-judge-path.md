@@ -1,46 +1,57 @@
-# MCP-primary reads — what judges hit vs what the code proves
+# MCP-primary reads — hosted implementation
 
-**Consolidation item 3** is about routing **MongoDB reads** through a single module (`app/memory/mcp_reads.py`) so sub-agents and tools do not call PyMongo ad hoc. It is **not** the same as “every HTTP request on web.app goes through the MongoDB MCP Server.”
+**Consolidation item 3** — production reads route through **MongoDB MCP Server** (`app/memory/mcp_reads.py` → `mcp_http_client.py`), not silent PyMongo.
 
-## Three runtime paths
+---
 
-| Path | Who uses it | MongoDB reads | MCP Server |
-|------|-------------|---------------|------------|
-| **A — Hosted demo** | Judges on Firebase → Cloud Run `practice-companion-api` | Coach / planner / memory APIs use **PyMongo directly** (`app/memory/*.py`, coach pipeline) | **Not invoked** |
-| **B — ADK playground** | Local `make playground` (:8080) | Orchestrator tools + sub-agents import **`mcp_reads`** | Optional when `mcp-config.json` + `npx` MongoDB MCP available |
-| **C — Change-stream listener** | Cloud Run `change-stream-listener` | **PyMongo** watch on `portfolio_entries` | **Not invoked** |
+## Architecture (deployed)
 
-Judges on **https://practice-companion-hackathon.web.app** use path **A**. That is intentional for latency and ops: one Cloud Run service, no stdio MCP child process.
-
-## What `mcp_reads` actually does today
-
-- All sub-agent read tools (`coach`, `planner`, `triage`, `mentor`, etc.) import `memory.mcp_reads` instead of raw `collection.find`.
-- When `ORCHESTRATOR_USE_MCP=true` (default), the module **records** MCP-primary attempts and **falls back to PyMongo** for the actual query (see `_try_mcp_find` in `mcp_reads.py`).
-- **Writes** always use PyMongo (hot path).
-
-So item 3 in the repo means: **contract + routing layer + tests**, with MCP as the **declared** read surface for the multi-agent stack, and PyMongo as the **production** implementation until a hosted MCP sidecar is deployed.
-
-## Honest Devpost / judge lines
-
-Use wording like:
-
-- “Sub-agent memory reads go through an MCP-primary abstraction; the hosted Coach API uses the same Atlas data via PyMongo for reliability.”
-- “Full MongoDB MCP Server tooling is demonstrated in the local ADK playground (`make playground`) with `mcp-config.json`.”
-
-Avoid claiming judges’ browser sessions execute MCP tool calls unless you add a Cloud Run MCP bridge.
-
-## Verification
-
-```bash
-./scripts/verify_v5_spec.sh   # items 1–13 including mcp_reads imports + test_mcp_primary.py
+```text
+web.app → practice-companion-api (Cloud Run)
+           → mcp_reads → HTTP MCP client (IAM Bearer + x-mcp-api-key)
+           → mongodb-mcp (Cloud Run, min_instances=1, Streamable HTTP)
+           → MongoDB Atlas
 ```
 
-## If you want MCP on the hosted path later
+| Component | Path |
+|-----------|------|
+| MCP service | `services/mongodb-mcp/` + `scripts/deploy-mongodb-mcp.sh` |
+| HTTP client | `app/memory/mcp_http_client.py` |
+| Read router | `app/memory/mcp_reads.py` |
+| OTel spans | `app/memory/mcp_telemetry.py` — `mongodb.mcp.find`, `.find_one`, `.aggregate` |
+| Verify | `scripts/verify_mcp_in_production.sh` |
 
-Options (not required for hackathon):
+---
 
-1. **Sidecar / second service** — MCP server with Atlas credentials; API calls HTTP MCP instead of PyMongo for reads.
-2. **Agent Engine / Vertex** — deploy orchestrator where Google hosts tool execution.
-3. **Implement real MCP in `_try_mcp_find`** — wire MongoDB MCP `find`/`aggregate` tools instead of immediate fallback.
+## Deploy order
 
-Until then, item 3 is **satisfied for architecture + local demo**; item **A** remains the judge-facing path.
+1. `./scripts/deploy-mongodb-mcp.sh` — grants Coach API SA `roles/run.invoker` on MCP service
+2. Add to `.env`: `MONGODB_MCP_HTTP_URL`, `MONGODB_MCP_API_KEY`, `MONGODB_MCP_ALLOW_PYMONGO_FALLBACK=false`
+3. `./scripts/deploy-coach-api.sh`
+4. `./scripts/verify_mcp_in_production.sh` — **last step**; capture Trace screenshot for Devpost
+
+---
+
+## Environment
+
+| Variable | Production | Local dev |
+|----------|------------|-----------|
+| `MONGODB_MCP_HTTP_URL` | `https://mongodb-mcp-….run.app/mcp` | unset → PyMongo if fallback allowed |
+| `MONGODB_MCP_API_KEY` | shared secret (MCP `httpHeaders`) | optional |
+| `MONGODB_MCP_ALLOW_PYMONGO_FALLBACK` | **`false`** | **`true`** |
+| `MONGODB_MCP_USE_GCP_IDENTITY` | `true` (Cloud Run → MCP IAM) | `true` if testing against deployed MCP |
+| `ORCHESTRATOR_USE_MCP` | `true` | `true` |
+
+**Fallback code is retained** — set `MONGODB_MCP_ALLOW_PYMONGO_FALLBACK=true` to recover from MCP outage without redeploying.
+
+---
+
+## Devpost wording (after verify script passes)
+
+> Every read in Iris's hosted production path — Mentor portfolio queries, Triage reads, Glass Box search — routes through the MongoDB MCP Server on Cloud Run. Sub-agents call MCP tools (`find`, `aggregate`); they do not use PyMongo directly for reads when `MONGODB_MCP_ALLOW_PYMONGO_FALLBACK=false`. Trace screenshots show `mongodb.mcp.find` and `mongodb.mcp.aggregate` spans.
+
+---
+
+## Local playground (stdio)
+
+`make playground` still supports `mcp-config.json` + `npx` via `orchestrator/mongodb_mcp.py` when `MONGODB_MCP_HTTP_URL` is unset.

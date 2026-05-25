@@ -3,6 +3,7 @@ import { ScanProgressBanner } from './ScanProgressBanner';
 import { triageScanStage } from '../lib/scanLoadingStages';
 import { Check, ExternalLink, ImageIcon, Layers, Loader2, Trash2, X } from 'lucide-react';
 import { HitlReasoningCallout } from './HitlReasoningCallout';
+import { TabEmptyState } from './TabEmptyState';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { entryIdsForProposal } from '../lib/triageEntryIds';
 import {
@@ -18,6 +19,7 @@ import type { PortfolioListItem } from '../types/memory';
 interface Props {
   mode: UserMode;
   onGoToMemory?: () => void;
+  onGoToStudio?: () => void;
 }
 
 const MAX_THUMBS = 6;
@@ -110,7 +112,7 @@ function describeProposal(item: PendingApproval): string {
   return item.agentReasoning;
 }
 
-export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
+export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory, onGoToStudio }) => {
   const [items, setItems] = useState<PendingApproval[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -290,10 +292,21 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
       )}
 
       {!loading && items.length === 0 && (
-        <p className="text-muted text-sm border border-dashed border-warm rounded-lg p-6 text-center">
-          No suggestions waiting. Scan after you have photos in Memory (upload in Studio or run{' '}
-          <code className="text-brand-400">make seed-demo</code>).
-        </p>
+        <TabEmptyState
+          icon={Layers}
+          title="No label suggestions yet"
+          description="I group similar photos in your library and propose consistent tags — nothing changes until you approve."
+          steps={[
+            'Upload a few photos in My Studio first',
+            'Open My Work and confirm they appear',
+            'Tap Scan my library, then approve or decline each suggestion',
+          ]}
+          action={
+            onGoToStudio
+              ? { label: 'Upload in Studio', onClick: onGoToStudio }
+              : undefined
+          }
+        />
       )}
 
       {items.length > 0 && (

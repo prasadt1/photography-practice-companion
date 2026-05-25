@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, ImageIcon, Loader2, Settings, ShoppingBag, X } from 'lucide-react';
 import { ScanProgressBanner } from './ScanProgressBanner';
+import { TabEmptyState } from './TabEmptyState';
 import { printScanStage } from '../lib/scanLoadingStages';
 import { HitlReasoningCallout } from './HitlReasoningCallout';
 import { friendlyErrorMessage } from '../lib/friendlyError';
@@ -235,10 +236,21 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
       )}
 
       {!loading && items.length === 0 && (
-        <p className="text-muted text-sm border border-dashed border-warm rounded-lg p-6 text-center">
-          No drafts waiting. Run <strong className="text-muted">Draft listing proposals</strong>{' '}
-          or ask Ask Mentor (working pro) which photos to list.
-        </p>
+        <TabEmptyState
+          icon={ShoppingBag}
+          title="No listing drafts yet"
+          description="I draft Etsy-style titles, descriptions, and prices from your portfolio — nothing goes live until you approve each card."
+          steps={[
+            'Switch to Working pro in Settings if you sell prints',
+            'Upload strong portfolio photos in Studio',
+            'Tap Draft listing proposals, or ask Mentor which photos to list',
+          ]}
+          action={
+            onGoToMentor
+              ? { label: 'Ask Mentor', onClick: onGoToMentor }
+              : undefined
+          }
+        />
       )}
 
       <ul className="space-y-5">

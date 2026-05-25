@@ -56,5 +56,4 @@ deploy-hosting: frontend-build-prod
 	@firebase deploy --only hosting
 
 frontend-build-prod:
-	@if [ -z "$(API_URL)" ]; then echo "Set API_URL=https://your-cloud-run-url"; exit 1; fi
-	@cd frontend && VITE_API_BASE_URL="$(API_URL)" VITE_USE_MOCK=false npm run build
+	@bash scripts/frontend-build-prod.sh

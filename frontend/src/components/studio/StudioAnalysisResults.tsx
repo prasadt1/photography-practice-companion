@@ -18,6 +18,7 @@ import SpatialOverlay from './SpatialOverlay';
 import DimensionOverlay from './DimensionOverlay';
 import GlassBoxPanel from './GlassBoxPanel';
 import { LearningInsights } from './LearningInsights';
+import { PortfolioTrendInsights } from './PortfolioTrendInsights';
 import { exportXMPSidecar } from '../../services/xmpService';
 
 type TabId = 'overview' | 'glass-box' | 'fix';
@@ -231,6 +232,8 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 onViewGlassBox={() => setActiveTab('glass-box')}
               />
 
+              <PortfolioTrendInsights />
+
               <div className="bg-surface-1 rounded-3xl p-6 border border-warm">
                 <h2 className="text-xl font-bold text-stone-100 flex items-start gap-2 mb-3">
                   <Star className="w-6 h-6 text-brand-400 fill-brand-400 shrink-0" />
@@ -341,20 +344,23 @@ const StudioAnalysisResults: React.FC<Props> = ({
           )}
 
           {activeTab === 'glass-box' && (
-            <GlassBoxPanel
-              rationale={analysis.rationale}
-              groundingPrinciples={analysis.groundingPrinciples}
-              groundingCitations={analysis.groundingCitations}
-              evidence={analysis.evidence}
-              focusDimension={focusDimension}
-              onFocusDimension={(dim) => {
-                if (dim) focusScoreDimension(dim);
-                else {
-                  setSelectedDimension(null);
-                  setHoveredDimension(null);
-                }
-              }}
-            />
+            <div className="space-y-6 animate-fadeIn">
+              <GlassBoxPanel
+                rationale={analysis.rationale}
+                groundingPrinciples={analysis.groundingPrinciples}
+                groundingCitations={analysis.groundingCitations}
+                evidence={analysis.evidence}
+                focusDimension={focusDimension}
+                onFocusDimension={(dim) => {
+                  if (dim) focusScoreDimension(dim);
+                  else {
+                    setSelectedDimension(null);
+                    setHoveredDimension(null);
+                  }
+                }}
+              />
+              <PortfolioTrendInsights />
+            </div>
           )}
 
           {activeTab === 'fix' && (

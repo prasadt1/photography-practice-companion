@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ImageIcon, RefreshCw, Sparkles } from 'lucide-react';
+import { TabEmptyState } from './TabEmptyState';
 import { apiUnreachableMessage } from '../lib/apiHelp';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { MemoryGridSkeleton } from './SkeletonBlocks';
@@ -22,7 +23,11 @@ const SCORE_LABELS: { key: keyof AestheticProfileSummary['averageScores']; label
   { key: 'subject_impact', label: 'Subject' },
 ];
 
-export const MemoryTab: React.FC = () => {
+interface MemoryTabProps {
+  onGoToStudio?: () => void;
+}
+
+export const MemoryTab: React.FC<MemoryTabProps> = ({ onGoToStudio }) => {
   const [entries, setEntries] = useState<PortfolioListItem[]>([]);
   const [profile, setProfile] = useState<AestheticProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,13 +203,21 @@ export const MemoryTab: React.FC = () => {
       )}
 
       {entries.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl border border-dashed border-warm">
-          <ImageIcon className="w-12 h-12 text-stone-600 mx-auto mb-3" />
-          <p className="text-muted">No portfolio entries yet.</p>
-          <p className="text-sm text-muted mt-1">
-            Upload a photo in Studio — it will appear here after analysis.
-          </p>
-        </div>
+        <TabEmptyState
+          icon={ImageIcon}
+          title="Your library is empty"
+          description="Every Studio critique is saved here with scores, tags, and Glass Box reasoning."
+          steps={[
+            'Open My Studio and upload a photo',
+            'Review the Glass Box critique',
+            'Return here to see trends and your aesthetic profile',
+          ]}
+          action={
+            onGoToStudio
+              ? { label: 'Go to My Studio', onClick: onGoToStudio }
+              : undefined
+          }
+        />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {entries.map((entry) => {

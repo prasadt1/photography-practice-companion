@@ -34,6 +34,10 @@ def main() -> None:
         print("ERROR: MONGODB_URI not set in .env", file=sys.stderr)
         sys.exit(1)
 
+    mcp_url = os.getenv("MONGODB_MCP_HTTP_URL", "").strip()
+    mcp_key = os.getenv("MONGODB_MCP_API_KEY", "").strip()
+    mcp_fallback = os.getenv("MONGODB_MCP_ALLOW_PYMONGO_FALLBACK", "false").strip()
+
     pairs: dict[str, str] = {
         "GOOGLE_CLOUD_PROJECT": project,
         "VERTEX_AI_GEMINI_LOCATION": os.getenv("VERTEX_AI_GEMINI_LOCATION", "global"),
@@ -50,7 +54,14 @@ def main() -> None:
         "DEMO_USER_ID": os.getenv("DEMO_USER_ID", ""),
         "CORS_ORIGINS": cors_full,
         "MONGODB_URI": mongodb_uri,
+        "ORCHESTRATOR_USE_MCP": os.getenv("ORCHESTRATOR_USE_MCP", "true"),
+        "MONGODB_MCP_ALLOW_PYMONGO_FALLBACK": mcp_fallback or "false",
+        "MONGODB_MCP_USE_GCP_IDENTITY": os.getenv("MONGODB_MCP_USE_GCP_IDENTITY", "true"),
     }
+    if mcp_url:
+        pairs["MONGODB_MCP_HTTP_URL"] = mcp_url
+    if mcp_key:
+        pairs["MONGODB_MCP_API_KEY"] = mcp_key
 
     for key, value in pairs.items():
         print(f"{key}: {_yaml_value(value)}")

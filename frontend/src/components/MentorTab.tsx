@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, MessageCircle, Send, X } from 'lucide-react';
+import { Loader2, MessageCircle, Send, Sparkles, X } from 'lucide-react';
 import { ChatErrorBanner } from './ChatErrorBanner';
+import { TabEmptyState } from './TabEmptyState';
 import { MentorMarkdown } from './MentorMarkdown';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { mentorLoadingStage } from '../lib/mentorLoadingStages';
@@ -139,9 +140,18 @@ export const MentorTab: React.FC<Props> = ({ mode }) => {
       <div className="flex-1 flex flex-col rounded-xl border border-warm bg-surface-1 min-h-[400px] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
-            <p className="text-center text-muted py-12">
-              Ask about your progress, style, or portfolio memory — or pick a suggestion below.
-            </p>
+            <div className="py-4">
+              <TabEmptyState
+                icon={Sparkles}
+                title="Start a conversation"
+                description="I search your past critiques and portfolio memory — replies can take 30–90 seconds when I dig through your library."
+                steps={[
+                  'Upload a few photos in Studio so I have memory to draw on',
+                  'Pick a suggested question below, or type your own',
+                  'Open Glass Box on any critique to see what I remembered',
+                ]}
+              />
+            </div>
           )}
           {messages.map((m) => (
             <div

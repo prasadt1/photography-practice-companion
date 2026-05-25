@@ -247,10 +247,16 @@ function App() {
               onAssignmentsChange={refreshActiveAssignment}
             />
           )}
-          {activeTab === 'memory' && <MemoryTab />}
+          {activeTab === 'memory' && (
+            <MemoryTab onGoToStudio={() => navigate('studio')} />
+          )}
           {activeTab === 'mentor' && <MentorTab mode={userMode} />}
           {activeTab === 'triage' && (
-            <TriageTab mode={userMode} onGoToMemory={() => navigate('memory')} />
+            <TriageTab
+              mode={userMode}
+              onGoToMemory={() => navigate('memory')}
+              onGoToStudio={() => navigate('studio')}
+            />
           )}
           {activeTab === 'print' && (
             <PrintSalesTab

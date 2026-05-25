@@ -23,9 +23,10 @@ pass "Item 2 service files present (Cloud Run deploy: manual)"
 echo "=== Item 3: MCP primary path ==="
 count=$(grep -l "mcp_reads" app/sub_agents/*.py 2>/dev/null | wc -l | tr -d ' ')
 test "$count" -ge 5 || fail "sub_agents mcp_reads imports: $count"
-cd "$APP" && uv run python -m pytest ../tests/test_mcp_primary.py -q --tb=no || fail "test_mcp_primary"
+test -f app/memory/mcp_http_client.py || fail "mcp_http_client.py missing"
+cd "$APP" && uv run python -m pytest ../tests/test_mcp_primary.py ../tests/test_mcp_http_reads.py -q --tb=no || fail "mcp tests"
 cd "$ROOT"
-pass "Item 3 MCP routing (see docs/mcp-primary-judge-path.md for hosted vs playground)"
+pass "Item 3 MCP routing + HTTP client (production: ./scripts/verify_mcp_in_production.sh)"
 
 echo "=== Item 4: multi-user scoping ==="
 demo_count=$(grep -r "DEMO_USER_ID" app/sub_agents/ 2>/dev/null | wc -l | tr -d ' ' || true)

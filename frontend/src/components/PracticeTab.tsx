@@ -19,7 +19,7 @@ import {
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { formatSkillApplicationDelta } from '../lib/formatSkillDelta';
 import { HitlReasoningCallout } from './HitlReasoningCallout';
-import { ShootNowDialog } from './ShootNowDialog';
+import { PracticeInlineShootBanner } from './PracticeInlineShootBanner';
 import { PracticeCardsSkeleton } from './SkeletonBlocks';
 import type { Assignment, ReflectionResult, UserMode } from '../types/practice';
 
@@ -44,7 +44,8 @@ export const PracticeTab: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastReflection, setLastReflection] = useState<ReflectionResult | null>(null);
   const [expandedCompletedId, setExpandedCompletedId] = useState<string | null>(null);
-  const [acceptedForShoot, setAcceptedForShoot] = useState<Assignment | null>(null);
+  const [shootBanner, setShootBanner] = useState<Assignment | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,7 +85,7 @@ export const PracticeTab: React.FC<Props> = ({
       const accepted = await acceptAssignment(id);
       await load();
       onAssignmentsChange?.();
-      setAcceptedForShoot(accepted);
+      setShootBanner(accepted);
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
@@ -129,20 +130,23 @@ export const PracticeTab: React.FC<Props> = ({
     );
   }
 
+  const focus: 'proposed' | 'active' | 'idle' =
+    proposed.length > 0 ? 'proposed' : active.length > 0 ? 'active' : 'idle';
+
   return (
     <div className="animate-fadeIn space-y-8 max-w-3xl mx-auto">
-      {acceptedForShoot && (
-        <ShootNowDialog
-          assignment={acceptedForShoot}
+      {shootBanner && (
+        <PracticeInlineShootBanner
+          assignment={shootBanner}
           onShootNow={() => {
-            setAcceptedForShoot(null);
+            setShootBanner(null);
             onGoToField();
           }}
           onStudioUpload={() => {
-            setAcceptedForShoot(null);
+            setShootBanner(null);
             onGoToStudio();
           }}
-          onLater={() => setAcceptedForShoot(null)}
+          onDismiss={() => setShootBanner(null)}
         />
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -184,17 +188,18 @@ export const PracticeTab: React.FC<Props> = ({
         </p>
       )}
 
-      {proposed.map((a) => (
-        <ProposedCard
-          key={a.id}
-          assignment={a}
-          busy={acting === a.id}
-          onAccept={() => void handleAccept(a.id)}
-          onDecline={() => void handleDecline(a.id)}
-        />
-      ))}
+      {focus === 'proposed' &&
+        proposed.map((a) => (
+          <ProposedCard
+            key={a.id}
+            assignment={a}
+            busy={acting === a.id}
+            onAccept={() => void handleAccept(a.id)}
+            onDecline={() => void handleDecline(a.id)}
+          />
+        ))}
 
-      {lastReflection && (
+      {focus !== 'proposed' && lastReflection && (
         <div className="rounded-2xl border border-brand-500/40 bg-brand-500/10 p-5 text-sm text-stone-200">
           <p className="text-[10px] font-bold text-brand-400 uppercase tracking-wider mb-2">
             Reflection complete
@@ -207,18 +212,19 @@ export const PracticeTab: React.FC<Props> = ({
         </div>
       )}
 
-      {active.map((a) => (
-        <ActiveCard
-          key={a.id}
-          assignment={a}
-          onGoToStudio={onGoToStudio}
-          onGoToField={onGoToField}
-          onComplete={() => void handleComplete(a.id)}
-          completing={acting === `complete-${a.id}`}
-        />
-      ))}
+      {focus === 'active' &&
+        active.map((a) => (
+          <ActiveCard
+            key={a.id}
+            assignment={a}
+            onGoToStudio={onGoToStudio}
+            onGoToField={onGoToField}
+            onComplete={() => void handleComplete(a.id)}
+            completing={acting === `complete-${a.id}`}
+          />
+        ))}
 
-      {proposed.length === 0 && active.length === 0 && (
+      {focus === 'idle' && (
         <div className="text-center py-12 rounded-2xl border border-dashed border-warm">
           <Target className="w-10 h-10 text-stone-600 mx-auto mb-3" />
           <p className="text-muted">No active practice yet.</p>
@@ -228,11 +234,23 @@ export const PracticeTab: React.FC<Props> = ({
         </div>
       )}
 
-      {completed.length > 0 && (
+      {completed.length > 0 && focus !== 'proposed' && (
         <section>
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
-            Completed
-          </h3>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
+              Completed
+            </h3>
+            {focus === 'active' && (
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="text-xs text-brand-400 hover:text-brand-300"
+              >
+                {showHistory ? 'Hide history' : 'Show history'}
+              </button>
+            )}
+          </div>
+          {(focus === 'idle' || showHistory) && (
           <ul className="space-y-3">
             {completed.map((a) => (
               <CompletedCard
@@ -245,6 +263,7 @@ export const PracticeTab: React.FC<Props> = ({
               />
             ))}
           </ul>
+          )}
         </section>
       )}
     </div>

@@ -11,16 +11,17 @@
 ## Features
 
 - Glass Box multimodal critique (5-axis scores + spatial overlays)
-- Adaptive practice assignments with explicit rationale
+- Adaptive practice assignments with explicit rationale and human-in-the-loop accept/decline
 - Reflection and **Intentional Skill Application Rate (ISAR)** across shoots
-- MongoDB memory: portfolio embeddings, Atlas Vector Search, Atlas Search on critique text; aesthetic profile recomputed on demand today (change-stream listener deployable via `services/change-stream-listener/`)
+- MongoDB memory: portfolio embeddings, Atlas Vector Search, Atlas Search on critique text; aesthetic profile recomputed via change-stream listener on portfolio writes
+- **MongoDB MCP-primary reads** in production: Coach API → HTTP Streamable MCP (Cloud Run) → Atlas; verified with `./scripts/verify_mcp_in_production.sh` (`mcp_read_ok` in Cloud Logging)
 - Agent Builder–grounded photography principles
 - XMP sidecar export for Lightroom workflows
-- Hobbyist vs working-pro modes
+- Hobbyist vs working-pro modes; Firebase Google sign-in on hosted build when `VITE_FIREBASE_*` is set
 
 ## Technologies
 
-Gemini 3 Pro · Google ADK · Vertex AI Agent Engine · Agent Builder Data Store · MongoDB Atlas (Flex) · MongoDB MCP Server · Cloud Run · Cloud Storage · Firebase Hosting · React · TypeScript · Python
+Gemini 3 Pro · Google ADK · Vertex AI Agent Engine · Agent Builder Data Store · MongoDB Atlas (Flex) · MongoDB MCP Server · Cloud Run · Cloud Storage · Firebase Hosting · React · TypeScript · Python · OpenTelemetry (MCP read spans)
 
 ## Data sources
 
@@ -30,11 +31,9 @@ Gemini 3 Pro · Google ADK · Vertex AI Agent Engine · Agent Builder Data Store
 
 ## Findings & learnings
 
-*(Fill after build — be honest.)*
-
-- What worked: e.g. co-locating vectors + operational docs in Atlas; MCP for orchestrator memory reads  
-- What was hard: cross-region Atlas (`eu-west3`) vs Vertex (`us-central1`); Agent Engine cold start  
-- Surprises: …
+- **What worked:** Co-locating vectors + operational docs in Atlas; routing portfolio reads through MCP so judges can trace `mongodb.mcp.find` in Cloud Trace; layered auth (Cloud Run IAM + `x-mcp-api-key`) for the MCP sidecar.
+- **What was hard:** EJSON round-trips and MCP tool responses wrapped in untrusted-user-data tags; `MONGODB_URI` with `&` breaking naive `source .env` in deploy scripts; cross-region Atlas (`eu-west3`) vs Vertex (`us-central1`).
+- **Surprises:** Portfolio list had to call `mcp_reads` explicitly — a PyMongo shortcut bypassed MCP and left verify scripts with no `mcp_read_ok` logs.
 
 ## Track
 
@@ -42,10 +41,11 @@ Gemini 3 Pro · Google ADK · Vertex AI Agent Engine · Agent Builder Data Store
 
 ## Links
 
-- Hosted app: `https://<firebase-site>.web.app`  
-- Agent API: *(Agent Engine endpoint)*  
-- Repo: `https://github.com/prasadt1/photography-practice-companion`  
-- Video: *(YouTube/Vimeo)*
+- Hosted app: https://practice-companion-hackathon.web.app
+- Coach API: https://practice-companion-api-l6kusl5xcq-uc.a.run.app
+- MCP service: https://mongodb-mcp-l6kusl5xcq-uc.a.run.app/mcp
+- Repo: https://github.com/prasadt1/photography-practice-companion
+- Video: *(YouTube/Vimeo — record 3–5 min demo: Studio → Glass Box → Practice HITL → Memory trends → MCP verify)*
 
 ## Prior work attribution
 

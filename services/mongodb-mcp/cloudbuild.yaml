@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/practice-companion-hackathon/mongodb-mcp:latest
+      - -f
+      - services/mongodb-mcp/Dockerfile
+      - .
+images:
+  - gcr.io/practice-companion-hackathon/mongodb-mcp:latest

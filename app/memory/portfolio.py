@@ -95,13 +95,17 @@ def list_portfolio_entries(
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
 
-    cursor = (
-        get_db()
-        .portfolio_entries.find(query, projection={"embedding": 0})
-        .sort("created_at", -1)
-        .limit(max(1, min(limit, 100)))
+    from memory import mcp_reads
+
+    coll = get_db().portfolio_entries
+    docs = mcp_reads.find(
+        coll,
+        query,
+        projection={"embedding": 0},
+        limit=max(1, min(limit, 100)),
+        sort=[("created_at", -1)],
     )
-    entries = [_serialize_entry(doc) for doc in cursor]
+    entries = [_serialize_entry(doc) for doc in docs]
     return {"entries": entries, "total": len(entries)}
 
 
@@ -122,11 +126,15 @@ def compute_aesthetic_summary(
         get_db().portfolio_entries.count_documents(query) if query else 0
     )
 
-    docs = list(
-        get_db()
-        .portfolio_entries.find(query, projection={"scores": 1, "aesthetic_tags": 1})
-        .sort("created_at", -1)
-        .limit(sample_size)
+    from memory import mcp_reads
+
+    coll = get_db().portfolio_entries
+    docs = mcp_reads.find(
+        coll,
+        query,
+        projection={"scores": 1, "aesthetic_tags": 1},
+        limit=sample_size,
+        sort=[("created_at", -1)],
     )
     if not docs:
         return {

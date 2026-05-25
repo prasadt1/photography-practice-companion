@@ -1,7 +1,10 @@
 """
-MongoDB read path — MCP-primary when ORCHESTRATOR_USE_MCP=true, PyMongo fallback on failure.
+MongoDB read path — MCP-primary when ORCHESTRATOR_USE_MCP=true.
 
-Writes always use PyMongo (hot paths). Sub-agent read tools should import from this module.
+Hosted production: reads go to MongoDB MCP Server (Streamable HTTP on Cloud Run).
+Local: set MONGODB_MCP_HTTP_URL or allow PyMongo fallback via MONGODB_MCP_ALLOW_PYMONGO_FALLBACK.
+
+Writes always use PyMongo.
 """
 
 from __future__ import annotations
@@ -24,41 +27,44 @@ def mcp_primary_enabled() -> bool:
     )
 
 
+def allow_pymongo_fallback() -> bool:
+    return os.environ.get("MONGODB_MCP_ALLOW_PYMONGO_FALLBACK", "true").lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+
+
+def mcp_http_configured() -> bool:
+    from memory.mcp_http_client import mcp_http_url
+
+    return bool(mcp_http_url())
+
+
 def mcp_read_stats() -> dict[str, int]:
     return {"attempted": _mcp_reads_attempted, "succeeded": _mcp_reads_succeeded}
 
 
-def _try_mcp_find(
-    collection_name: str,
-    filt: dict[str, Any],
-    *,
-    projection: dict[str, Any] | None = None,
-    limit: int | None = None,
-    sort: list[tuple[str, int]] | None = None,
-) -> list[dict[str, Any]] | None:
-    """Attempt MCP read; return None to signal PyMongo fallback."""
-    global _mcp_reads_attempted, _mcp_reads_succeeded
-    if not mcp_primary_enabled():
-        return None
-    _mcp_reads_attempted += 1
-    try:
-        from pathlib import Path
+def _db_name(collection: Any) -> str:
+    return os.environ.get("MONGODB_DB_NAME", collection.database.name)
 
-        config_rel = os.environ.get("MONGODB_MCP_CONFIG_PATH", "mcp-config.json")
-        config_path = Path(config_rel)
-        if not config_path.is_absolute():
-            config_path = Path(__file__).resolve().parent.parent.parent / config_rel.lstrip(
-                "./"
-            )
-        if not config_path.is_file():
-            return None
-        # MCP-primary contract: reads are routed through the MongoDB MCP tool surface.
-        # Cloud Run MCP service mirrors Atlas; local dev uses configured stdio server.
-        _mcp_reads_succeeded += 1
-        return None  # delegate to PyMongo after MCP path accounting
-    except Exception as exc:
-        logger.warning("MCP read unavailable: %s", exc)
-        return None
+
+def _should_use_mcp() -> bool:
+    return mcp_primary_enabled() and mcp_http_configured()
+
+
+def _on_mcp_failure(exc: Exception, operation: str, collection_name: str) -> None:
+    if allow_pymongo_fallback():
+        logger.warning(
+            "MCP read failed (%s %s), PyMongo fallback allowed: %s",
+            operation,
+            collection_name,
+            exc,
+        )
+        return
+    raise RuntimeError(
+        f"MCP read required but failed for {operation} on {collection_name}: {exc}"
+    ) from exc
 
 
 def find(
@@ -69,15 +75,27 @@ def find(
     limit: int | None = None,
     sort: list[tuple[str, int]] | None = None,
 ) -> list[dict[str, Any]]:
-    mcp_result = _try_mcp_find(
-        collection.name,
-        filt,
-        projection=projection,
-        limit=limit,
-        sort=sort,
-    )
-    if mcp_result is not None:
-        return mcp_result
+    global _mcp_reads_attempted, _mcp_reads_succeeded
+    if _should_use_mcp():
+        _mcp_reads_attempted += 1
+        try:
+            from memory import mcp_http_client
+
+            docs = mcp_http_client.mcp_find(
+                _db_name(collection),
+                collection.name,
+                filt,
+                projection=projection,
+                limit=limit,
+                sort=sort,
+            )
+            _mcp_reads_succeeded += 1
+            return docs
+        except Exception as exc:
+            _on_mcp_failure(exc, "find", collection.name)
+            if not allow_pymongo_fallback():
+                raise
+
     cursor = collection.find(filt, projection=projection)
     if sort:
         cursor = cursor.sort(sort)
@@ -93,15 +111,26 @@ def find_one(
     projection: dict[str, Any] | None = None,
     sort: list[tuple[str, int]] | None = None,
 ) -> dict[str, Any] | None:
-    mcp_result = _try_mcp_find(
-        collection.name,
-        filt,
-        projection=projection,
-        limit=1,
-        sort=sort,
-    )
-    if mcp_result is not None:
-        return mcp_result[0] if mcp_result else None
+    global _mcp_reads_attempted, _mcp_reads_succeeded
+    if _should_use_mcp():
+        _mcp_reads_attempted += 1
+        try:
+            from memory import mcp_http_client
+
+            doc = mcp_http_client.mcp_find_one(
+                _db_name(collection),
+                collection.name,
+                filt,
+                projection=projection,
+                sort=sort,
+            )
+            _mcp_reads_succeeded += 1
+            return doc
+        except Exception as exc:
+            _on_mcp_failure(exc, "find_one", collection.name)
+            if not allow_pymongo_fallback():
+                raise
+
     kwargs: dict[str, Any] = {}
     if projection:
         kwargs["projection"] = projection
@@ -111,9 +140,22 @@ def find_one(
 
 
 def aggregate(collection: Any, pipeline: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if mcp_primary_enabled():
-        _try_mcp_find(collection.name, {})
-    try:
-        return list(collection.aggregate(pipeline))
-    except Exception:
-        raise
+    global _mcp_reads_attempted, _mcp_reads_succeeded
+    if _should_use_mcp():
+        _mcp_reads_attempted += 1
+        try:
+            from memory import mcp_http_client
+
+            docs = mcp_http_client.mcp_aggregate(
+                _db_name(collection),
+                collection.name,
+                pipeline,
+            )
+            _mcp_reads_succeeded += 1
+            return docs
+        except Exception as exc:
+            _on_mcp_failure(exc, "aggregate", collection.name)
+            if not allow_pymongo_fallback():
+                raise
+
+    return list(collection.aggregate(pipeline))
