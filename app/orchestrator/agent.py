@@ -14,24 +14,22 @@
 # limitations under the License.
 
 """
-Practice Companion Orchestrator Agent
+Practice Companion — ADK playground entry (v5 multi-agent orchestrator).
 
-Phase 2: MongoDB MCP (optional) + memory/principles FunctionTools + Coach upload tool.
+Delegates to sub-agents via AgentTool (app/agent.py). Legacy FunctionTool-only
+orchestrator removed in Phase 1 per docs/spec.md §2.1.
 """
 
 import os
 from pathlib import Path
 
 import google.auth
-from google.adk.agents import Agent
-from google.adk.apps import App
-from google.adk.models import Gemini
-from google.genai import types
 from dotenv import load_dotenv
+from google.adk.apps import App
+from google.genai import types
 
-from orchestrator.tool_registry import build_orchestrator_tools
+from agent import build_orchestrator_agent
 
-# Load environment variables from .env file (look in parent directory if not found)
 project_root = Path(__file__).parent.parent.parent
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -44,17 +42,13 @@ if creds_rel:
     if creds_path.is_file():
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(creds_path.resolve())
 
-# Set up GCP environment
-# Use application default credentials (already authenticated via gcloud)
 try:
     _, project_id = google.auth.default()
 except Exception:
-    # Fallback to env var if ADC not available
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "practice-companion-hackathon")
 
 os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
 
-# Gemini 3.x uses the global Vertex endpoint (ADR-010). Embeddings stay regional.
 gemini_location = os.getenv(
     "VERTEX_AI_GEMINI_LOCATION",
     os.getenv("GEMINI_VERTEX_REGION", "global"),
@@ -62,23 +56,17 @@ gemini_location = os.getenv(
 os.environ["GOOGLE_CLOUD_LOCATION"] = gemini_location
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-# Default: Gemini 3.1 Pro preview (successor to gemini-3-pro-preview on Vertex)
-gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
+def _default_persona() -> str:
+    try:
+        from memory.users import get_persona
 
-# Load orchestrator instruction from prompts/orchestrator.txt
-prompts_dir = Path(__file__).parent.parent / "prompts"
-orchestrator_instruction = (prompts_dir / "orchestrator.txt").read_text()
+        return get_persona(None)
+    except Exception:
+        return os.getenv("DEFAULT_PERSONA", "hobbyist")
 
-# Practice Companion Orchestrator
-root_agent = Agent(
-    name="practice_companion_orchestrator",
-    model=Gemini(
-        model=gemini_model,
-        retry_options=types.HttpRetryOptions(attempts=3),
-    ),
-    instruction=orchestrator_instruction,
-    tools=build_orchestrator_tools(),
-)
+
+default_persona = _default_persona()
+root_agent = build_orchestrator_agent(default_persona)
 
 app = App(
     root_agent=root_agent,

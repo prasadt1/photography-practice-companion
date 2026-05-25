@@ -4,6 +4,11 @@ import { ModeToggle } from './components/ModeToggle';
 import { PracticeTab } from './components/PracticeTab';
 import { FieldTab } from './components/FieldTab';
 import { MemoryTab } from './components/MemoryTab';
+import { MentorTab } from './components/MentorTab';
+import { TriageTab } from './components/TriageTab';
+import { PrintSalesTab } from './components/PrintSalesTab';
+import { clearMentorSession } from './services/mentorClient';
+import { fetchUserProfile, personaToUserMode, updatePersona } from './services/userClient';
 import { ActivePracticeBanner } from './components/studio/ActivePracticeBanner';
 import PhotoUploader from './components/studio/PhotoUploader';
 import { fetchActiveAssignment } from './services/practiceClient';
@@ -13,7 +18,7 @@ import { mapAnalysisResult } from './lib/mapAnalysisResult';
 import type { AnalysisResult } from './types';
 import type { Assignment, UserMode } from './types/practice';
 
-type Tab = 'studio' | 'practice' | 'memory' | 'field';
+type Tab = 'studio' | 'practice' | 'memory' | 'mentor' | 'triage' | 'print' | 'field';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('studio');
@@ -22,6 +27,7 @@ function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState('photo.jpg');
   const [userMode, setUserMode] = useState<UserMode>('hobbyist');
+  const [personaError, setPersonaError] = useState<string | null>(null);
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
 
   const refreshActiveAssignment = useCallback(async () => {
@@ -35,6 +41,20 @@ function App() {
   useEffect(() => {
     void refreshActiveAssignment();
   }, [activeTab, refreshActiveAssignment]);
+
+  useEffect(() => {
+    if (userMode !== 'working_pro' && activeTab === 'print') {
+      setActiveTab('mentor');
+    }
+  }, [userMode, activeTab]);
+
+  useEffect(() => {
+    void fetchUserProfile()
+      .then((p) => setUserMode(personaToUserMode(p.persona)))
+      .catch(() => {
+        /* API offline — keep local default */
+      });
+  }, []);
 
   const handleImageSelected = async (file: File, previewUrl: string) => {
     setAnalyzing(true);
@@ -73,6 +93,9 @@ function App() {
     { id: 'studio', label: 'Studio' },
     { id: 'practice', label: 'Practice' },
     { id: 'memory', label: 'Memory' },
+    { id: 'mentor', label: 'Mentor' },
+    { id: 'triage', label: 'Organize' },
+    ...(userMode === 'working_pro' ? [{ id: 'print' as const, label: 'Print' }] : []),
     { id: 'field', label: 'Field' },
   ];
 
@@ -108,7 +131,22 @@ function App() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 border-b border-slate-800">
-        <ModeToggle mode={userMode} onModeChange={setUserMode} />
+        <ModeToggle
+          mode={userMode}
+          onModeChange={setUserMode}
+          onPersistPersona={async (m) => {
+            setPersonaError(null);
+            await updatePersona(m);
+            clearMentorSession();
+          }}
+          onPersistError={(msg) => setPersonaError(msg)}
+        />
+        {personaError && (
+          <p className="max-w-7xl mx-auto px-4 pb-2 text-sm text-amber-400" role="alert">
+            Persona not saved on server ({personaError}). Mentor chat still uses your
+            selected toggle.
+          </p>
+        )}
       </div>
 
       <nav
@@ -173,6 +211,13 @@ function App() {
           />
         )}
         {activeTab === 'memory' && <MemoryTab />}
+        {activeTab === 'mentor' && <MentorTab mode={userMode} />}
+        {activeTab === 'triage' && (
+          <TriageTab mode={userMode} onGoToMemory={() => setActiveTab('memory')} />
+        )}
+        {activeTab === 'print' && (
+          <PrintSalesTab mode={userMode} onGoToMentor={() => setActiveTab('mentor')} />
+        )}
         {activeTab === 'field' && (
           <FieldTab
             assignment={activeAssignment}

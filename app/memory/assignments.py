@@ -9,8 +9,6 @@ from typing import Any
 from bson import ObjectId
 
 from memory.db import get_db
-from planner.service import generate_assignment
-from reflection.service import reflect_assignment
 
 
 def _resolve_user_id(user_id: str | None) -> ObjectId | None:
@@ -121,6 +119,8 @@ def link_upload_to_assignment(
 
 
 def complete_assignment(assignment_id: str) -> dict[str, Any]:
+    from sub_agents.reflection_pipeline import reflect_assignment
+
     reflection = reflect_assignment(assignment_id)
     now = datetime.now(timezone.utc)
     coll = get_db().assignments
@@ -173,6 +173,8 @@ def propose_assignment(
     existing = get_db().assignments.find_one({"user_id": uid, "status": "proposed"})
     if existing:
         return _serialize(existing)
+
+    from sub_agents.planner_pipeline import generate_assignment
 
     doc = generate_assignment(str(uid), mode=mode)
     return _serialize(doc)

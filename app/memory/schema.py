@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -116,5 +116,50 @@ class CoachAnalysisOutput(BaseModel):
     glass_box: GlassBox = Field(alias="glassBox")
     spatial_metadata: SpatialMetadata = Field(alias="spatialMetadata")
     bounding_boxes: list[dict] = Field(default_factory=list, alias="boundingBoxes")
+
+    model_config = {"populate_by_name": True}
+
+
+Persona = Literal["hobbyist", "working_pro", "vision_impairment"]
+ApprovalStatus = Literal["pending", "approved", "modified", "rejected"]
+
+
+class UserPreferences(BaseModel):
+    """Optional user settings (v5 §6.2)."""
+
+    voice_first: bool = Field(default=False, alias="voiceFirst")
+    haptic_feedback: bool = Field(default=True, alias="hapticFeedback")
+
+    model_config = {"populate_by_name": True}
+
+
+class ProposedAction(BaseModel):
+    type: str
+    target_id: str = Field(alias="targetId")
+    payload: dict = Field(default_factory=dict)
+
+    model_config = {"populate_by_name": True}
+
+
+class UserDecision(BaseModel):
+    action: Literal["approve", "modify", "reject"] | None = None
+    override_payload: dict | None = Field(default=None, alias="overridePayload")
+    decided_at: datetime | None = Field(default=None, alias="decidedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class PendingApproval(BaseModel):
+    """HITL document (§5.7)."""
+
+    user_id: str = Field(alias="userId")
+    agent_name: str = Field(alias="agentName")
+    proposed_action: ProposedAction = Field(alias="proposedAction")
+    agent_reasoning: str = Field(alias="agentReasoning")
+    status: ApprovalStatus = "pending"
+    user_decision: UserDecision | None = Field(default=None, alias="userDecision")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), alias="createdAt"
+    )
 
     model_config = {"populate_by_name": True}

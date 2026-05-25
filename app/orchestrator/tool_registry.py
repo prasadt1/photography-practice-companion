@@ -1,4 +1,7 @@
-"""Assemble orchestrator tools for ADK playground / Agent Engine."""
+"""Legacy FunctionTool registry (pre–Phase 1). Superseded by app/agent.py AgentTool orchestrator.
+
+Kept for reference; playground uses orchestrator/agent.py → build_orchestrator_agent().
+"""
 
 from __future__ import annotations
 

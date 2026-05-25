@@ -1,18 +1,29 @@
-"""FastAPI server — Studio photo analysis via Coach sub-agent."""
+"""FastAPI server — Studio (Coach) + Mentor Copilot orchestrator chat (Phase 2)."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
-from coach.service import analyze_photo  # noqa: E402
+_creds_rel = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+if _creds_rel:
+    _cp = Path(_creds_rel)
+    if not _cp.is_absolute():
+        _cp = PROJECT_ROOT / _creds_rel.lstrip("./")
+    if _cp.is_file():
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(_cp.resolve())
+
+from api.orchestrator_service import invoke_orchestrator_chat  # noqa: E402
+from sub_agents.coach import analyze_photo  # noqa: E402
 from memory.assignments import (  # noqa: E402
     accept_assignment,
     complete_assignment,
@@ -22,8 +33,37 @@ from memory.assignments import (  # noqa: E402
     propose_assignment,
 )
 from memory.portfolio import compute_aesthetic_summary, list_portfolio_entries  # noqa: E402
+from memory.pending_approvals import apply_decision, list_pending  # noqa: E402
+from memory.users import get_user_profile, set_persona  # noqa: E402
+from api.triage_scan import run_triage_scan  # noqa: E402
+from api.print_sales_scan import run_print_sales_scan  # noqa: E402
 
-app = FastAPI(title="Practice Companion API", version="0.3.0")
+app = FastAPI(title="Practice Companion API", version="0.4.0")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=8000)
+    session_id: str | None = Field(default=None, alias="sessionId")
+    user_id: str | None = Field(default=None, alias="userId")
+    # UI persona wins over stale DB (Phase 2 bugfix: toggle without persisted persona)
+    persona: Literal["hobbyist", "working_pro", "vision_impairment"] | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+class PersonaUpdate(BaseModel):
+    persona: Literal["hobbyist", "working_pro", "vision_impairment"]
+    user_id: str | None = Field(default=None, alias="userId")
+
+    model_config = {"populate_by_name": True}
+
+
+class ApprovalDecision(BaseModel):
+    action: Literal["approve", "reject", "modify"]
+    override_payload: dict | None = Field(default=None, alias="overridePayload")
+    user_id: str | None = Field(default=None, alias="userId")
+
+    model_config = {"populate_by_name": True}
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,7 +76,97 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "phase": "3"}
+    return {
+        "status": "ok",
+        "phase": "4",
+        "orchestratorChat": "enabled",
+        "triageHitl": "enabled",
+        "printSalesHitl": "enabled",
+    }
+
+
+@app.get("/api/v1/users/me")
+def users_me(user_id: str | None = None) -> dict:
+    try:
+        return get_user_profile(user_id=user_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.patch("/api/v1/users/me")
+def users_me_patch(body: PersonaUpdate) -> dict:
+    try:
+        return set_persona(body.persona, user_id=body.user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/chat")
+async def agent_chat(body: ChatRequest) -> dict:
+    try:
+        return await invoke_orchestrator_chat(
+            body.message,
+            user_id=body.user_id,
+            session_id=body.session_id,
+            persona=body.persona,
+        )
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/pending-approvals")
+def pending_approvals_list(
+    user_id: str | None = None,
+    status: str | None = "pending",
+    agent_name: str | None = None,
+) -> dict:
+    try:
+        return list_pending(user_id=user_id, status=status, agent_name=agent_name)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.patch("/api/v1/pending-approvals/{approval_id}")
+def pending_approvals_decide(approval_id: str, body: ApprovalDecision) -> dict:
+    try:
+        return apply_decision(
+            approval_id,
+            body.action,
+            override_payload=body.override_payload,
+            user_id=body.user_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/triage/scan")
+def triage_scan(user_id: str | None = None) -> dict:
+    """Run Triage analysis and create HITL proposals (fast path for web demo)."""
+    try:
+        return run_triage_scan(user_id=user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/print-sales/scan")
+def print_sales_scan(user_id: str | None = None, marketplace: str = "etsy") -> dict:
+    """Create Print Sales HITL listing proposals (fast path for web demo)."""
+    try:
+        return run_print_sales_scan(user_id=user_id, marketplace=marketplace)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/v1/analyze-photo")

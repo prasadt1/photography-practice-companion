@@ -16,9 +16,21 @@ import logging
 import os
 
 
+def _enable_genai_tracing() -> None:
+    """OpenTelemetry GenAI instrumentation (per-agent spans in Cloud Trace)."""
+    try:
+        from opentelemetry.instrumentation.google_genai import GoogleGenAiInstrumentor
+
+        GoogleGenAiInstrumentor().instrument()
+        logging.info("Google GenAI OpenTelemetry instrumentation enabled")
+    except Exception as exc:
+        logging.info("GenAI instrumentation skipped: %s", exc)
+
+
 def setup_telemetry() -> str | None:
     """Configure OpenTelemetry and GenAI telemetry with GCS upload."""
     os.environ.setdefault("GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY", "true")
+    _enable_genai_tracing()
 
     bucket = os.environ.get("LOGS_BUCKET_NAME")
     capture_content = os.environ.get(

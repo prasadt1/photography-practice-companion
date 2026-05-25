@@ -1,5 +1,5 @@
-"""Coach sub-agent — multimodal critique and portfolio writes."""
+"""Legacy package — re-exports Coach pipeline from v5 sub_agents."""
 
-from coach.service import analyze_photo
+from sub_agents.coach import analyze_photo, coach_agent
 
-__all__ = ["analyze_photo"]
+__all__ = ["analyze_photo", "coach_agent"]

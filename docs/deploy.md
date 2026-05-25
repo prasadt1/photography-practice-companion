@@ -6,7 +6,7 @@ Judges need a **public URL**. The Vite dev proxy only works locally; production 
 
 ```
 Browser → Firebase Hosting (static React)
-       → Cloud Run practice-companion-api (FastAPI / Coach)
+       → Cloud Run practice-companion-api (FastAPI: Coach + Mentor orchestrator chat)
        → MongoDB Atlas · Vertex AI · GCS · Agent Builder
 ```
 
@@ -42,6 +42,10 @@ Cloud Run service account needs roles:
 - `roles/aiplatform.user`
 - `roles/storage.objectAdmin` (portfolio bucket)
 - `roles/discoveryengine.editor` or viewer (Data Store search)
+
+## Phase 2 — Mentor chat on Cloud Run
+
+Mentor Copilot uses `POST /api/v1/agent/chat` on the **same** Cloud Run service as Studio (`api/server.py`). No separate Agent Engine URL is required for the hackathon demo. Persona is stored in `users.persona` (`PATCH /api/v1/users/me`).
 
 ## 1. Deploy Coach API (Cloud Run)
 

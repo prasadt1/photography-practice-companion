@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .agent import app
+"""Orchestrator package — import `orchestrator.agent` for ADK app (avoids circular imports)."""
 
-__all__ = ["app"]
+__all__: list[str] = []

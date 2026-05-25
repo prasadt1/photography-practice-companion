@@ -1,116 +1,355 @@
-# Practice Companion — Master Spec & Claude Code Build Prompt (v3)
+# Practice Companion — Master Spec & Build Prompt (v5)
 
 **Project:** Photography Practice Companion
-**Repository:** `photography-practice-companion` (created fresh during contest period — see [§1](#1-repository-setup))
+**Repository:** `photography-practice-companion`
 **Hackathon:** Google Cloud Rapid Agent Hackathon — MongoDB partner track
 **Deadline:** June 11, 2026, 2:00 PM PT
+**Today:** May 24, 2026 (18 days remaining)
 **Owner:** Prasad Tilloo
-**Stack:** Gemini 3 Pro + ADK (via Agent Starter Pack) + Vertex AI Agent Engine + Agent Builder Data Store + MongoDB Atlas with MongoDB MCP Server + Cloud Run (auxiliary services) + Firebase Hosting (frontend) + React/TypeScript
-
-> **Changes from v2:** Agent Builder Data Store added for photography principles grounding (satisfies the rules' literal "Agent Builder" requirement + adds real grounding value). Frontend hosting moved from Vercel to Firebase Hosting (Vercel competes with Google Cloud hosting services per rules §7.B). MongoDB change streams added for `aesthetic_profile` background derivation. Coach output extended with richer spatial metadata (subject relationships, lighting maps). Atlas Search added for full-text retrieval over Glass Box content. Rules compliance appendix added. Devpost submission text plan added.
+**Stack:** Gemini 3 Pro + ADK (proper multi-agent) + Vertex AI Agent Engine + Agent Builder Data Store + MongoDB Atlas + Firebase Hosting + native iOS via SwiftUI
 
 ---
 
-## 0. How to use this document
+## ⚠️ READ THIS FIRST — Why v5 exists
 
-This is the master spec and the working prompt for Claude Code. Sections are cross-linked. The build is structured into five phases ([§4](#phase-0--setup) through [§8](#phase-4--field-mode--xmp--polish)), each with a verification gate at the end. Resume by checking which gate has been passed and starting at the next phase.
+v3 (Cursor-led build) shipped a working hosted product but materially diverged from the spec: Coach/Planner/Reflection were implemented as Python services called via FunctionTool wrappers, not as proper ADK sub-agents. Production had 0 ADK agents in the request path. The multi-agent claim was wallpaper.
 
-**Two roles** in execution:
-- **Prasad (manual steps)** — sign-up flows, billing, UI confirmations, human-in-the-loop decisions. Marked with **[MANUAL]**.
-- **Claude Code (automated)** — file creation, code generation, CLI commands, schema setup. Marked with **[AUTO]**.
+v4 added explicit anti-patterns and verification commands to prevent that recurrence. v5 closes the remaining ambiguities that adversarial review surfaced — places where Cursor could still "resolve" interpretation in its own (wrong) direction even while passing the verification commands.
 
-**Before starting Phase 0**, Prasad should install the official MongoDB Claude Plugin in Claude Code from the Anthropic Plugin Marketplace — it bundles the MongoDB MCP Server and pre-built agent skills.
+**Key v5 decisions, committed and non-negotiable (with one explicit fallback exception in §8.0):**
 
-**Rules compliance is non-negotiable.** Every change to the spec or to the build must respect the hackathon official rules. See [Appendix C](#appendix-c--rules-compliance-checklist) before final submission.
+1. **Default target = 9 total LlmAgent instances:** 1 orchestrator + 8 sub-agents. Canonical and referenced everywhere. **Only** the formal, human-activated fallback in §8.0 may switch the build profile to 8 agents.
+2. **Field Coach Orchestrator** is the 9th LlmAgent — not a "flow," not a "feature exercised by orchestrator routing." A proper sub-agent that delegates to other sub-agents within the iPhone field-capture path.
+3. **iOS = SwiftUI native** (requires Mac + Xcode + Apple Developer account). Fallback only if no Mac: Capacitor wrap of existing PWA.
+4. **Persona enforcement at tool level** — orchestrator's `AgentTool` list dynamically constructed per persona. Working-pro-only agents (Print Sales) aren't even available in the toolset for hobbyist sessions.
+5. **Full file migration from v3 → v5** is specified in §1.5. Old Python services deleted before Phase 1 begins.
+6. **HITL has structural implementation requirements** (data model, UI flow, audit log) — not just conceptual gates.
 
-**Supporting docs:** [`doc-map.md`](doc-map.md) · [`decisions.md`](decisions.md) · [`mongodb-setup.md`](mongodb-setup.md) · [`claude-code-handoff.md`](claude-code-handoff.md) · [`CONTEXT.md`](../CONTEXT.md)
-
----
-
-## 1. Repository setup
-
-### 1.1 Create the fresh repo
-
-**[MANUAL]** Prasad creates a new public GitHub repository named `photography-practice-companion`. License: Apache-2.0. Initialize empty.
-
-### 1.2 Source repos to mine
-
-**Source A — `photography-coach-ai-gemini3`** (https://github.com/prasadt1/photography-coach-ai-gemini3)
-The original DeepMind Vibe Code competition entry on Gemini 3 Pro. Primary source for frontend components and photography analysis system prompts.
-
-**Source B — `photography-coach-gemma4`** (https://github.com/prasadt1/photography-coach-gemma4)
-The Gemma 4 / L.E.N.S. evolution. Source for XMP, voice, LiveCameraCapture, iOS PWA hardening, HTTPS-on-LAN setup. Files in this repo were created in May 2026 (within contest period).
-
-### 1.3 What to mine from where
-
-**From Source A (gemini3):**
-- Photography analysis system prompts → migrate into ADK Coach agent instructions and the Agent Builder Data Store (see [§0.7](#07-agent-builder-data-store-for-photography-principles)).
-- Types and scoring semantics reference only (see ADR-009).
-
-**From Source B (gemma4) — Studio UI (ADR-009, implemented in `frontend/src/components/studio/`):**
-- `AnalysisResults.tsx` → `StudioAnalysisResults.tsx` (adapted).
-- `SpatialOverlay.tsx`, `PhotoUploader.tsx`, `EvidencePanel.tsx` (adapted).
-- `services/xmpService.ts` (tiered star ratings + IPTC keywords).
-
-**From Source B (gemma4) — later phases:**
-- `services/voiceCoach.ts` → port as-is. Field Mode TTS.
-- `services/voiceService.ts` → port as-is.
-- `services/validationService.ts` → port as-is. Zod + AJV validation.
-- `components/LiveCameraCapture.tsx` → port as-is. Field Mode foundation.
-- `scripts/setup-dev-https.sh` → port as-is.
-- `public/manifest.json` + service worker → port, rebrand for Practice Companion.
-- `vite.config.ts` HTTPS/proxy patterns → adapt.
-
-**Do NOT port:**
-- Anything Ollama-related.
-- Electron Vault Mode files.
-- L.E.N.S. artisan-accessibility messaging — different product, different framing.
-- Demo Mode hardcoded sample responses.
-- The single-file `geminiService.ts` itself — logic gets distributed across ADK agents.
-
-### 1.4 What's net new
-
-- ADK agent definitions (orchestrator + 3 sub-agents) — [§10](#10-agent-definitions).
-- Agent Builder Data Store with photography principles knowledge — [§0.7](#07-agent-builder-data-store-for-photography-principles).
-- MongoDB Atlas memory layer with three-tier schema, vector index, Atlas Search index — [§7](#7-mongodb-schema).
-- MongoDB MCP Server registered as the orchestrator's primary data access tool.
-- MongoDB change stream listener for `aesthetic_profile` derivation — [§11.4](#114-change-stream-listener-for-aesthetic-profile).
-- New Practice tab, Memory tab in the UI.
-- Working-pro mode routing logic.
-- Field Mode flow using ported voice + camera infrastructure.
+If you (Cursor / Claude Code / any AI tool) are reading this and your implementation diverges from any of these six commitments, **STOP** and surface the divergence before continuing.
 
 ---
 
-## 2. Hackathon context & framework
+## 1. How to use this document
 
-### 2.1 Stack confirmation
+### 1.1 Roles
 
-- **Gemini 3 Pro** — reasoning (mandatory per rules §7.A).
-- **Google Cloud Agent Builder** — used for Data Store (photography principles grounding); satisfies the rules' literal Agent Builder requirement. [§0.7](#07-agent-builder-data-store-for-photography-principles).
-- **ADK (Agent Development Kit)** — primary agent framework, via Agent Starter Pack scaffold (officially listed in hackathon resources). Compatible with Agent Builder ecosystem.
-- **Vertex AI Agent Engine** — primary deployment target for the agents.
-- **MongoDB Atlas + MongoDB MCP Server** — partner integration; orchestrator's primary data access tool.
-- **Cloud Run** — auxiliary services (MongoDB MCP Server hosting, change stream listener).
-- **Firebase Hosting** — frontend deploy target (replaces Vercel for rules compliance).
+- **Prasad (human)** — manual steps, decisions, signing in to dashboards. Marked **[MANUAL]**.
+- **AI coding tool (Cursor or Claude Code)** — file creation, code generation, CLI commands. Marked **[AUTO]**.
 
-### 2.2 Why ADK + Agent Builder Data Store, not just ADK
+### 1.2 Required opening prompt for every AI session
 
-The hackathon rules text (§7.A) says "powered by Gemini and Google Cloud Agent Builder." The Resources page lists Agent Starter Pack (ADK-based) as a supported path. We satisfy both by using ADK as the agent runtime *and* using Agent Builder Data Store for photography principles grounding — Agent Builder is a real, load-bearing part of the architecture, not name-dropped.
+Every session must start with this verbatim:
 
-### 2.3 What's explicitly NOT used (per rules §7.B)
+```
+Read /docs/spec.md in full before doing anything else. Pay particular attention to:
+- §2 (Guardrails and Anti-Patterns)
+- §1.5 (v3 → v5 file migration list)
+- §3.5 (Canonical agent count: exactly 9)
 
-- No services that directly compete with Google Cloud (cloud platform capabilities): no Vercel, no AWS, no Azure.
-- No services that directly compete with MongoDB (our chosen partner track): no Pinecone, no Weaviate, no Postgres+pgvector.
-- No third-party AI tools: only Google Cloud AI (Gemini, multimodal embeddings, Vertex AI) and MongoDB-owned AI features (Voyage AI is technically allowed since acquired by MongoDB; not used in this build).
+If your proposed implementation diverges from any of the above, STOP and surface
+the divergence — do NOT implement the divergent version.
+```
 
-### 2.4 Submission deliverables (Devpost, per rules §7.B)
+### 1.3 Daily check-in prompt
 
-1. URL to hosted Project — Firebase Hosting URL (frontend) + Agent Engine endpoint (backend).
-2. Text description with summary, features, technologies, data sources, findings, learnings — see [§18](#18-devpost-text-description).
-3. URL to public open-source code repo with Apache-2.0 license file visible in the About section.
-4. ~3-minute demo video uploaded to YouTube or Vimeo, English (or with English subtitles) — see [§16](#16-demo-script).
-5. Track selection: MongoDB.
-6. Completed Devpost submission form.
+At the end of each work session, ask the AI tool:
+
+> *"Show me the multi-agent architecture as it stands today. List each ADK LlmAgent instance, its file path, its tools, and one example user query that would route to it. Confirm the active profile's expected agent count (9 by default; 8 only if §8.0 was explicitly activated by Prasad). If any sub-agent is implemented as a FunctionTool wrapper around a Python service rather than a proper LlmAgent, flag it explicitly."*
+
+If the answer is anything other than 9 distinct LlmAgent instances each with its own file and tools, the architecture has drifted and needs correction.
+
+### 1.4 Self-correction trigger
+
+If the AI tool realizes mid-implementation that its approach matches an anti-pattern from §2.2, it MUST:
+
+1. STOP. Do not commit further code.
+2. Surface the divergence to Prasad in plain language: *"I implemented X as a Python service called via FunctionTool. §2 requires it to be a proper ADK sub-agent. Want me to refactor?"*
+3. Wait for Prasad's instruction. Do not silently continue.
+
+The v3 failure was that Cursor never surfaced the structural divergence. Do not repeat that.
+
+### 1.5 v3 → v5 file migration
+
+**The v3 hosted product is live and working but its agent architecture is wrong.** v5 requires explicit migration before Phase 1 begins.
+
+**[AUTO] Files to DELETE from the existing v3 repo before Phase 1:**
+
+```
+app/coach/service.py                  # Python service Cursor built; replaced by proper sub-agent
+app/coach/agent.py                    # unused stub from v3
+app/planner/service.py                # Python service; replaced by proper sub-agent
+app/reflection/service.py             # Python service; replaced by proper sub-agent
+app/orchestrator/coach_tool.py        # FunctionTool wrapper around Coach service; obsolete
+app/orchestrator/planner_tool.py      # FunctionTool wrapper around Planner service; obsolete
+app/orchestrator/reflection_tool.py   # FunctionTool wrapper around Reflection service; obsolete
+scripts/bootstrap-mongodb.js          # if it exists from v3 work; replaced by app/memory/indexes.py
+```
+
+**Wildcard deletes are explicitly prohibited.** Do NOT run `rm app/orchestrator/*_tool.py` or similar patterns. Delete each file by exact name. If other files exist in `app/orchestrator/` that are not in the list above (e.g., utility modules, configuration files, or shared helpers), they are NOT deleted. The AI coding tool must inspect each file in `app/orchestrator/` before deletion and confirm it is a FunctionTool wrapper to one of the listed v3 services. If uncertain, surface the file to Prasad rather than delete it.
+
+**[AUTO] Files to CREATE in the new structure:**
+
+```
+app/agent.py                              # NEW orchestrator (proper LlmAgent with AgentTool)
+app/sub_agents/coach.py                   # Coach as proper LlmAgent
+app/sub_agents/mentor.py                  # Mentor sub-agent
+app/sub_agents/planner.py                 # Planner sub-agent
+app/sub_agents/reflection.py              # Reflection sub-agent
+app/sub_agents/triage.py                  # Backlog Triage sub-agent
+app/sub_agents/print_sales.py             # Print Sales Strategist (working_pro persona)
+app/sub_agents/visual_describer.py        # Visual Describer (vision_impairment persona)
+app/sub_agents/field_coach.py             # Field Coach Orchestrator (iPhone flow)
+app/prompts/orchestrator.txt              # ≥80 lines
+app/prompts/coach.txt                     # ≥30 lines
+app/prompts/mentor.txt                    # ≥30 lines
+app/prompts/planner.txt                   # ≥30 lines
+app/prompts/reflection.txt                # ≥30 lines
+app/prompts/triage.txt                    # ≥30 lines
+app/prompts/print_sales.txt               # ≥30 lines
+app/prompts/visual_describer.txt          # ≥30 lines
+app/prompts/field_coach.txt               # ≥30 lines
+app/memory/indexes.py                     # MongoDB schema + index creation
+app/memory/schema.py                      # MongoDB document models
+ios/                                       # NEW SwiftUI app directory
+```
+
+**[AUTO] Infrastructure to KEEP:**
+
+- GCP project (`practice-companion-hackathon`)
+- Firebase Hosting (existing setup)
+- MongoDB Atlas Flex cluster (`practice-photography-companion-mvp-cluster`)
+- Agent Builder Data Store (`photography-principles`)
+- GCS bucket for photo storage
+- Deployment scripts (Cloud Run, Firebase)
+- Frontend React tabs (Studio/Practice/Memory/Field) — kept but rewired to call orchestrator
+- XMP sidecar export client-side code
+- Change stream listener (if deployed)
+
+**[AUTO] Verification after migration:**
+
+```bash
+# These should return 0 (old files deleted)
+ls app/coach/service.py 2>/dev/null | wc -l                  # 0
+ls app/planner/service.py 2>/dev/null | wc -l                # 0
+ls app/reflection/service.py 2>/dev/null | wc -l             # 0
+
+# These should return 1 (new files created)
+ls app/agent.py 2>/dev/null | wc -l                          # 1
+ls app/sub_agents/*.py 2>/dev/null | wc -l                   # 8
+ls app/prompts/*.txt 2>/dev/null | wc -l                     # 9
+```
+
+If verification fails, migration is incomplete. Do not proceed to Phase 1.
+
+---
+
+## 2. Guardrails and anti-patterns
+
+This section exists because the v3 build used the anti-patterns below. **Cursor / Claude Code reading this: these are not suggestions. They are hard requirements.**
+
+### 2.1 The fundamental rule
+
+**Every sub-agent MUST be an actual `LlmAgent` instance with its own `instruction` and `tools=[...]`, NOT a Python service called from a FunctionTool wrapper.**
+
+### 2.2 Anti-patterns — DO NOT do these
+
+**❌ Anti-pattern 1: Wrapping a Python service as a FunctionTool and calling it a "sub-agent"**
+
+```python
+# WRONG — this is NOT a sub-agent
+from google.adk.tools import FunctionTool
+
+def analyze_photo(image_url: str) -> dict:
+    return coach_service.analyze(image_url)  # calls Python service
+
+orchestrator = LlmAgent(
+    name="orchestrator",
+    tools=[FunctionTool(analyze_photo)],   # this is a tool, not a sub-agent
+)
+```
+
+This was the v3 implementation. It produces a system where the orchestrator is the only LLM-reasoning agent and "Coach" is just a deterministic Python function. No second agent exists. The multi-agent claim collapses.
+
+**❌ Anti-pattern 2: Single agent with many tools, all routing through Python services**
+
+```python
+# WRONG — looks like multi-agent, isn't
+orchestrator = LlmAgent(
+    name="orchestrator",
+    tools=[
+        FunctionTool(call_coach_service),
+        FunctionTool(call_planner_service),
+        FunctionTool(call_reflection_service),
+        # ...
+    ],
+)
+```
+
+Eight FunctionTools does not make multi-agent. This is one agent with tool-calling.
+
+**❌ Anti-pattern 3: Different sub-agents with identical tool surfaces**
+
+```python
+# WRONG — sub-agents that aren't structurally different
+coach_agent = LlmAgent(instruction="You are a Coach", tools=[same_tools])
+planner_agent = LlmAgent(instruction="You are a Planner", tools=[same_tools])
+reflection_agent = LlmAgent(instruction="You are Reflection", tools=[same_tools])
+```
+
+Different prompts on the same toolkit is role-play, not multi-agent. Each sub-agent must have ≥1 tool no other sub-agent has.
+
+### 2.3 Required pattern — DO this
+
+```python
+# CORRECT — each sub-agent is its own ADK LlmAgent with unique tools
+from google.adk.agents import LlmAgent
+from google.adk.tools.agent_tool import AgentTool
+
+coach_agent = LlmAgent(
+    name="coach",
+    model="gemini-3-pro",
+    instruction=open("app/prompts/coach.txt").read(),
+    tools=[
+        analyze_image_multimodal_tool,      # unique to Coach
+        ground_in_data_store_principles,     # shared with Mentor
+        write_portfolio_entry_tool,          # unique to Coach
+        generate_multimodal_embedding_tool,  # unique to Coach
+    ],
+)
+
+planner_agent = LlmAgent(
+    name="planner",
+    model="gemini-3-pro",
+    instruction=open("app/prompts/planner.txt").read(),
+    tools=[
+        get_portfolio_aggregates_by_skill_tool,  # unique to Planner
+        get_active_assignment_tool,               # shared with Reflection
+        write_practice_assignment_tool,           # unique to Planner
+        query_data_store_principles_for_assignment_tool,  # unique to Planner (different from Coach's grounding)
+    ],
+)
+
+# ... same pattern for all 8 sub-agents
+
+# Orchestrator delegates via AgentTool, NOT FunctionTool
+orchestrator = LlmAgent(
+    name="orchestrator",
+    model="gemini-3-pro",
+    instruction=open("app/prompts/orchestrator.txt").read(),
+    tools=build_persona_filtered_tool_list(),  # see §4.3 for dynamic filtering
+)
+
+def build_persona_filtered_tool_list(persona: str) -> list:
+    """Tool list is constructed per persona. Working pro gets Print Sales;
+    vision impairment gets Visual Describer; hobbyist gets neither."""
+    base_tools = [
+        AgentTool(agent=coach_agent),
+        AgentTool(agent=mentor_agent),
+        AgentTool(agent=planner_agent),
+        AgentTool(agent=reflection_agent),
+        AgentTool(agent=field_coach_agent),
+        get_user_persona_tool,
+        get_session_context_tool,
+        get_active_assignment_tool,
+    ]
+    if persona in ["hobbyist", "working_pro"]:
+        base_tools.append(AgentTool(agent=triage_agent))
+    if persona == "working_pro":
+        base_tools.append(AgentTool(agent=print_sales_agent))
+    if persona == "vision_impairment":
+        base_tools.append(AgentTool(agent=visual_describer_agent))
+    return base_tools
+```
+
+### 2.4 Verification commands (run at every phase gate)
+
+```bash
+# Verify exactly 9 LlmAgent instances exist (1 orchestrator + 8 sub-agents)
+LLM_AGENT_COUNT=$(grep -rh "LlmAgent(" app/ | grep -v "^#" | wc -l)
+echo "LlmAgent instances: $LLM_AGENT_COUNT (must be 9)"
+test $LLM_AGENT_COUNT -eq 9 || echo "FAIL: expected 9, got $LLM_AGENT_COUNT"
+
+# Verify 8 sub-agent files exist
+SUB_AGENT_COUNT=$(ls app/sub_agents/*.py 2>/dev/null | wc -l)
+echo "Sub-agent files: $SUB_AGENT_COUNT (must be 8)"
+test $SUB_AGENT_COUNT -eq 8 || echo "FAIL: expected 8, got $SUB_AGENT_COUNT"
+
+# Verify 9 prompt files exist (1 orchestrator + 8 sub-agents)
+PROMPT_COUNT=$(ls app/prompts/*.txt 2>/dev/null | wc -l)
+echo "Prompt files: $PROMPT_COUNT (must be 9)"
+test $PROMPT_COUNT -eq 9 || echo "FAIL: expected 9, got $PROMPT_COUNT"
+
+# Verify each prompt is substantial (≥30 lines)
+for f in app/prompts/*.txt; do
+    LINES=$(wc -l < "$f")
+    test $LINES -ge 30 || echo "FAIL: $f has $LINES lines (need ≥30)"
+done
+
+# Verify orchestrator uses AgentTool, not FunctionTool, for sub-agents
+AGENT_TOOL_COUNT=$(grep "AgentTool(agent=" app/agent.py | wc -l)
+echo "AgentTool registrations: $AGENT_TOOL_COUNT (must be ≥8)"
+test $AGENT_TOOL_COUNT -ge 8 || echo "FAIL: expected ≥8, got $AGENT_TOOL_COUNT"
+
+# Verify old v3 service files are deleted
+for f in app/coach/service.py app/planner/service.py app/reflection/service.py; do
+    test ! -f "$f" || echo "FAIL: v3 file still exists: $f"
+done
+```
+
+If any of these checks fail, the phase is incomplete. **Do not proceed to the next phase.**
+
+### 2.4.b Runtime introspection check (persona isolation)
+
+The grep checks in §2.4 prove that 9 LlmAgent instances exist in the codebase. They do NOT prove that persona filtering correctly excludes forbidden agents at runtime. This runtime check does, and it MUST also pass at the Phase 1 gate.
+
+Create `tests/test_persona_isolation.py`:
+
+```python
+"""
+Runtime verification: orchestrator's persona-filtered toolset MUST match
+the canonical persona matrix in §3.2. Forbidden agents must NOT be reachable.
+
+Run after Phase 1: python -m pytest tests/test_persona_isolation.py -v
+"""
+
+from app.agent import build_persona_filtered_tool_list
+
+def _agent_names(tools):
+    return {t.agent.name for t in tools if hasattr(t, 'agent')}
+
+def test_hobbyist_isolation():
+    names = _agent_names(build_persona_filtered_tool_list("hobbyist"))
+    # Required agents:
+    for required in ["coach", "mentor", "planner", "reflection", "triage", "field_coach"]:
+        assert required in names, f"FAIL: hobbyist missing required agent: {required}"
+    # Forbidden agents:
+    for forbidden in ["print_sales", "visual_describer"]:
+        assert forbidden not in names, f"FAIL: hobbyist has forbidden agent: {forbidden}"
+
+def test_working_pro_isolation():
+    names = _agent_names(build_persona_filtered_tool_list("working_pro"))
+    for required in ["coach", "mentor", "planner", "reflection", "triage", "field_coach", "print_sales"]:
+        assert required in names, f"FAIL: working_pro missing required agent: {required}"
+    for forbidden in ["visual_describer"]:
+        assert forbidden not in names, f"FAIL: working_pro has forbidden agent: {forbidden}"
+
+def test_vision_impairment_isolation():
+    names = _agent_names(build_persona_filtered_tool_list("vision_impairment"))
+    for required in ["coach", "mentor", "planner", "reflection", "field_coach", "visual_describer"]:
+        assert required in names, f"FAIL: vision_impairment missing required agent: {required}"
+    for forbidden in ["print_sales", "triage"]:
+        assert forbidden not in names, f"FAIL: vision_impairment has forbidden agent: {forbidden}"
+
+def test_all_personas_have_orchestrator_base():
+    for persona in ["hobbyist", "working_pro", "vision_impairment"]:
+        names = _agent_names(build_persona_filtered_tool_list(persona))
+        for base in ["coach", "mentor", "planner", "reflection", "field_coach"]:
+            assert base in names, f"FAIL: {persona} missing base agent: {base}"
+```
+
+This test asserts **both** required and forbidden agents per persona. If §2.4 grep checks pass but this test fails, persona enforcement is at the wrong level (probably prompt-only suggestion rather than tool-level enforcement) — the architecture has drifted and must be corrected before Phase 2.
+
+In fallback mode (§8.0), update this test to remove `"triage"` from required agents in `test_hobbyist_isolation` and `test_working_pro_isolation`.
 
 ---
 
@@ -118,524 +357,433 @@ The hackathon rules text (§7.A) says "powered by Gemini and Google Cloud Agent 
 
 ### 3.1 One-paragraph description
 
-Practice Companion is an AI photography mentor that combines multimodal critique with adaptive practice planning, grounded in a photographer's persistent aesthetic identity over time. Unlike single-shot critique tools that grade one image in isolation, Practice Companion remembers what each photographer is working on, what they've improved, and what to push next. Dual audience: hobbyist photographers (skill growth) and working professionals (aesthetic consistency).
+Practice Companion is an AI photography mentor that adapts to who you are and remembers what you've made. It serves three genuinely different personas (hobbyist developing skills, working pro pursuing commercial outcomes, photographer with vision impairment pursuing creative expression) through persona-based agentic orchestration: the same iPhone app, web app, and memory layer produce structurally different products via different sub-agent compositions. The persistent thread: an AI mentor that remembers you, accessible from any channel, grounded in your evolving aesthetic identity.
 
-### 3.2 Dual audience
+### 3.2 Three personas with structurally different agentic behavior
 
-- **Hobbyist mode** — pedagogical focus. Practice assignments calibrated to current skill level. Glass Box critique. Intentional Skill Application Rate tracking ([§13](#13-demo-arc--kpi)).
-- **Working-pro mode** — aesthetic consistency focus. Cross-shoot drift analysis. Business-aware micro-assignments.
+| Persona | Priority | Sub-agents available in orchestrator's toolset | Output modality |
+|---|---|---|---|
+| **Hobbyist** | Skill development | Coach, Mentor, Planner, Reflection, Triage, Field Coach (6 sub-agents + orchestrator = 7 agents available in this session) | Visual UI + Glass Box critique + voice nudges |
+| **Working Pro** | Commercial outcomes | Coach, Mentor, Planner, Reflection, Triage, Field Coach, **Print Sales Strategist** (7 sub-agents + orchestrator = 8 agents available in this session) | Visual UI + business reasoning chains + revenue-aware planning |
+| **Photographer with Vision Impairment** | Capture assistance | Coach, Mentor, Planner, Reflection, Field Coach, **Visual Describer** (6 sub-agents + orchestrator = 7 agents available in this session). **Triage is NOT available** — Triage's bulk-visual-clustering UI is not voice-first and would degrade for this persona; deferred to post-hackathon work on accessibility-first Triage variant. | Voice-first + haptic feedback + scene narration |
 
-### 3.3 Two operational modes
+**Note:** The CODEBASE contains all 9 LlmAgent instances (always). The orchestrator's RUNTIME toolset is filtered per persona by `build_persona_filtered_tool_list()` (see §4.3). This means:
+- Code grep returns 9 LlmAgent instances ✓
+- Hobbyist users cannot invoke Print Sales or Visual Describer ✓
+- Working pros cannot invoke Visual Describer (and vice versa) ✓
+- Persona enforcement is at the tool level (architectural), not the prompt level (suggestion)
 
-- **Studio Mode** — post-shoot deep work. Upload, critique, assign, export to Lightroom. Primary loop and demo focus.
-- **Field Mode** — live coaching during a shoot via PWA + voice. Limited demo segment; full Field Mode is post-hackathon.
+### 3.3 Five agentic features
 
-### 3.4 Market positioning
+| Feature | Primary persona | Primary channel | LlmAgent(s) primarily exercised |
+|---|---|---|---|
+| **Mentor Copilot** | All three | Mobile + Web | Orchestrator → Mentor → (Coach, Reflection, Planner as needed) |
+| **Live Field Coach** | All three (mode-dependent) | iPhone | Orchestrator → **Field Coach (9th LlmAgent)** → (Coach, Visual Describer, Mentor as needed) |
+| **Backlog Triage Agent** | Hobbyist, Working Pro | Web | Orchestrator → Triage |
+| **Print Sales Strategist** | Working Pro only | Mobile + Web | Orchestrator → Print Sales Strategist |
+| **Visual Describer** | Photographer with Vision Impairment | iPhone primarily | Orchestrator → Visual Describer (sometimes via Field Coach in field mode) |
 
-Saturated for culling/editing (Aftershoot, Imagen, Evoto), CRM (Sprout, HoneyBook), publishing (Pygma). Gap: skill development and workflow intelligence layered on top of existing tools. Practice Companion sits in that gap — doesn't replace anything, sits underneath as a memory of who you are as a photographer.
+**Live Field Coach is implemented as a proper LlmAgent (Field Coach Orchestrator).** It receives camera frames and session state, then makes LLM-reasoned decisions about which other sub-agents to invoke (Coach for analysis, Visual Describer for description in vision_impairment mode, Mentor for assignment context). This makes the iPhone field-capture flow genuinely agentic — not a UI experience routing to other agents.
 
-### 3.5 Design and impact framing (for judging criteria balance)
+### 3.4 Three channels
 
-The four hackathon judging criteria are equally weighted (per rules §8): Technological Implementation, Design, Potential Impact, Quality of Idea. Earlier versions of this spec leaned heavily on Technological Implementation. Each phase now has design and impact considerations:
+| Channel | Identity | Unique capabilities | Hackathon scope |
+|---|---|---|---|
+| **iPhone (native SwiftUI app)** | "The viewfinder companion" | Live Field Coach with ARKit composition overlays, native camera control via AVFoundation, AVSpeechSynthesizer voice agent, UIImpactFeedbackGenerator haptic feedback for vision_impairment mode, push notifications | **Primary deliverable.** TestFlight or App Store submission. |
+| **Web (existing React PWA)** | "The studio" | Mentor Chat, Studio/Practice/Memory tabs, single-photo critique, accessible from any device | **Secondary deliverable.** Stays on Firebase Hosting. |
+| **Desktop (native macOS)** | "The darkroom" | Lightroom integration via file system watching, Backlog Triage at scale, bulk XMP operations | **Out of scope.** Post-hackathon. |
 
-- **Design:** Glass Box reasoning makes critique transparent (not magical). Side-by-side baseline-vs-current visualization. Voice-first Field Mode for hands-on photography. PWA install for iOS without app-store friction. Per-tab information hierarchy: Studio → Practice → Memory → Field.
-- **Potential Impact:** Photography market is $66.8B by 2035. AOP 2026 survey shows £34,900 average loss per working photographer (142% YoY increase) — pedagogy and aesthetic consistency tools have real economic value. Pattern generalizes to other creator categories (illustrators, video creators, musicians, writers).
-- **Quality of Idea:** "AI mentor with persistent aesthetic memory" is a new product category, not a feature on an existing one. Three-tier MongoDB memory + multimodal embeddings + change-stream-driven derived profiles is an architectural pattern that fits the product, not a generic stack applied to a generic problem.
+**iOS framework decision: SwiftUI native.** Reasons:
+- Native ARKit for AR composition overlays (critical for sighted mode demo)
+- Native AVSpeechSynthesizer for voice (critical for vision_impairment mode)
+- Native UIImpactFeedbackGenerator for haptics (critical for vision_impairment mode)
+- Native camera control via AVFoundation (better quality than browser getUserMedia)
+- TestFlight + App Store submission path
+- Apple Watch companion possible if time permits
 
----
+**Prerequisite:** Prasad must confirm in Phase 0:
+- [ ] Mac available with Xcode 15+ installed
+- [ ] Apple Developer Program enrollment status (enroll today if not active)
 
-## Phase 0 — Setup
+**Fallback if no Mac:** Capacitor wraps existing React PWA into a native iOS shell. Loses native ARKit/voice/haptics but gets App Store submission. Effort: 6-10 hours vs 30-40 hours for SwiftUI. This is a strict downgrade in product quality and should only be the fallback.
 
-### 0.1 MongoDB Atlas + MongoDB MCP Server
+### 3.5 Canonical agent count
 
-**[MANUAL]** Atlas account and cluster:
-1. Sign up at https://www.mongodb.com/cloud/atlas/register.
-2. Project named `photography-practice-companion`.
-3. **Flex tier** cluster (not Free/M0 — Vector Search, Atlas Search, and change streams require Flex+; Flex is capped at $30/month, typically $8-15 for hackathon-scale use). Region: GCP Europe-West3 (Frankfurt). Do NOT preload sample dataset.
-4. Database user with read/write access.
-5. Network access: `0.0.0.0/0` for dev.
-6. Save the connection string.
-7. **Atlas service account** for MCP Server auth. In Atlas → Organization Settings → Service Accounts. Save client ID (`mdb_sa_id_*`) and client secret (`mdb_sa_sk_*`).
+**Target architecture: exactly 9 LlmAgent instances.** This is the canonical build target. A formal 8-agent fallback profile (§8.0) activates ONLY if Phase 1 verifiably fails by EOD May 30, and only by Prasad's human-initiated decision — never by the AI coding tool's discretion.
 
-**[MANUAL]** Install the MongoDB Claude Plugin in Claude Code from the Anthropic Plugin Marketplace. Accelerates every MongoDB-related dev step.
+| # | Agent | File | Always available in orchestrator toolset? |
+|---|---|---|---|
+| 1 | Orchestrator | `app/agent.py` | N/A (this IS the orchestrator) |
+| 2 | Coach | `app/sub_agents/coach.py` | Yes (all personas) |
+| 3 | Mentor | `app/sub_agents/mentor.py` | Yes (all personas) |
+| 4 | Planner | `app/sub_agents/planner.py` | Yes (all personas) |
+| 5 | Reflection | `app/sub_agents/reflection.py` | Yes (all personas) |
+| 6 | Triage | `app/sub_agents/triage.py` | Yes (hobbyist + working_pro, not vision_impairment) |
+| 7 | Field Coach | `app/sub_agents/field_coach.py` | Yes (all personas) |
+| 8 | Print Sales Strategist | `app/sub_agents/print_sales.py` | Only working_pro persona |
+| 9 | Visual Describer | `app/sub_agents/visual_describer.py` | Only vision_impairment persona |
 
-**[AUTO]** For runtime, MongoDB MCP Server runs as Node.js process. Setup:
-```bash
-npx mongodb-mcp-server@latest setup
-# Configure: Claude Code client, read+write mode, connection string, Atlas service account credentials
-```
-Generates MCP configuration file, registered with the ADK orchestrator in Phase 2.
-
-### 0.2 Google Cloud project
-
-**[MANUAL]**:
-1. Sign in at https://console.cloud.google.com.
-2. Request $100 credits at https://forms.gle/xfv9vQzfRfNCCVbG7 by June 4, 2026 (per rules §6).
-3. Project named `practice-companion-hackathon`.
-4. Enable billing.
-5. Enable APIs:
-   - Vertex AI API
-   - Vertex AI Agent Engine API
-   - Discovery Engine API (this is the Agent Builder Data Store API)
-   - Cloud Run API
-   - Cloud Build API
-   - Secret Manager API
-   - Firebase Hosting API (added in v3)
-6. Service account `practice-companion-runtime` with roles:
-   - Vertex AI User
-   - Vertex AI Agent Engine User
-   - Discovery Engine Editor (for Agent Builder Data Store management)
-   - Cloud Run Invoker
-   - Secret Manager Secret Accessor
-   - Storage Object User
-   - Firebase Hosting Admin
-7. Generate JSON key, save as `gcp-service-account.json`, add to `.gitignore`.
-8. Install Google Cloud SDK: https://cloud.google.com/sdk/docs/install
-9. Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
-10. Install Firebase CLI: `npm install -g firebase-tools`
-
-### 0.3 Verify Gemini 3 Pro and Vertex AI access
-
-**[AUTO]**:
-```bash
-gcloud auth activate-service-account --key-file=gcp-service-account.json
-gcloud config set project practice-companion-hackathon
-gcloud ai models list --region=us-central1 | grep -E "gemini-3|multimodalembedding"
-```
-
-### 0.4 Verify MongoDB connectivity
-
-**[AUTO]**:
-```bash
-python -c "import pymongo; c = pymongo.MongoClient('$MONGODB_URI'); print(c.server_info())"
-python scripts/bootstrap-mongodb.py
-```
-
-See [`mongodb-setup.md`](mongodb-setup.md) for cluster host and MCP env mapping.
-
-### 0.5 Environment variables
-
-**[AUTO]** Create `.env.example`:
-```
-# Google Cloud
-GOOGLE_CLOUD_PROJECT=practice-companion-hackathon
-GOOGLE_APPLICATION_CREDENTIALS=./gcp-service-account.json
-VERTEX_AI_REGION=us-central1
-VERTEX_AI_GEMINI_LOCATION=global
-GEMINI_MODEL=gemini-3.1-pro-preview
-EMBEDDING_MODEL=multimodalembedding@001
-
-# MongoDB Atlas
-MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/practice_companion?retryWrites=true&w=majority
-MONGODB_DB_NAME=practice_companion
-MONGODB_ATLAS_CLIENT_ID=mdb_sa_id_xxxxxxxxxxxxx
-MONGODB_ATLAS_CLIENT_SECRET=mdb_sa_sk_xxxxxxxxxxxxxxxxxxx
-MONGODB_MCP_CONFIG_PATH=./mcp-config.json
-
-# Agent Engine / ADK
-AGENT_ENGINE_LOCATION=us-central1
-ORCHESTRATOR_AGENT_RESOURCE_NAME=  # filled after deployment in Phase 2
-
-# Agent Builder Data Store (v3)
-DATA_STORE_LOCATION=global
-DATA_STORE_ID=  # filled after Data Store creation in §0.7
-
-# Firebase Hosting (v3)
-FIREBASE_PROJECT_ID=practice-companion-hackathon
-
-# Frontend
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-### 0.6 Initialize Firebase Hosting
-
-**[AUTO]**:
-```bash
-firebase login
-firebase init hosting
-# Select existing GCP project: practice-companion-hackathon
-# Public directory: frontend/dist
-# Configure as single-page app: Yes
-# Set up automatic builds and deploys with GitHub: optional
-```
-
-### 0.7 Agent Builder Data Store for photography principles
-
-This is the load-bearing Agent Builder touchpoint. The Coach sub-agent grounds its critique in a curated photography principles knowledge base hosted in an Agent Builder Data Store, not in inline prompts.
-
-**[AUTO]** Create the Data Store:
-```bash
-gcloud alpha discovery-engine data-stores create photography-principles \
-  --location=global \
-  --industry-vertical=GENERIC \
-  --solution-type=SOLUTION_TYPE_SEARCH \
-  --content-config=CONTENT_REQUIRED
-```
-
-**[AUTO]** Curate photography principles content as Markdown documents:
-- `principles/composition.md` — rule of thirds, leading lines, framing, negative space, symmetry, balance, depth.
-- `principles/lighting.md` — golden hour, key/fill/rim setups, hard vs soft light, color temperature, exposure.
-- `principles/technique.md` — focus, sharpness, depth of field, motion blur, ISO and noise, white balance.
-- `principles/creativity.md` — perspective, moment, story, juxtaposition, abstraction, color theory.
-- `principles/subject_impact.md` — emotional content, expression, eye contact, posing, environmental context.
-
-These principles are derived from photography knowledge (publicly available), refined during the contest period. Not direct copies from prior projects.
-
-**[AUTO]** Upload documents to the Data Store:
-```bash
-gcloud alpha discovery-engine documents import \
-  --data-store=photography-principles \
-  --location=global \
-  --source-folder=./principles
-```
-
-**[AUTO]** Save the Data Store ID into `.env` as `DATA_STORE_ID`.
-
-### 0.8 Phase 0 verification gate
-
-- [ ] MongoDB Atlas cluster created; PyMongo test connection succeeds.
-- [ ] Atlas service account created; client ID and secret in `.env`.
-- [ ] MongoDB Claude Plugin installed in Claude Code; MongoDB tools visible.
-- [ ] Google Cloud project created; billing enabled; service account key downloaded.
-- [ ] All required GCP APIs enabled (including Discovery Engine and Firebase Hosting).
-- [ ] `gcloud ai models list` returns Gemini 3 Pro and multimodal embedding model.
-- [ ] `uv --version` returns successfully.
-- [ ] Firebase CLI installed; `firebase projects:list` shows our project.
-- [ ] Agent Builder Data Store `photography-principles` created and contains 5 principles documents.
-- [ ] $100 credits applied or in flight.
+**Verification commands in §2.4 are anchored to the 9-agent target.** Any deviation (10 agents, 8 agents, etc.) is a failure of the phase gate UNLESS the formal 8-agent fallback (§8.0) has been human-activated. The number 9 is referenced throughout this spec — if you see a different number anywhere except §8.0, that's a documentation error, not a license to implement differently.
 
 ---
 
-## Phase 1 — Scaffold with Agent Starter Pack
+## 4. Architecture — multi-agent with persona-based routing
 
-### 1.1 Generate the scaffold
+### 4.1 Component diagram (verbal)
 
-**[AUTO]** From the empty cloned repo:
-```bash
-cd photography-practice-companion
-uvx agent-starter-pack create
-# Selections:
-#   - Project name: photography-practice-companion
-#   - Template: adk_live  (multimodal RAG with audio/video/text)
-#   - Region: us-central1
-#   - Deployment target: agent_engine
-#   - CI/CD: github_actions
-```
+- **iOS app (SwiftUI)** + **Web app (React on Firebase Hosting)** — both call the same agent endpoints
+- **Agent endpoint** (Vertex AI Agent Engine or Cloud Run hosted ADK orchestrator) — receives user input, builds persona-filtered toolset, routes via orchestrator
+- **Orchestrator** (LlmAgent #1) — looks up user persona, parses user intent, builds persona-filtered tool list, delegates to one or more sub-agents
+- **8 sub-agents** (LlmAgents #2-9) — each is its own ADK Agent with distinct instruction and tools
+- **MongoDB Atlas** — accessed by sub-agents through MongoDB MCP Server (primary) or direct PyMongo (write hot paths)
+- **Vertex AI Gemini 3 Pro** — model backing every agent
+- **Agent Builder Data Store** — photography principles grounding, queried by Coach and Mentor
+- **GCS** — photo originals
+- **Vertex AI multimodalembedding@001** — embeddings for portfolio vector search
+- **Change stream listener (Cloud Run)** — derives `aesthetic_profile` reactively from `portfolio_entries` writes
 
-### 1.2 Verify scaffold
+### 4.2 Orchestrator routing logic
 
-**[AUTO]**:
-```bash
-uv sync
-make playground
-```
-Playground UI opens; base agent responds to a test prompt.
+The orchestrator's system prompt (`app/prompts/orchestrator.txt`) makes routing decisions based on:
 
-### 1.3 Add frontend scaffold
+1. **User persona** (`hobbyist | working_pro | vision_impairment`) — fetched from MongoDB user document
+2. **User intent** (parsed from natural language input) — examples below
+3. **Current session context** (active assignment, recent uploads, conversation history)
 
-**[AUTO]**:
-```bash
-mkdir frontend && cd frontend
-npm create vite@latest . -- --template react-ts
-npm install
-```
+Example routing decisions:
 
-### 1.4 Port frontend files from sources
+| User input | Persona | Sub-agent(s) invoked | Reasoning |
+|---|---|---|---|
+| "Critique this photo" + image | Hobbyist | Coach | Single-photo analysis with skill-development framing |
+| "Critique this photo" + image | Working Pro | Coach + Print Sales Strategist (if photo scores high) | Adds commercial-fit analysis |
+| "Tell me what I just captured" + image | Vision Impairment | Visual Describer | Voice-first scene description, not aesthetic critique |
+| "What should I work on next?" | Hobbyist | Planner (with skill-development priority) | Personal growth focus |
+| "What should I work on next?" | Working Pro | Planner (with business priority) + Print Sales Strategist | Revenue-aware planning |
+| "How am I doing with portraits?" | Hobbyist | Mentor (which orchestrates: Atlas Search + portfolio aggregation + Reflection) | Multi-source synthesis of progress |
+| "I just finished my assignment" | All | Reflection → Planner (sequential) | Compute delta, then propose next |
+| "Organize my photos from 2024" | Hobbyist, Working Pro | Triage | Bulk archive operation |
+| "Which photos should I list on Society6?" | Working Pro only | Print Sales Strategist | Marketplace recommendations |
+| "Center the subject in the frame" (voice) | Vision Impairment | Visual Describer (with haptic engine) | Real-time spatial guidance |
+| **iPhone camera frame** (any persona) | All | **Field Coach** → (Coach or Visual Describer based on persona, plus Mentor for assignment context) | Real-time field coaching with sub-delegation |
 
-**[AUTO]** Fetch from raw GitHub URLs, save under `frontend/src/`. Strip Ollama/Electron/Vault Mode references. Replace direct Gemini API calls with calls to a new `services/agentClient.ts` that hits the Agent Engine endpoint.
+### 4.3 Persona enforcement at tool level
 
-### 1.5 Final directory structure (post-Phase 1)
+**Persona filtering happens in the orchestrator's TOOL CONSTRUCTION, not in its prompt.** The orchestrator cannot invoke a sub-agent it doesn't have a tool for.
 
-```
-photography-practice-companion/
-├── README.md                       # Comprehensive, written last
-├── LICENSE                         # Apache-2.0
-├── .gitignore                      # Includes gcp-service-account.json, .env, etc.
-├── .env.example                    # From §0.5
-├── pyproject.toml                  # From Agent Starter Pack
-├── uv.lock
-├── Makefile                        # From Agent Starter Pack
-├── deployment/                     # Terraform from Agent Starter Pack
-├── docs/
-│   ├── spec.md                     # This master spec
-│   ├── architecture.md
-│   ├── demo-script.md              # From §16
-│   ├── judge-pitch.md              # From §17
-│   └── devpost-text.md             # From §18
-├── principles/                     # Photography principles for Data Store
-│   ├── composition.md
-│   ├── lighting.md
-│   ├── technique.md
-│   ├── creativity.md
-│   └── subject_impact.md
-├── app/                            # ADK agent code
-│   ├── agent.py                    # Orchestrator
-│   ├── sub_agents/
-│   │   ├── coach.py
-│   │   ├── planner.py
-│   │   └── reflection.py
-│   ├── tools/
-│   │   ├── mongodb_mcp.py
-│   │   ├── data_store_grounding.py # NEW: queries Agent Builder Data Store
-│   │   ├── atlas_search.py         # NEW: full-text search over portfolio
-│   │   ├── photo_analysis.py
-│   │   └── embedding.py
-│   ├── memory/
-│   │   ├── schema.py
-│   │   └── repository.py
-│   ├── prompts/
-│   │   ├── orchestrator.txt
-│   │   ├── coach.txt
-│   │   ├── planner.txt
-│   │   └── reflection.txt
-│   └── eval/
-├── change_stream_listener/         # NEW: Cloud Run service
-│   ├── Dockerfile
-│   ├── main.py                     # Subscribes to portfolio_entries change stream
-│   └── derive_aesthetic_profile.py # Recomputes aesthetic_profile on new entries
-├── frontend/
-│   ├── package.json
-│   ├── firebase.json               # NEW: Firebase Hosting config
-│   ├── .firebaserc                 # NEW
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   ├── index.html
-│   └── src/
-│       ├── main.tsx
-│       ├── App.tsx
-│       ├── components/
-│       │   ├── AnalysisResults.tsx     # Ported
-│       │   ├── SpatialOverlay.tsx      # Ported
-│       │   ├── PhotoUploader.tsx       # Ported
-│       │   ├── LiveCameraCapture.tsx   # Ported
-│       │   ├── PracticeTab.tsx         # NEW
-│       │   ├── MemoryTab.tsx           # NEW
-│       │   └── ModeToggle.tsx          # NEW
-│       ├── services/
-│       │   ├── xmpService.ts           # Ported
-│       │   ├── voiceCoach.ts           # Ported
-│       │   ├── voiceService.ts         # Ported
-│       │   ├── validationService.ts    # Ported
-│       │   ├── agentClient.ts          # NEW
-│       │   └── memoryClient.ts         # NEW
-│       └── types/
-│           ├── index.ts
-│           ├── practice.ts             # NEW
-│           └── memory.ts               # NEW
-├── public/
-│   ├── manifest.json               # Ported, rebranded
-│   └── sw.js                       # Ported
-└── scripts/
-    ├── setup-dev-https.sh          # Ported
-    ├── seed-demo-data.py           # NEW
-    └── deploy.sh                   # NEW
-```
-
-### 1.6 Phase 1 verification gate
-
-- [ ] Agent Starter Pack scaffold generated successfully.
-- [ ] `make playground` boots; base agent responds.
-- [ ] All frontend files in §1.3 ported, Ollama/Electron stripped.
-- [ ] Frontend `npm run dev` succeeds.
-- [ ] MongoDB MCP Server tested via Claude Code (can query empty Atlas cluster).
-- [ ] Firebase Hosting config initialized (`firebase.json` and `.firebaserc` present in `frontend/`).
-- [ ] Repo pushed to GitHub with `.gitignore`.
-
----
-
-## Phase 2 — Multi-agent system with MongoDB MCP and Agent Builder Data Store
-
-### 2.1 MongoDB schema and indexes
-
-**[AUTO]** Implement `app/memory/indexes.py` to create collections, vector index on `portfolio_entries.embedding`, and Atlas Search index on `glass_box` content. See [§7](#7-mongodb-schema).
-
-### 2.2 Define orchestrator and sub-agents
-
-**[AUTO]** Build ADK agent code. System instructions in `app/prompts/<name>.txt`.
-
-**Orchestrator (`app/agent.py`):**
-- ADK Agent with tools: MongoDB MCP Server (registered as MCPToolset), Agent Builder Data Store grounding tool, Atlas Search tool, the three sub-agents as Agent tools.
-- System instruction: routes user requests; uses MongoDB MCP for all user data; uses Data Store grounding before Coach for any principles questions; uses Atlas Search when looking up past critique themes.
-
-**Coach sub-agent (`app/sub_agents/coach.py`):**
-- Calls Gemini 3 Pro multimodal.
-- Before generating critique: grounds in Agent Builder Data Store via `tools/data_store_grounding.py` to pull relevant photography principles for the scene type.
-- Outputs structured JSON per `portfolio_entries` schema, including extended spatial metadata (see [§7.2](#72-collections)).
-- Writes to MongoDB via PyMongo.
-
-**Practice Planner sub-agent (`app/sub_agents/planner.py`):**
-- Inputs: recent portfolio, active and completed assignments, aesthetic profile (from orchestrator's MCP queries).
-- Reasons via Gemini 3 Pro.
-- Outputs `assignments` document with `rationale`.
-
-**Reflection sub-agent (`app/sub_agents/reflection.py`):**
-- Multi-image Gemini 3 Pro call comparing baseline vs completion shots.
-- Computes Intentional Skill Application Rate delta.
-- Writes SkillDelta to assignment document.
-
-### 2.3 Register MongoDB MCP Server, Data Store grounding, and Atlas Search as tools
-
-**[AUTO]** In `app/agent.py`:
 ```python
-from google.adk.agents import LlmAgent
-from google.adk.tools.mcp_tool import MCPToolset
-from google.adk.tools.discovery_engine import DataStoreSearch
-
-mongodb_tools = MCPToolset.from_config(config_path=os.environ["MONGODB_MCP_CONFIG_PATH"])
-principles_grounding = DataStoreSearch(
-    project=os.environ["GOOGLE_CLOUD_PROJECT"],
-    location=os.environ["DATA_STORE_LOCATION"],
-    data_store_id=os.environ["DATA_STORE_ID"],
-)
-atlas_search_tool = AtlasSearchTool(...)  # custom wrapper around MongoDB Atlas Search API
-
-orchestrator = LlmAgent(
-    name="practice_companion_orchestrator",
-    model="gemini-3-pro",
-    instruction=open("app/prompts/orchestrator.txt").read(),
-    tools=[
-        mongodb_tools,
-        principles_grounding,
-        atlas_search_tool,
-        coach_agent_tool,
-        planner_agent_tool,
-        reflection_agent_tool,
-    ],
-)
+def build_persona_filtered_tool_list(persona: str) -> list:
+    base_tools = [
+        AgentTool(agent=coach_agent),
+        AgentTool(agent=mentor_agent),
+        AgentTool(agent=planner_agent),
+        AgentTool(agent=reflection_agent),
+        AgentTool(agent=field_coach_agent),
+        get_user_persona_tool,
+        get_session_context_tool,
+        get_active_assignment_tool,
+    ]
+    if persona in ["hobbyist", "working_pro"]:
+        base_tools.append(AgentTool(agent=triage_agent))
+    if persona == "working_pro":
+        base_tools.append(AgentTool(agent=print_sales_agent))
+    if persona == "vision_impairment":
+        base_tools.append(AgentTool(agent=visual_describer_agent))
+    return base_tools
 ```
 
-### 2.4 Local testing
+This is architectural enforcement, not prompt guidance. A judge reviewing the code sees explicit per-persona tool filtering.
 
-**[AUTO]** Run `make playground`. Test:
-- Orchestrator can query Data Store for "rule of thirds" and get the grounded principles.
-- Upload a test image → Coach grounds in Data Store, analyzes via Gemini, writes to MongoDB with extended spatial annotations.
-- Orchestrator can query MongoDB MCP for the newly written entry.
-- Atlas Search returns hits for a text query against Glass Box content.
+### 4.4 Edge case: user asks for capability outside their persona
 
-### 2.5 Phase 2 verification gate
+If a hobbyist asks "which photos should I list on Society6?", the orchestrator cannot invoke Print Sales Strategist (it's not in the toolset). The orchestrator's instruction (`app/prompts/orchestrator.txt`) must include this fallback:
 
-- [ ] MongoDB collections, vector index, Atlas Search index all created.
-- [ ] All three sub-agents respond to test inputs.
-- [ ] MongoDB MCP Server registered as orchestrator tool.
-- [ ] Agent Builder Data Store grounding tool registered and returns principles docs.
-- [ ] Atlas Search tool registered and returns text search hits.
-- [ ] End-to-end: upload image → Coach grounds in Data Store → portfolio entry in MongoDB with extended spatial metadata.
+> *"If the user requests a capability that is unavailable for their persona, respond with: 'That capability is available in [persona] mode. Would you like to switch your persona? (You can change this in Settings.)' Do NOT pretend the capability is unavailable for technical reasons. Do NOT silently refuse without explanation."*
 
----
+### 4.5 Sequential and parallel orchestration
 
-## Phase 3 — Memory + end-to-end Studio Mode
+The multi-agent claim requires both patterns be demonstrable:
 
-### 3.1 Three memory tiers
+**Sequential example:** User says "I just finished my assignment, here are the new photos." Orchestrator:
+1. Invokes Coach for each photo (analyzes, stores, embeds)
+2. Invokes Reflection (compares baseline to completion shoots, computes skill_delta)
+3. Invokes Planner (proposes next assignment based on demonstrated improvement)
+Three sub-agent invocations in sequence, each feeding the next.
 
-1. **Portfolio (long-term)** — every critiqued photo with embeddings, scores, spatial metadata, aesthetic tags. Retrieval via Atlas Vector Search and Atlas Search.
-2. **Conversational context (cross-session)** — recent threads.
-3. **Ephemeral (in-session)** — ADK runtime.
+**Parallel example:** User asks "How am I doing on portraits?" Orchestrator invokes Mentor, which itself fans out:
+1. Atlas Search over Glass Box content (text search) — concurrent
+2. Vector search for visual similarity to portrait baseline — concurrent
+3. Aesthetic profile aggregation — concurrent
+4. Synthesis from all three results in a single response
 
-### 3.2 Studio Mode flow
+Two patterns must be visible in traces for at least one demo query each.
 
-1. **Upload** — frontend file picker or drag-drop.
-2. **Coach pass** — orchestrator routes to Coach. Coach grounds in Data Store principles → analyzes with Gemini 3 Pro → writes to portfolio with extended spatial metadata + embedding.
-3. **Aesthetic profile updates** — change stream listener detects the new write and recomputes the aesthetic profile asynchronously ([§11.4](#114-change-stream-listener-for-aesthetic-profile)).
-4. **Practice tab** — if active assignment exists, orchestrator calls Reflection. SkillDelta displayed.
-5. **Plan next** — orchestrator calls Planner. New assignment with `rationale`.
-6. **Export** — XMP sidecars via ported `xmpService.ts`. User downloads ZIP, imports into Lightroom.
+### 4.6 Why this is genuine multi-agent (not theater)
 
-### 3.3 Practice and Memory tabs
+- 9 distinct LlmAgent instances in the codebase, each with its own file, prompt (≥30 lines), and `tools=[...]` distinct from other agents
+- Persona filtering changes which sub-agents are invocable (tool-level enforcement)
+- Sequential orchestration (Reflection → Planner) and parallel orchestration (Mentor calling multiple sub-agents) both demonstrated
+- Traces show multiple LLM spans, one per sub-agent invocation
+- The grep `grep -r "LlmAgent(" app/ | wc -l` returns exactly 9
 
-**[AUTO]**:
-- `PracticeTab.tsx`: active assignment top, baseline-vs-current viz, completed assignments below.
-- `MemoryTab.tsx`: portfolio timeline, aesthetic profile view, vector search for aesthetic queries, Atlas Search bar for text queries ("show me feedback I got about backlit subjects").
+### 4.7 Routing contract per UI action (authoritative)
 
-### 3.4 Demo seed data
+For every major UI action, this table specifies whether the request goes through the agentic orchestrator path or a deterministic service path. **This is the single source of truth for what's agentic vs deterministic.** No other section may contradict this table.
 
-**[AUTO]** `scripts/seed-demo-data.py`:
-- ~30 photos across 4 hypothetical shoots.
-- Pre-computed aesthetic profile.
-- One completed assignment with baseline + post-assignment shots.
-- One active assignment in progress.
+**Endpoint naming clarification:** `/v1/agent/*` paths in this spec are **product API contracts**, not a claim that Vertex AI Agent Engine natively exposes those exact URLs. In deployment, these contracts can be implemented either (a) directly in a Cloud Run gateway that proxies to Agent Engine sessions, or (b) as first-class Cloud Run ADK endpoints when using the fallback backend path. The UI contracts stay stable; backend wiring can vary per §9.
 
-**Image sourcing per rules §7.B (no third-party content violations):**
-- Prasad's own photography (primary).
-- Stock photos with explicit redistribution licenses (Unsplash, Pexels — license details documented in `scripts/seed-demo-data.py`).
-- No web-scraped images without license verification.
+| UI action | Path | Endpoint | Expected sub-agent / tool usage |
+|---|---|---|---|
+| **Studio: upload photo** | Orchestrator | `POST /v1/agent/invoke` (intent=critique) | Orchestrator → Coach sub-agent → writes portfolio_entry |
+| **Studio: view existing critique** | Deterministic | `GET /v1/portfolio/{id}` | Direct MongoDB read; no agent invocation |
+| **Studio: edit/override Coach scores** | Deterministic | `PATCH /v1/portfolio/{id}/overrides` | Direct MongoDB write to `user_overrides` array |
+| **Practice: view active assignment** | Deterministic | `GET /v1/practice/active` | Direct MongoDB read |
+| **Practice: accept proposed assignment** | Deterministic | `PATCH /v1/practice/{id}` (status=active) | Direct MongoDB write |
+| **Practice: decline proposed assignment** | Deterministic | `PATCH /v1/practice/{id}` (status=declined, reason=...) | Direct MongoDB write |
+| **Practice: complete assignment + propose next** | Orchestrator | `POST /v1/agent/invoke` (intent=complete_and_replan) | Orchestrator → Reflection → Planner (sequential) |
+| **Memory: view portfolio** | Deterministic | `GET /v1/portfolio?user_id=...` | Direct MongoDB read |
+| **Memory: simple keyword search (filter UI)** | Deterministic | `GET /v1/portfolio/search?q=...&type=keyword` | Direct Atlas Search query |
+| **Memory: semantic / natural-language query** | Orchestrator | `POST /v1/agent/invoke` (intent=query_memory) | Orchestrator → Mentor → (Atlas Search + Vector Search + Reflection) |
+| **Mentor Chat: send message** | Orchestrator | `POST /v1/agent/invoke` (intent=chat) | Orchestrator → Mentor → (sub-agents as needed) |
+| **iPhone Field Mode: start session** | Deterministic | `POST /v1/capture_sessions` | Direct MongoDB write |
+| **iPhone Field Mode: stream camera frame** | Orchestrator | `POST /v1/agent/field_capture` | Orchestrator → Field Coach → (Coach for sighted OR Visual Describer for vision_impairment) + Mentor for assignment context |
+| **iPhone Field Mode: voice command** | Orchestrator | `POST /v1/agent/field_voice` | Orchestrator → Field Coach → (Visual Describer for vision_impairment) |
+| **iPhone Field Mode: capture frame to portfolio** | Deterministic + ML side-effect | `POST /v1/portfolio` | Direct MongoDB write + Vertex AI embedding call (deterministic ML call, not agent) |
+| **iPhone Field Mode: end session + auditory summary** | Orchestrator | `POST /v1/agent/invoke` (intent=narrate_session) | Orchestrator → Visual Describer (vision_impairment only) |
+| **Persona toggle** | Deterministic | `PATCH /v1/users/me` (persona=...) | Direct MongoDB write; orchestrator's toolset reflects on next agent invocation |
+| **Working Pro: view print sales recommendations** | Orchestrator | `POST /v1/agent/invoke` (intent=print_recommendations) | Orchestrator → Print Sales Strategist |
+| **Working Pro: approve listing** | Deterministic + side-effect | `PATCH /v1/pending_approvals/{id}` (action=approve) | Direct MongoDB write; side-effect: marketplace publication queued |
+| **Working Pro: modify listing** | Deterministic + side-effect | `PATCH /v1/pending_approvals/{id}` (action=modify, override_payload=...) | Direct MongoDB write; side-effect: marketplace publication queued with override |
+| **Working Pro: reject listing** | Deterministic | `PATCH /v1/pending_approvals/{id}` (action=reject) | Direct MongoDB write |
+| **Triage: start backlog processing** | Orchestrator | `POST /v1/agent/invoke` (intent=triage_backlog) | Orchestrator → Triage |
+| **Triage: approve proposed tag application** | Deterministic + side-effect | `PATCH /v1/pending_approvals/{id}` (action=approve) | Direct MongoDB write; side-effect: bulk tag commit + aesthetic_profile change-stream trigger |
+| **Triage: approve proposed photo deletion** | Deterministic + side-effect | `PATCH /v1/pending_approvals/{id}` (action=approve) | Direct MongoDB write; side-effect: photo deletion |
+| **Vision Impairment: cross-session recall query** | Orchestrator | `POST /v1/agent/invoke` (intent=recall_captures) | Orchestrator → Visual Describer → Atlas Search on `scene_search` index |
 
-### 3.5 Phase 3 verification gate
-
-- [ ] Full Studio Mode loop end-to-end with seed data.
-- [ ] Practice tab and Memory tab render with seed data.
-- [ ] Atlas Vector Search returns sensible aesthetic similarity hits.
-- [ ] Atlas Search returns hits for text queries on Glass Box content.
-- [ ] Change stream listener visibly updates aesthetic profile when a new portfolio entry is written.
-- [ ] Cross-session: close browser, reopen → orchestrator knows the active assignment via MCP query.
-
----
-
-## Phase 4 — Field Mode + XMP + polish
-
-### 4.1 Field Mode segment
-
-iPhone connects via LAN HTTPS. LiveCameraCapture active. Voice coach calls one to two suggestions per frame. Captured frame analyzed by Coach in near-real-time. 30–60 seconds of the demo; full Field Mode is post-hackathon.
-
-### 4.2 XMP integration verification
-
-**[AUTO]**: Run Studio Mode on real RAW files → generate XMP sidecars → import into Lightroom Classic.
-**[MANUAL]**: Prasad verifies ratings, color labels, IPTC keywords, description in Lightroom.
-
-### 4.3 Polish
-
-- **README** — comprehensive. Position as Practice Companion. Section on prior-work attribution (gemini3 + gemma4 as architectural foundation, with new agent system + MongoDB memory + Practice Planner as new product). Hackathon track, judge-ready.
-- **Demo video** — record per [§16](#16-demo-script).
-- **Hosted deploy** — Agent Engine via `make deploy`. Frontend on Firebase Hosting via `firebase deploy --only hosting`.
-- **Devpost submission** — text description per [§18](#18-devpost-text-description).
-
-### 4.4 Phase 4 verification gate
-
-- [ ] Field Mode segment works on iPhone via LAN HTTPS.
-- [ ] XMP export verified in Lightroom Classic.
-- [ ] Agent deployed to Vertex AI Agent Engine, reachable.
-- [ ] Frontend deployed to Firebase Hosting, points to Agent Engine.
-- [ ] Change stream listener deployed to Cloud Run, reachable.
-- [ ] README finalized with prior-work attribution; LICENSE present.
-- [ ] Demo video recorded, uploaded to YouTube/Vimeo, English (or subtitled).
-- [ ] Devpost submission form completed.
-- [ ] [Appendix C](#appendix-c--rules-compliance-checklist) compliance checklist run.
+**Principle:** The orchestrator path is used whenever the response requires LLM reasoning, multi-source synthesis, or sub-agent delegation. The deterministic path is used for state transitions, lookups, and writes that don't require reasoning. Agentic claims are anchored in the orchestrator-routed actions. HITL approve/modify/reject endpoints are intentionally deterministic — the agency was in the proposal step (sub-agent created the `pending_approvals` document); the approval step is a simple state transition with side-effects.
 
 ---
 
-## 7. MongoDB schema
+## 5. Human-in-the-Loop architecture
 
-### 7.1 Database: `practice_companion`
+HITL is structural for Practice Companion, not decorative. The hackathon criterion for "structural" HITL is that the gates must be required by the problem rather than bolted on to satisfy a rubric.
 
-**Atlas:** Flex tier, GCP **`europe-west3`** (Belgium — only region available). Cluster `practice-photography-companion-mvp-cluster`. Setup: [`mongodb-setup.md`](mongodb-setup.md).
+### 5.1 Three HITL patterns
 
-**Data access:** Orchestrator **reads** via MongoDB MCP; Coach / Planner / Reflection **write** via PyMongo ([`decisions.md`](decisions.md) ADR-003).
+**Pattern 1: Hard gates** — actions the agent CANNOT take autonomously, ever
+- Deleting any photo (Triage)
+- Publishing any marketplace listing (Print Sales Strategist)
+- Sending any client-facing communication (future scope)
 
-### 7.1.1 Image storage (GCS + MongoDB)
+**Pattern 2: Soft gates** — actions the agent proposes, user approves or modifies before commit
+- Practice assignment generation (Planner)
+- Bulk tag suggestions (Triage)
+- Coach analysis commit to portfolio
+- Capture descriptions and scene narration (Visual Describer)
+- Marketplace listing drafts (Print Sales)
 
-**[AUTO]** Do not store image bytes in MongoDB.
+**Pattern 3: Override-as-training-signal** — user corrections feed back into the system and improve future behavior
+- Tag overrides update `aesthetic_profile` via change stream
+- Score overrides on Coach analysis update grounding pattern weights
+- Listing edits in Print Sales inform future draft templates per marketplace
+- Scene description corrections (vision impairment) improve future Visual Describer outputs
+- Practice assignment declines feed Planner's calibration
 
-- Upload originals and thumbnails to **`gs://practice-companion-portfolio`** (`us-central1`).
-- Store `image_url` / `thumbnail_url` in `portfolio_entries` (GCS URI or signed HTTPS for Gemini multimodal).
-- MongoDB holds metadata, Glass Box, spatial fields, and **embedding** vectors.
+### 5.2 HITL gates per feature
 
-Seed script uploads demo images to GCS once, then inserts MongoDB documents.
+| Feature | Gate type | What requires human approval | Why structural |
+|---|---|---|---|
+| **Coach** | Soft | Coach analysis committed to portfolio | Hallucinated critique would corrupt aesthetic_profile and downstream coaching |
+| **Mentor Copilot** | Soft (conversational) | Multi-turn conversation IS the HITL | Without conversational steering, multi-turn reasoning would drift |
+| **Planner** | Soft | Every proposed assignment requires user accept/decline/modify | Bad assignments waste user time and degrade skill development |
+| **Reflection** | Soft | Skill delta interpretation can be overridden | Wrong delta would mislead photographer about progress |
+| **Triage** | **Hard** for deletions, soft for tags | Individual photo deletion requires explicit approve; bulk tag commits require batch approval | Deletions irreversible; bad bulk tagging corrupts search |
+| **Print Sales Strategist** | **Hard** for publications | Every listing requires explicit approve before publication. Every pricing override required. | Financial implications: bad pricing or wrong listing = lost revenue or platform violations |
+| **Visual Describer** | Soft (voice-mediated) | Scene description corrections via voice; recomposition acceptance via voice/haptic | Wrong descriptions could mislead vision-impaired users about what they captured |
+| **Field Coach** | Soft (ambient) | User can mute, override suggestions, ignore prompts | Pushy real-time coaching that can't be overridden would be hostile |
 
-### 7.2 Collections
+### 5.3 HITL behavior per persona
 
-**`shoot_id`:** Logical grouping for one upload session (shared `ObjectId` on `portfolio_entries`). No separate `shoots` collection for MVP.
+| Persona | HITL philosophy | Specific behavior |
+|---|---|---|
+| **Hobbyist** | Light touch | Practice assignments proposed in a "card" UI that can be dismissed without explicit decline |
+| **Working Pro** | Stronger HITL — financial implications | Listing previews shown with full marketplace metadata; approval is a deliberate action; NO batch-approve without explicit "auto-approve" toggle |
+| **Photographer with Vision Impairment** | Voice-first HITL | "Confirm capture" voice prompt before any state-changing action; haptic pulse confirms acceptance |
 
-**`users`**
+### 5.4 The training-signal loop
+
+User overrides write to MongoDB and reshape future agent behavior:
+
+- **Triage tag override** → `aesthetic_profile` updated via change stream → next Coach analysis grounds in updated profile
+- **Coach score override** → flagged in `portfolio_entries.user_overrides`, used as calibration signal for future Coach prompts
+- **Print Sales listing edit** → marketplace-specific patterns updated in `print_sales` metadata → next draft for that marketplace reflects user preferences
+- **Visual Describer scene correction** → updates `users.preferences.description_style` → future Visual Describer outputs adapt
+- **Planner assignment decline** → recorded in `practice_assignments` with reason → Planner avoids similar shapes for that user
+
+### 5.5 Why this passes the "structural not decorative" test
+
+1. **Gates required by problem, not rubric** — deletions, marketplace publications, financial actions have irreversible/costly consequences
+2. **Gates differ across personas** — working pros have stricter financial-action gates; vision-impaired users have voice-first gates
+3. **Override loop is real** — corrections genuinely improve the system over time via MongoDB-backed state
+
+### 5.6 HITL in the demo (per §10 demo script)
+
+Two HITL moments must be visible in the 3-minute demo:
+
+- **Working pro Print Sales segment** — Print Sales Strategist proposes 5 listings. User reviews each, modifies price on one, removes one, approves remaining 4. Approve is *deliberate* per-listing, not batch.
+- **Persona switch segment** — When persona switches to vision_impairment, HITL modality switches with it. "Would you like to recompose?" is voice-mediated; user responds verbally; haptic confirms response was understood.
+
+### 5.7 HITL implementation requirements (testable, not conceptual)
+
+**MongoDB collection: `pending_approvals`**
+
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "agent_name": "string (which sub-agent proposed)",
+  "proposed_action": {
+    "type": "delete_photo | publish_listing | commit_assignment | apply_tags | ...",
+    "target_id": "ObjectId or string",
+    "payload": "object (the proposed change)"
+  },
+  "agent_reasoning": "string (Glass Box explanation)",
+  "status": "pending | approved | modified | rejected",
+  "user_decision": {
+    "action": "approve | modify | reject | null",
+    "override_payload": "object | null (if modified)",
+    "decided_at": "ISODate | null"
+  },
+  "created_at": "ISODate"
+}
+```
+
+**Hard gate enforcement (Triage delete, Print Sales publish):**
+
+```python
+# WRONG — agent autonomously deletes
+def triage_delete_photo(photo_id):
+    portfolio_entries.delete_one({"_id": photo_id})  # NEVER do this
+
+# CORRECT — agent proposes; user approves
+def triage_propose_deletion(photo_id, reasoning):
+    pending_approvals.insert_one({
+        "user_id": current_user_id,
+        "agent_name": "triage",
+        "proposed_action": {"type": "delete_photo", "target_id": photo_id, "payload": {}},
+        "agent_reasoning": reasoning,
+        "status": "pending",
+        "created_at": now()
+    })
+    # UI shows approval card; user must explicitly approve before deletion executes
+```
+
+**UI flow requirements:**
+
+For hard gates:
+1. Approval card displayed with: agent name, proposed action description, agent's reasoning (Glass Box)
+2. Three explicit buttons: "Approve", "Modify", "Reject" — NOT auto-dismiss on tap outside
+3. For working_pro Print Sales: each listing requires its own approval card (NO batch-approve without explicit `auto_approve_listings=true` user preference)
+
+For soft gates:
+1. Suggestion shown with reasoning
+2. User can accept (one tap), modify (opens edit form), or ignore (auto-dismiss after N seconds)
+3. Modifications captured as override events
+
+For voice-mediated HITL (vision_impairment):
+1. Voice prompt before any state-changing action: *"I'd like to [action]. Say 'yes', 'modify', or 'no'."*
+2. Voice acknowledgment captured to `capture_sessions.voice_interactions`
+3. Haptic pulse on the device confirms voice response was received
+
+**State machine and mutability semantics (authoritative):**
+
+| State | How entered | What's mutable while in this state | Valid transitions out |
+|---|---|---|---|
+| `pending` | Document created by sub-agent | NONE for fields `proposed_action`, `agent_reasoning`, `agent_name`, `created_at` — these are FROZEN at creation. Only `status` field can change (and `user_decision` populates atomically with the status transition). | → `approved`, `modified`, `rejected`, or `expired` |
+| `approved` | User explicit approve | NONE — document is fully immutable. `user_decision` populated with `action=approve`, `decided_at=now`. | (terminal) |
+| `modified` | User explicit modify | NONE — document is fully immutable. `user_decision` populated with `action=modify`, `override_payload`, `decided_at=now`. | (terminal) |
+| `rejected` | User explicit reject | NONE — document is fully immutable. `user_decision` populated with `action=reject`, `decided_at=now`. | (terminal) |
+| `expired` | System auto-expires after N hours (default 168h = 7 days; configurable per persona) | NONE — document is fully immutable. `user_decision.action=null`, `decided_at` set to expiration timestamp. | (terminal) |
+
+**Critical rule — no in-place agent revisions:** Once a `pending_approvals` document exists, neither the agent nor the system may modify `proposed_action`, `agent_reasoning`, or `agent_name`. If the agent's understanding changes after proposing (e.g., new context arrives), a NEW `pending_approvals` document MUST be created and the original `pending` document MUST be transitioned to `rejected` with `user_decision.action=null` and a system-recorded note `superseded_by=<new_id>` in a separate `superseded_links` collection or a system metadata field.
+
+**Critical rule — atomic transitions:** The status transition from `pending` to any terminal state and the population of `user_decision` MUST be a single atomic MongoDB update operation. Two-step writes (first status, then user_decision, or vice versa) are NOT permitted — they create audit windows where the document is in an inconsistent state.
+
+**Why this matters:** Without immutability semantics, the audit trail is meaningless. A judge or auditor must be able to reconstruct exactly what was proposed at what time and what the user decided. Mutable proposals defeat that. The training-signal loop (§5.4) also depends on stable, queryable history — if `proposed_action` can be retroactively edited, sub-agent calibration based on user overrides becomes unreliable.
+
+**Audit log queries:**
+
+Full history per user (all states, ordered):
+```python
+db.pending_approvals.find({"user_id": uid}).sort("created_at", 1)
+```
+
+Only completed decisions (for sub-agent override calibration):
+```python
+db.pending_approvals.find({
+    "user_id": uid,
+    "status": {"$in": ["approved", "modified", "rejected"]}
+})
+```
+
+**Override capture data model:**
+
+User overrides are written to:
+- `pending_approvals.user_decision.override_payload` (the modified version)
+- `users.preferences.override_history` (rolling array of recent overrides for that user, for sub-agent calibration)
+
+The override_history is read by the relevant sub-agent at the start of its next invocation:
+
+```python
+class TriageAgent(LlmAgent):
+    def __init__(self):
+        super().__init__(
+            instruction=load_prompt_with_user_overrides("triage")
+        )
+
+def load_prompt_with_user_overrides(agent_name):
+    base = open(f"app/prompts/{agent_name}.txt").read()
+    overrides = get_recent_overrides(current_user_id, agent_name, limit=20)
+    if overrides:
+        return base + "\n\nRecent user overrides to consider:\n" + format_overrides(overrides)
+    return base
+```
+
+This makes the training-signal loop concrete: overrides are stored, retrieved, and injected into the next invocation's instruction.
+
+---
+
+## 6. MongoDB schema
+
+### 6.1 Database: `practice_companion`
+
+### 6.2 Collections
+
+**`users`** — persona drives orchestration; preferences drive HITL behavior
 ```json
 {
   "_id": "ObjectId",
   "email": "string",
   "display_name": "string",
-  "mode": "hobbyist | working_pro",
+  "persona": "hobbyist | working_pro | vision_impairment",
+  "preferences": {
+    "voice_enabled": "boolean",
+    "haptic_enabled": "boolean",
+    "auto_approve_listings": "boolean (default false; working_pro only)",
+    "description_style": "concise | detailed (vision_impairment only)",
+    "preferred_genres": ["string"],
+    "override_history": [{
+      "agent": "string",
+      "override_type": "string",
+      "original": "object",
+      "modified": "object",
+      "timestamp": "ISODate"
+    }]
+  },
   "created_at": "ISODate"
 }
 ```
 
-**`portfolio_entries`** — every critiqued photo. Schema extended in v3 with richer spatial metadata.
+**`portfolio_entries`** — base schema for all personas, extended with persona-specific fields
 ```json
 {
   "_id": "ObjectId",
@@ -655,53 +803,65 @@ Seed script uploads demo images to GCS once, then inserts MongoDB documents.
     "observations": ["string"],
     "reasoning_steps": ["string"],
     "priority_fixes": [{ "severity": "critical|moderate|minor", "issue": "string" }],
-    "grounding_principles": ["string"]   // which Data Store principles were retrieved during analysis
+    "grounding_principles": ["string"]
   },
   "spatial_metadata": {
     "annotations": [{ "bbox": [x,y,w,h], "severity": "string", "note": "string" }],
-    "subject_relationships": {           // NEW in v3
-      "primary_subject_position": "left_third | center | right_third | ...",
+    "subject_relationships": {
+      "primary_subject_position": "string",
       "secondary_subjects": [{ "position": "string", "relationship_to_primary": "string" }],
-      "depth_axis": "foreground_only | foreground_midground | full_depth | ...",
+      "depth_axis": "string",
       "leading_lines_present": "boolean"
     },
-    "lighting_map": {                    // NEW in v3
-      "key_light_direction": "upper_left | upper_right | front | back | top | ...",
-      "fill_light_strength": "absent | low | moderate | high",
+    "lighting_map": {
+      "key_light_direction": "string",
+      "fill_light_strength": "string",
       "rim_light_present": "boolean",
-      "color_temperature": "warm | neutral | cool | mixed",
-      "shadow_character": "hard | soft | mixed"
+      "color_temperature": "string",
+      "shadow_character": "string"
     }
   },
   "aesthetic_tags": ["string"],
-  "embedding": [/* 1408-dim from Vertex AI multimodalembedding@001 */],
+  "embedding": [/* 1408-dim Vertex AI multimodalembedding@001 */],
+  "user_overrides": [{ "field": "string", "original": "any", "modified": "any", "timestamp": "ISODate" }],
+
+  // Vision impairment persona enrichment (only populated for this persona)
+  "scene_description": "string (optional)",
+  "capture_intent": "string (optional)",
+  "audio_transcript": "string (optional)",
+  "haptic_pattern_used": "string (optional)",
+
+  // Working pro enrichment
+  "client_id": "ObjectId (optional)",
+  "delivered_in_gallery": "ObjectId (optional)",
+
   "created_at": "ISODate"
 }
 ```
 
-**`assignments`**
+**`practice_assignments`**
 ```json
 {
   "_id": "ObjectId",
   "user_id": "ObjectId",
-  "status": "proposed | active | completed | abandoned",
+  "status": "proposed | active | completed | declined",
   "brief": "string",
   "target_skill": "string",
   "rationale": "string",
+  "persona_context": "hobbyist | working_pro | vision_impairment",
   "baseline_shoot_ids": ["ObjectId"],
   "completion_shoot_ids": ["ObjectId"],
   "skill_delta": {
-    "metric": "Intentional Skill Application Rate",
+    "metric": "string",
     "baseline_value": "number",
     "current_value": "number",
     "delta": "number"
   },
+  "decline_reason": "string (optional; captured if user declines)",
   "created_at": "ISODate",
   "completed_at": "ISODate | null"
 }
 ```
-
-**HITL Flow** (Phase 3, ADR-007): Planner creates assignments with `status: proposed`. Practice tab UI shows Accept/Decline buttons. Only `active` assignments trigger Reflection on completion.
 
 **`conversations`**
 ```json
@@ -709,13 +869,18 @@ Seed script uploads demo images to GCS once, then inserts MongoDB documents.
   "_id": "ObjectId",
   "user_id": "ObjectId",
   "thread_id": "string",
-  "messages": [{ "role": "user|assistant", "content": "string", "timestamp": "ISODate" }],
+  "messages": [{
+    "role": "user | assistant",
+    "content": "string",
+    "tool_calls": [{ "agent": "string", "tool": "string", "input": "object", "output": "object" }],
+    "timestamp": "ISODate"
+  }],
   "summary": "string",
   "last_active": "ISODate"
 }
 ```
 
-**`aesthetic_profile`** — derived per user, refreshed by change stream listener.
+**`aesthetic_profile`** — derived per user, refreshed via change stream
 ```json
 {
   "_id": "ObjectId",
@@ -724,330 +889,617 @@ Seed script uploads demo images to GCS once, then inserts MongoDB documents.
   "preferred_lighting": ["string"],
   "subject_patterns": ["string"],
   "stylistic_consistency_score": "number 0-1",
+  "evolution_trajectory": "string (one paragraph)",
   "computed_at": "ISODate",
-  "computed_from_portfolio_size": "number"   // NEW in v3: how many portfolio entries informed this profile
+  "computed_from_portfolio_size": "number"
 }
 ```
 
-### 7.3 Indexes
+**`client_outcomes`** (working pro persona)
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "client_id": "ObjectId",
+  "shoot_id": "ObjectId",
+  "delivered_gallery_size": "number",
+  "client_selected_count": "number",
+  "conversion_rate": "number 0-1",
+  "client_feedback": "string",
+  "client_preference_signals": ["string"],
+  "delivered_at": "ISODate"
+}
+```
 
-- **`portfolio_entries`**:
-  - Vector index on `embedding` (Atlas Vector Search, 1408 dimensions, cosine).
-  - **Atlas Search index** (new in v3) on `glass_box.observations`, `glass_box.reasoning_steps`, `glass_box.priority_fixes.issue`, `aesthetic_tags` — for full-text retrieval.
-  - Compound index on `(user_id, created_at)`.
-  - Single index on `shoot_id`.
-- `assignments`: compound index on `(user_id, status)`.
-- `conversations`: compound index on `(user_id, last_active)`.
-- `aesthetic_profile`: single index on `user_id`.
+**`print_sales`** (working pro persona)
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "portfolio_entry_id": "ObjectId",
+  "marketplace": "etsy | society6 | redbubble | saatchi_art | other",
+  "marketplace_listing_metadata": { /* flexible per marketplace */ },
+  "list_price": "number",
+  "currency": "string",
+  "units_sold": "number",
+  "revenue": "number",
+  "user_listing_edits": [{ "field": "string", "original": "any", "modified": "any" }],
+  "listed_at": "ISODate",
+  "first_sale_at": "ISODate | null"
+}
+```
 
-### 7.4 Change stream
+**`capture_sessions`** (vision impairment persona)
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "started_at": "ISODate",
+  "ended_at": "ISODate",
+  "location_description": "string",
+  "voice_interactions": [{
+    "user_said": "string",
+    "agent_said": "string",
+    "haptic_pattern": "string",
+    "frame_captured": "boolean",
+    "portfolio_entry_id": "ObjectId | null",
+    "timestamp": "ISODate"
+  }]
+}
+```
 
-Subscribed by the change stream listener service ([§11.4](#114-change-stream-listener-for-aesthetic-profile)):
-- Source: `portfolio_entries` collection.
-- Filter: insert operations only.
-- Action: trigger `derive_aesthetic_profile.py` for the affected `user_id`.
+**`pending_approvals`** (HITL — see §5.7)
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "agent_name": "string",
+  "proposed_action": { "type": "string", "target_id": "string", "payload": "object" },
+  "agent_reasoning": "string",
+  "status": "pending | approved | modified | rejected",
+  "user_decision": {
+    "action": "approve | modify | reject | null",
+    "override_payload": "object | null",
+    "decided_at": "ISODate | null"
+  },
+  "created_at": "ISODate"
+}
+```
 
-### 7.5 Embedding strategy
+### 6.3 Indexes
 
-Primary: **Vertex AI `multimodalembedding@001`** — 1408-dim, image+text, Google-provided (rules-compliant).
-Alternative documented: **Voyage AI** (MongoDB-owned post-acquisition; rules-compliant). Not used in this build due to time-budget; comparable-or-better multimodal quality would be a post-hackathon swap.
+**`portfolio_entries`:**
+- Vector index on `embedding` (Atlas Vector Search, 1408 dimensions, cosine)
+- **Atlas Search index `glass_box_search`:** fields `glass_box.observations`, `glass_box.reasoning_steps`, `glass_box.priority_fixes.issue`, `aesthetic_tags`
+- **Atlas Search index `scene_search`** (NEW for vision_impairment): fields `scene_description`, `capture_intent`, `audio_transcript`
+- Compound `(user_id, created_at)`
+- Single `shoot_id`
+- Sparse single `client_id`
+
+**`practice_assignments`:** compound `(user_id, status)`
+
+**`conversations`:** compound `(user_id, last_active)`
+
+**`aesthetic_profile`:** single `user_id`
+
+**`client_outcomes`:** compound `(user_id, client_id, delivered_at)`
+
+**`print_sales`:** compound `(user_id, marketplace, listed_at)`, sparse `first_sale_at`
+
+**`capture_sessions`:** compound `(user_id, started_at)`
+
+**`pending_approvals`:** compound `(user_id, status, created_at)`, sparse `(user_id, agent_name)`
+
+### 6.4 Change stream subscriptions
+
+- `portfolio_entries` insert → trigger `aesthetic_profile` derivation for affected `user_id`
+- `print_sales` insert → trigger ROI re-aggregation for working pro
+- `capture_sessions` complete → trigger scene description indexing for vision impairment persona
+
+### 6.5 Reference to companion document
+
+**Companion document requirement:** This spec references the MongoDB load-bearing partner argument from §6.5, §10, §11, and §15. That document MUST exist at `/docs/mongodb-story-document.md` in the project repo before Phase 5 (Devpost text writing). If it does not exist at that location, the Devpost text cannot quote from it.
+
+**Status:** The companion document has been independently delivered at `/mnt/user-data/outputs/mongodb-story-document.md` and contains: thesis (operational simplicity argument), MongoDB primitives × features matrix, MongoDB primitives × personas matrix, three cross-channel user journeys, honest competitive framing (Firestore/Postgres+pgvector alternatives acknowledged), and five Devpost-ready talking points.
+
+**Action required in Phase 0:** Copy `/mnt/user-data/outputs/mongodb-story-document.md` into the project repo at `/docs/mongodb-story-document.md`. Phase 0 gate includes verification: `test -f docs/mongodb-story-document.md || exit 1`.
 
 ---
 
-## 10. Agent definitions
+## 7. Agent definitions
 
-### 10.1 Orchestrator
+Each of the 8 sub-agents is its own `LlmAgent` instance with its own file, prompt (≥30 lines), and distinct tools.
 
-**Role:** Routes user requests; uses MongoDB MCP for user-state reads/writes; uses Agent Builder Data Store grounding for principles lookups; uses Atlas Search for text retrieval over past critique content; uses Atlas Vector Search via MCP for aesthetic similarity.
+### 7.1 Orchestrator (`app/agent.py`)
 
-**Tools:**
-- MongoDB MCP Server (read/write portfolio, assignments, conversations, aesthetic_profile, plus Atlas vector and full-text search).
-- Agent Builder Data Store grounding (photography principles).
-- Atlas Search tool (full-text search over Glass Box content).
-- Coach, Planner, Reflection sub-agents.
+**Role:** Receives all user input. Looks up persona. Builds persona-filtered toolset (§4.3). Parses intent. Decides which sub-agent(s) to invoke (sequential or parallel). Synthesizes final response.
 
-### 10.2 Coach sub-agent
+**Tools:** Dynamic per persona via `build_persona_filtered_tool_list()`. See §4.3 (with §2.3 as illustrative pattern).
 
-**Role:** Analyze a single photo. Output 5-axis scoring, Glass Box reasoning, extended spatial metadata (annotations + subject relationships + lighting map).
+**Instruction:** `app/prompts/orchestrator.txt` — ≥80 lines covering:
+- Persona-aware routing matrix (§4.2)
+- Sequential vs parallel decision logic
+- Edge case handling (§4.4)
+- Re-planning behavior when sub-agent results contradict assumptions
+- HITL gate triggering (when to create `pending_approvals` documents)
 
-**Implementation:**
-1. Identify scene type from quick multimodal preview (portrait, landscape, street, etc.).
-2. Query Agent Builder Data Store for principles relevant to that scene type — e.g., portrait → composition + lighting + subject_impact principles.
-3. Pass retrieved principles + image to Gemini 3 Pro with the Coach system prompt.
-4. Receive structured JSON output. Validate against Zod schema. Write to MongoDB with `grounding_principles` field recording which Data Store docs were used (for transparency and judge-facing explainability).
+### 7.2 Coach sub-agent (`app/sub_agents/coach.py`)
 
-### 10.3 Practice Planner sub-agent
+**Role:** Single-photo multimodal analysis. 5-axis scoring, Glass Box reasoning, spatial metadata, principle grounding.
 
-**Role:** Generate next assignment. Inputs from orchestrator's MCP queries (recent portfolio, assignments, aesthetic profile). Output: `assignments` document with `rationale`.
+**Tools (≥1 unique to Coach):**
+- `analyze_image_multimodal` — Gemini 3 Pro vision call, structured JSON output **[UNIQUE]**
+- `ground_in_data_store_principles` — queries Agent Builder Data Store for relevant principles based on scene type **[shared with Mentor]**
+- `write_portfolio_entry` — PyMongo write with embedding **[UNIQUE]**
+- `generate_multimodal_embedding` — Vertex AI multimodalembedding@001 call **[UNIQUE]**
 
-### 10.4 Reflection sub-agent
+**Instruction:** `app/prompts/coach.txt` — covers 5-axis schema, Glass Box format, grounding principles, spatial annotation requirements, persona-aware tone
 
-**Role:** Multi-image comparison between baseline and completion shoots. Compute ISAR delta. Write SkillDelta to the assignment document.
+### 7.3 Mentor sub-agent (`app/sub_agents/mentor.py`)
+
+**Role:** Multi-turn conversational mentor. Orchestrates information retrieval across portfolio/practice/conversations/profile to answer open-ended questions.
+
+**Tools (≥1 unique to Mentor):**
+- `atlas_search_glass_box` — full-text search over critique content using `glass_box_search` index **[UNIQUE]**
+- `vector_search_similar_photos` — visual similarity via Atlas Vector Search **[UNIQUE]**
+- `ground_in_data_store_principles` — **[shared with Coach]**
+- `get_aesthetic_profile_summary` — **[shared with Reflection]**
+- `get_recent_portfolio_aggregates_by_time` — time-windowed aggregation **[UNIQUE]** (distinct from Planner's `get_portfolio_aggregates_by_skill`)
+
+**Instruction:** `app/prompts/mentor.txt` — intent classification, multi-source synthesis, conversation state management, persona-aware tone
+
+### 7.4 Planner sub-agent (`app/sub_agents/planner.py`)
+
+**Role:** Generates next practice assignment based on portfolio analysis + active assignments + aesthetic profile + persona context.
+
+**Tools (≥1 unique to Planner):**
+- `get_portfolio_aggregates_by_skill` — aggregation grouped by target_skill **[UNIQUE]** (distinct from Mentor's time-windowed aggregation)
+- `get_active_assignment` — **[shared with Reflection]**
+- `write_practice_assignment` — **[UNIQUE]**
+- `query_client_outcomes` — working_pro persona only **[UNIQUE]**
+- `query_data_store_principles_for_assignment` — fetches principles to ground assignment rationale **[UNIQUE]** (distinct from Coach's grounding which focuses on scene-type principles)
+
+**Instruction:** `app/prompts/planner.txt` — persona-aware planning (skill-development for hobbyist, business-aware for working pro), rationale generation, calibration
+
+### 7.5 Reflection sub-agent (`app/sub_agents/reflection.py`)
+
+**Role:** Multi-image comparison between baseline and completion shoots. Compute skill delta.
+
+**Tools (≥1 unique to Reflection):**
+- `get_shoot_photos_with_scores` — **[UNIQUE]**
+- `compare_multimodal_embeddings` — cross-shoot vector comparison **[UNIQUE]**
+- `write_skill_delta_to_assignment` — **[UNIQUE]**
+- `get_aesthetic_profile_summary` — **[shared with Mentor]**
+- `get_active_assignment` — **[shared with Planner]**
+
+**Instruction:** `app/prompts/reflection.txt` — ISAR computation for hobbyist, conversion delta for working pro, before/after framing
+
+### 7.6 Triage sub-agent (`app/sub_agents/triage.py`)
+
+**Role:** Bulk operation across large portfolio archives. Cluster by similarity, surface duplicates, suggest tags, identify forgotten gems.
+
+**Tools (≥1 unique to Triage):**
+- `cluster_portfolio_by_embedding` — vector clustering **[UNIQUE]**
+- `propose_bulk_tag_application` — writes `pending_approvals` for batch tag changes **[UNIQUE]**
+- `find_duplicate_portfolio_entries` — **[UNIQUE]**
+- `surface_top_scoring_untouched_photos` — **[UNIQUE]**
+- `propose_photo_deletion` — writes `pending_approvals` for individual deletions (HARD HITL gate) **[UNIQUE]**
+
+**Instruction:** `app/prompts/triage.txt` — clustering strategy, when to propose vs proceed, conflict resolution, never autonomously delete
+
+### 7.7 Print Sales Strategist sub-agent (`app/sub_agents/print_sales.py`) — working_pro persona only
+
+**Role:** Analyze portfolio for print-saleability per marketplace. Recommend products. Generate listings.
+
+**Tools (≥1 unique to Print Sales):**
+- `get_print_sales_history` — **[UNIQUE]**
+- `vector_search_similar_to_top_sellers` — **[UNIQUE]**
+- `aggregate_roi_by_marketplace` — **[UNIQUE]**
+- `generate_listing_metadata` — Gemini call with marketplace-specific formatting **[UNIQUE]**
+- `propose_listing_publication` — writes `pending_approvals` per listing (HARD HITL gate) **[UNIQUE]**
+- `get_aesthetic_profile_summary` — **[shared with Mentor, Reflection]**
+
+**Instruction:** `app/prompts/print_sales.txt` — per-marketplace strategy, pricing reasoning, listing draft format, never autonomously publish
+
+### 7.8 Visual Describer sub-agent (`app/sub_agents/visual_describer.py`) — vision_impairment persona only
+
+**Role:** Real-time scene description, spatial composition guidance, persistent scene memory for auditory recall.
+
+**Tools (≥1 unique to Visual Describer):**
+- `analyze_frame_for_description` — Gemini vision call with description-focused prompt (distinct from Coach's critique-focused prompt) **[UNIQUE]**
+- `compute_spatial_position` — geometric analysis of subject placement **[UNIQUE]**
+- `trigger_haptic_pattern` — iOS haptic command **[UNIQUE]**
+- `narrate_capture_session` — multi-frame narration **[UNIQUE]**
+- `atlas_search_scene_descriptions` — uses `scene_search` index **[UNIQUE]**
+- `write_capture_session_event` — **[UNIQUE]**
+
+**Instruction:** `app/prompts/visual_describer.txt` — description format (concise/detailed per user preference), spatial-first language, accessibility-aware, when to suggest recomposition, haptic pattern selection
+
+### 7.9 Field Coach sub-agent (`app/sub_agents/field_coach.py`) — 9th LlmAgent
+
+**Role:** Sub-orchestrator for the iPhone field-capture flow. Receives camera frames + session state. Decides which other sub-agents to invoke (Coach for analysis, Visual Describer for description in vision_impairment mode, Mentor for assignment context).
+
+**Tools (≥1 unique to Field Coach):**
+- `get_session_state` — fetches current field session state including recent suggestions **[UNIQUE]**
+- `update_session_state` — writes to session for next-frame stateful coaching **[UNIQUE]**
+- `AgentTool(agent=coach_agent)` — invoke Coach for sighted-mode analysis
+- `AgentTool(agent=visual_describer_agent)` — invoke Visual Describer for vision_impairment mode (note: this AgentTool is conditionally included based on persona at session start)
+- `AgentTool(agent=mentor_agent)` — invoke Mentor for assignment context
+- `decide_when_to_speak` — anti-interruption logic; agent must reason about whether to voice a suggestion **[UNIQUE]**
+
+**Instruction:** `app/prompts/field_coach.txt` — real-time decision-making, anti-interruption rules, persona-aware delegation (Coach for sighted, Visual Describer for vision_impairment), assignment-aware coaching
+
+### 7.10 Tool uniqueness justification
+
+For each pair of sub-agents that share read patterns on the same collection, here's why the tools are genuinely different jobs:
+
+| Sub-agent A | Sub-agent B | Same collection? | Different because |
+|---|---|---|---|
+| Mentor `get_recent_portfolio_aggregates_by_time` | Planner `get_portfolio_aggregates_by_skill` | Yes (portfolio_entries) | Different aggregation pipelines: Mentor groups by time-window for trend analysis; Planner groups by target_skill for gap analysis. Different output shapes, different consumers. |
+| Coach `ground_in_data_store_principles` | Planner `query_data_store_principles_for_assignment` | Yes (Data Store) | Different queries: Coach retrieves scene-type principles for inline analysis; Planner retrieves practice-design principles for assignment rationale. Different prompt frames, different results. |
+| Reflection `compare_multimodal_embeddings` | Print Sales `vector_search_similar_to_top_sellers` | Yes (portfolio_entries.embedding) | Different operations: Reflection compares baseline vs completion shoot embeddings (within-user); Print Sales does cross-portfolio nearest-neighbor against sold-photos cluster. |
+| Triage `cluster_portfolio_by_embedding` | Mentor `vector_search_similar_photos` | Yes (portfolio_entries.embedding) | Different operations: Triage clusters all portfolio entries; Mentor does single-photo nearest-neighbor search. Different algorithms (k-means vs ANN), different output shapes. |
+| Reflection `get_active_assignment` | Planner `get_active_assignment` | Yes (practice_assignments) | Same underlying read, intentionally shared. Both sub-agents need to know the active assignment but for different reasons. This is a legitimately shared tool. |
+
+If during implementation a tool ends up being structurally identical to one in another sub-agent (not just sharing name but same logic), it should be promoted to a shared utility and noted in this table.
 
 ---
 
-## 11. Deployment
+## 8. Phase plan (through June 11)
 
-### 11.1 Backend on Vertex AI Agent Engine
+### 8.0 Formal 8-agent fallback profile
+
+The default target is 9 LlmAgents (§3.5). If Phase 1 verifiably fails to produce 9 agents passing all §2.4 commands by EOD May 30, **Prasad** may activate this formal 8-agent fallback profile. **The AI coding tool MUST NOT activate this fallback on its own discretion.** Activation requires explicit human authorization in the conversation, e.g., "Activate the §8.0 fallback profile."
+
+**What changes in fallback mode:**
+
+- Triage sub-agent is dropped (rationale: least demo-critical; clustering-based bulk operations are the most complex sub-agent to build correctly)
+- LlmAgent count target: **8** (1 orchestrator + 7 sub-agents)
+- Sub-agent files target: **7**
+- Prompt files target: **8**
+- `app/sub_agents/triage.py` and `app/prompts/triage.txt` are NOT created
+- Backlog Triage Agent feature is deferred to post-hackathon
+- Demo script segment 2:20-2:50 (Triage moment) is replaced with extended persona-switching segment or dropped entirely
+
+**Verification commands in fallback mode:**
 
 ```bash
-make deploy
-# Or: agent_starter_pack deploy
-```
-Deploys orchestrator and sub-agents. Endpoint URL becomes the frontend's API base.
+LLM_AGENT_COUNT=$(grep -rh "LlmAgent(" app/ | grep -v "^#" | wc -l)
+test $LLM_AGENT_COUNT -eq 8 || exit 1
 
-### 11.2 MongoDB MCP Server on Cloud Run
+SUB_AGENT_COUNT=$(ls app/sub_agents/*.py 2>/dev/null | wc -l)
+test $SUB_AGENT_COUNT -eq 7 || exit 1
 
-Deploy as separate Cloud Run service:
-```bash
-cd backend_aux/mongodb_mcp_server
-gcloud builds submit --tag gcr.io/$GOOGLE_CLOUD_PROJECT/mongodb-mcp-server
-gcloud run deploy mongodb-mcp-server \
-  --image gcr.io/$GOOGLE_CLOUD_PROJECT/mongodb-mcp-server \
-  --region us-central1
-```
-Register the resulting Cloud Run URL with the orchestrator's MCP tool config.
+PROMPT_COUNT=$(ls app/prompts/*.txt 2>/dev/null | wc -l)
+test $PROMPT_COUNT -eq 8 || exit 1
 
-### 11.3 Frontend on Firebase Hosting (replaces Vercel)
-
-```bash
-cd frontend
-npm run build
-firebase deploy --only hosting
-```
-Public URL becomes the submission's hosted-project URL.
-
-### 11.4 Change stream listener for aesthetic profile
-
-Cloud Run service subscribed to MongoDB change stream on `portfolio_entries`. On each insert, recomputes the affected user's aesthetic profile and updates the `aesthetic_profile` collection.
-
-```bash
-cd change_stream_listener
-gcloud builds submit --tag gcr.io/$GOOGLE_CLOUD_PROJECT/aesthetic-profile-listener
-gcloud run deploy aesthetic-profile-listener \
-  --image gcr.io/$GOOGLE_CLOUD_PROJECT/aesthetic-profile-listener \
-  --region us-central1 \
-  --min-instances=1   # always-on listener
+AGENT_TOOL_COUNT=$(grep "AgentTool(agent=" app/agent.py | wc -l)
+test $AGENT_TOOL_COUNT -ge 7 || exit 1
 ```
 
-The listener is intentionally narrow — it does NOT replace the orchestrator's synchronous routing. It only powers the background `aesthetic_profile` derivation, demoable as the one place change streams earn their architectural complexity.
+**Persona availability in fallback mode:**
 
-### 11.5 Secrets
+- Hobbyist session: 5 sub-agents + orchestrator = **6 agents** (was 7)
+- Working Pro session: 6 sub-agents + orchestrator = **7 agents** (was 8)
+- Vision Impairment session: 6 sub-agents + orchestrator = **7 agents** (**unchanged** — Triage was never in this persona's toolset)
 
-Google Cloud Secret Manager:
-- `MONGODB_URI`
-- `MONGODB_ATLAS_CLIENT_SECRET`
-- Any other secrets referenced in env config.
+**Floor rule:** The 8-agent fallback is itself a target. Once activated, no further reduction is permitted by the AI coding tool. Any further degradation (to 7 or fewer) must be explicitly authorized by Prasad in a fresh authorization message.
 
----
+**Devpost / judge framing in fallback mode:** "Practice Companion ships with 8 specialized agents (1 orchestrator + 7 sub-agents). A 9th agent (Backlog Triage) was scoped but deferred to focus on shipping the demo-critical features at higher quality. This is documented in the README."
 
-## 13. Demo arc & KPI
 
-### 13.1 KPI
+### Phase 0 — Setup verification (May 24-25, 1-2 days)
 
-**Intentional Skill Application Rate (ISAR)** — for a shoot, the rate of frames where the photographer applied the active assignment's target skill deliberately and successfully. Computed by Reflection sub-agent. Baseline → assignment → post-assignment measured delta.
+**[MANUAL] Mac + iOS prerequisites:**
+- [ ] Mac available with Xcode 15+ installed
+- [ ] Apple Developer Program enrollment status verified (enroll today if not active; 1-3 day verification window)
+- [ ] If no Mac: confirm fallback to Capacitor PWA wrap (see §3.4)
 
-### 13.2 Demo arc (90-second core, expandable to 3 minutes)
+**[MANUAL] Verify existing infrastructure still works:**
+- [ ] MongoDB Atlas cluster reachable (`practice-photography-companion-mvp-cluster`)
+- [ ] Firebase Hosting deploys successfully
+- [ ] Vertex AI Gemini 3 Pro accessible
+- [ ] Agent Builder Data Store reachable
+- [ ] GCS bucket accessible
 
-1. **Set up (15s)** — "Meet [name]. Hobbyist photographer working on portraiture. Her last three shoots are in Practice Companion."
-2. **Practice tab (15s)** — current assignment: "Use rule of thirds deliberately. Baseline: 2/15 frames."
-3. **Upload new shoot (20s)** — Coach pass runs visibly. *Grounding citation appears: "principles consulted: composition.md — rule of thirds, leading lines"* — this is the Agent Builder Data Store grounding made visible. Glass Box critique with extended spatial map appears.
-4. **Reflection (20s)** — ISAR went from 13% to 67%. Side-by-side baseline vs current with lighting maps and subject-relationship overlays.
-5. **Background update (5s)** — *"And as the new shoot lands, the aesthetic profile updates in the background via MongoDB change streams — no polling, no scheduled jobs."* — show the Memory tab refreshing.
-6. **Plan next (10s)** — Planner suggests next assignment grounded in just-demonstrated improvement.
-7. **Export (5s)** — XMP sync to Lightroom.
+**[AUTO] Execute v3 → v5 file migration per §1.5.** Run verification commands in §1.5 to confirm.
 
-For 3 minutes: add Field Mode segment (30s) + judge pitch overview (30s).
+**[AUTO] Update MongoDB schema:**
+- [ ] Add `persona` field to `users` collection (default: `hobbyist` for existing users)
+- [ ] Add `preferences` subdocument to `users`
+- [ ] Create new collections: `client_outcomes`, `print_sales`, `capture_sessions`, `pending_approvals`
+- [ ] Create Atlas Search index `scene_search` for vision_impairment persona
 
----
+**[AUTO] Copy companion document into repo:**
+- [ ] `/mnt/user-data/outputs/mongodb-story-document.md` → `docs/mongodb-story-document.md`
 
-## 16. Demo script
+**Gate (verified by commands, not subjective):**
+- [ ] §1.5 verification commands pass (old files deleted, new structure created)
+- [ ] `python -c "from pymongo import MongoClient; print(MongoClient('$MONGODB_URI').list_database_names())"` returns the database
+- [ ] All new collections exist with their indexes (`db.collection.getIndexes()` for each)
+- [ ] `test -f docs/mongodb-story-document.md` passes (companion document in place)
 
-Detailed 3-minute script — initial cut from §13.2 expansion; Prasad refines.
+### Phase 1 — Multi-agent rewire (May 26-29, 4 days)
 
-**Trademark/IP cautions (per rules §7.B video constraints):**
-- Lightroom: describe as "industry-standard photo management software." Brief incidental Lightroom UI in import demo is likely fair use, but do not feature the Adobe Lightroom logo prominently or sustain shots of it. Same caution for any other branded software UI.
-- MongoDB and Google Cloud logos: acceptable to show since these are the partner and sponsor — they're explicitly part of the submission and the brand identification is reasonable.
-- No music with copyright restrictions; use original music or royalty-free.
-- All demo photos either Prasad's own or explicitly license-cleared per [§3.4](#34-demo-seed-data).
+**The critical phase.** This is where v3 diverged. Do not let it happen again.
 
----
+**[AUTO] Implement each of the 8 sub-agents in `app/sub_agents/*.py` as proper `LlmAgent` instances.** Each must have:
+- Its own `instruction` loaded from `app/prompts/<name>.txt` (≥30 lines)
+- Its own `tools=[...]` per §7
+- Its own Gemini call (model="gemini-3-pro" or equivalent, NOT inherited from orchestrator)
 
-## 17. Judge pitch points
+**[AUTO] Implement `app/agent.py` orchestrator** using `AgentTool(agent=...)` for each sub-agent + `build_persona_filtered_tool_list()` per **§4.3** (with §2.3 as illustrative pattern).
 
-For MongoDB judges specifically:
+**[AUTO] Set up trace instrumentation** (OpenInference + Cloud Trace) to capture per-agent spans.
 
-1. **MongoDB Atlas is the memory substrate that makes this product possible.** Practice Companion's value rests on "AI mentor that remembers who you are as a photographer." That requires per-tenant memory with vector search (semantic similarity over aesthetic), Atlas Search (full-text over critique history), change streams (background derived state), flexible documents (extended spatial metadata co-located with embeddings), and cross-session continuity — all in one managed primitive.
-
-2. **MongoDB MCP Server is the orchestrator's primary read interface.** Portfolio, assignment, profile, and search queries flow through the MongoDB MCP Server. Sub-agents write via PyMongo to the same schema. This is the partner integration the hackathon looks for as the agent's "superpower."
-
-3. **Three MongoDB capabilities operate together, not separately.** Atlas Vector Search (semantic image-aesthetic similarity), Atlas Search (full-text on Glass Box content), and change streams (background aesthetic profile derivation) compose to power the Memory tab and Practice loop. Replicating this combination in alternative stacks (Postgres + pgvector + Elasticsearch + custom polling service) imposes operational complexity for identical outcome.
-
-4. **The architectural pattern generalizes across the creator economy.** Illustrators (style consistency), video creators (voice/editing patterns), musicians (composition tendencies), writers (rhetorical fingerprints). Same MongoDB-shaped substrate, different multimodal embeddings. Vertical expansion story for MongoDB.
-
-For Google judges:
-
-5. **Agent Builder + ADK + Agent Engine in real combination.** Agent Builder Data Store grounds the Coach sub-agent in curated photography principles (not inline prompts). ADK orchestrates the multi-agent system. Vertex AI Agent Engine hosts it. Gemini 3 Pro powers reasoning and multimodal analysis. Multimodal embeddings via Vertex AI co-locate with operational data in MongoDB. No third-party AI tools.
-
-6. **Honest framing on load-bearing vs. fit.** MongoDB Atlas is the best fit among hackathon partners for this product's data shape. Alternatives would work but impose operational complexity for identical outcome. MongoDB's co-location of multiple data primitives in one managed service is the right architectural choice on its merits.
-
----
-
-## 18. Devpost text description
-
-Required submission element per rules §7.B. Drafted during Phase 4 polish; Claude Code generates initial cut; Prasad refines.
-
-**Required content:**
-- Summary of the project's features and functionality.
-- Technologies used (Gemini 3 Pro, ADK, Vertex AI Agent Engine, Agent Builder Data Store, MongoDB Atlas, MongoDB MCP Server, Cloud Run, Firebase Hosting, React, TypeScript).
-- Information about data sources (Prasad's own photography for demo; photography principles curated for the Data Store).
-- Findings and learnings from the build process — honest reflections on what worked, what didn't, what surprised.
-
-**Length target:** ~600-900 words. Devpost text descriptions are read carefully by judges and are often the deciding factor between similarly-scored technical implementations.
-
-**Suggested structure:**
-1. The problem (200 words) — pedagogical gap in photography tools, AOP 2026 economic context, why "memory" matters.
-2. The product (200 words) — Practice Companion features, dual audience, Studio + Field modes.
-3. The architecture (200 words) — how the agent system, MongoDB memory, Agent Builder Data Store, and change streams work together.
-4. Prior-work attribution (75 words) — gemini3 and gemma4 lineage; what's reused as infrastructure; what's new.
-5. Findings and learnings (100 words) — what we learned about agent design, partner integration, MongoDB capabilities.
-
----
-
-## 19. Out of scope
-
-- Lua-based Lightroom plugin.
-- Full Field Mode mobile app.
-- Multi-user collaboration.
-- Public sharing / social features.
-- Revenue analytics dashboard for working pros.
-- Other creator categories (expansion narrative, not build).
-- Authentication.
-- Mobile-native apps.
-- Voyage AI embeddings (post-hackathon swap candidate).
-- `agents-cli` migration (post-hackathon).
-- Vercel (rules-incompatible — using Firebase Hosting instead).
-- Any third-party AI tools (rules §7.B prohibits).
-
----
-
-## 20. Risk register
-
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| Agent Engine cold start affects demo | Medium | Min instances = 1 during demo recording window. |
-| MongoDB MCP Server deployment complexity | Medium | Spike Cloud Run deploy in Phase 1; verify orchestrator can reach MCP Server before Phase 2. |
-| Vertex AI multimodalembedding@001 quota | Low | Verified in §0.3. |
-| ADK + Agent Engine integration edge cases | Medium | Stay close to Agent Starter Pack's `adk_live` template; deviate only when necessary. |
-| Agent Builder Data Store latency for grounding | Low | Grounding is async to user — happens in Coach before Gemini call. Even 1-2 second Data Store latency is acceptable. |
-| Change stream listener race conditions | Low | Listener only updates `aesthetic_profile`, not anything on the demo's critical path. |
-| Atlas Search index build time on first deploy | Low | Build time is minutes for hackathon-scale data; trigger early in Phase 2. |
-| 50-hour build budget overrun | Medium | Phase 3 largest. If behind, drop Field Mode and demo Studio Mode only. |
-| Rules interpretation risk on "newly created" work | Low | Submitted repo is fresh; commits are within contest period; project (multi-agent system, MongoDB integration, etc.) is new even where utility files are reused. README explicitly attributes prior work. |
-| Lightroom XMP behavior change | Low | XMP code is from a working hackathon submission; format stable. Verify Phase 4. |
-| Firebase Hosting deploy issues | Low | Standard React/Vite + Firebase Hosting combo; well-documented. |
-
----
-
-## Appendix A — Build sequence
-
-```
-Phase 0 — Setup (5–7 hours; +1h for Data Store curation, Firebase init)
-  └─ Verification gate
-
-Phase 1 — Scaffold with Agent Starter Pack (3–5 hours)
-  └─ Verification gate
-
-Phase 2 — Multi-agent system with MCP + Data Store + Atlas Search (12–16 hours; +2h for Data Store grounding tool and Atlas Search tool integration)
-  └─ Verification gate
-
-Phase 3 — Memory + Studio Mode + change stream listener (12–16 hours; +2h for change stream service)
-  └─ Verification gate
-
-Phase 4 — Field Mode + XMP + polish + Devpost text + compliance check (7–11 hours; +1h for Devpost text + compliance run)
-  └─ Verification gate
-
-Total: 39–55 hours, target middle: 47 hours
-(v2 estimate was 33–49; v3 adds ~6 hours for Agent Builder Data Store, Atlas Search, change stream listener, and rules-compliance polish)
-```
-
----
-
-## Appendix B — Commands quick reference
+**Verification gate (all §2.4 commands must pass):**
 
 ```bash
-# Phase 0 — Verify access
-gcloud ai models list --region=us-central1 | grep -E "gemini-3|multimodalembedding"
-python -c "import pymongo; print(pymongo.MongoClient('$MONGODB_URI').server_info())"
-uvx --version
-firebase projects:list
+# All verification commands from §2.4
+LLM_AGENT_COUNT=$(grep -rh "LlmAgent(" app/ | grep -v "^#" | wc -l)
+test $LLM_AGENT_COUNT -eq 9 || exit 1
 
-# Phase 0 — Agent Builder Data Store
-gcloud alpha discovery-engine data-stores create photography-principles \
-  --location=global --industry-vertical=GENERIC --solution-type=SOLUTION_TYPE_SEARCH
+SUB_AGENT_COUNT=$(ls app/sub_agents/*.py 2>/dev/null | wc -l)
+test $SUB_AGENT_COUNT -eq 8 || exit 1
 
-# Phase 1 — Scaffold
-uvx agent-starter-pack create
+PROMPT_COUNT=$(ls app/prompts/*.txt 2>/dev/null | wc -l)
+test $PROMPT_COUNT -eq 9 || exit 1
 
-# Phase 1+ — Develop locally
-make playground
-cd frontend && npm run dev
+for f in app/prompts/*.txt; do
+    test $(wc -l < "$f") -ge 30 || exit 1
+done
 
-# Phase 4 — LAN HTTPS for iPhone
-cd frontend && npm run start:https
-
-# Phase 4 — Deploy
-make deploy                                  # Agent Engine deploy
-cd frontend && npm run build && firebase deploy --only hosting   # Firebase Hosting
-gcloud run deploy mongodb-mcp-server ...     # MongoDB MCP Server
-gcloud run deploy aesthetic-profile-listener ...   # Change stream listener
+AGENT_TOOL_COUNT=$(grep "AgentTool(agent=" app/agent.py | wc -l)
+test $AGENT_TOOL_COUNT -ge 8 || exit 1
 ```
+
+**Behavioral verification (concrete input → output):**
+- [ ] Playground query "critique this photo" + image triggers orchestrator → Coach sub-agent, trace shows ≥2 LLM spans
+- [ ] Playground query "what should I work on?" + hobbyist persona triggers orchestrator → Planner, response includes assignment rationale
+- [ ] Playground query "which photos should I sell?" + hobbyist persona returns the persona-switch fallback message per §4.4
+
+**Runtime persona-isolation verification (§2.4.b):**
+- [ ] `python -m pytest tests/test_persona_isolation.py -v` passes all 4 tests (or 4 tests adjusted for fallback mode per §8.0)
+
+**Fallback if Phase 1 incomplete by EOD May 30:** See §8.0 Formal 8-agent fallback profile. Activation requires explicit human authorization from Prasad — the AI coding tool MUST NOT activate this on its own.
+
+### Phase 2 — Persona routing + Mentor Copilot (May 30-Jun 2, 4 days)
+
+**[AUTO] Implement persona detection in orchestrator** (read from `users.persona`).
+**[AUTO] Implement intent classification in orchestrator prompt.**
+**[AUTO] Wire Mentor sub-agent for chat-based interactions.**
+**[AUTO] Build Mentor Chat UI in React** (new tab; doesn't replace existing tabs).
+**[AUTO] Deploy orchestrator to Vertex AI Agent Engine** OR Cloud Run with session API (whichever works first; document choice in deploy.md).
+**[AUTO] Wire frontend chat to orchestrator endpoint.**
+
+**Verification gate (concrete input → output):**
+
+For each of the following 5 canonical queries, verify the routing matches expectation AND the trace shows the right spans:
+
+1. **Query:** "show me my recent backlit portraits" (hobbyist persona)
+   **Expected:** Orchestrator → Mentor → (parallel: `atlas_search_glass_box` with "backlit" + `vector_search_similar_photos` filtered to user). Trace ≥3 LLM spans.
+
+2. **Query:** "I just finished my backlit subjects assignment, here are the new photos" + 5 images (hobbyist)
+   **Expected:** Orchestrator → Coach (x5 sequentially) → Reflection (with baseline shoot_id) → Planner. Trace ≥7 LLM spans showing sequential delegation.
+
+3. **Query:** "what's distinctive about my work?" (hobbyist)
+   **Expected:** Orchestrator → Mentor → (parallel: `get_aesthetic_profile_summary` + `get_recent_portfolio_aggregates_by_time` + `atlas_search_glass_box`). Synthesizes "your photographic voice" narrative.
+
+4. **Query:** "which photos would do well on Etsy?" (hobbyist persona)
+   **Expected:** Orchestrator returns persona-switch fallback message per §4.4 ("That capability is available in Working Pro mode..."). Print Sales NOT invoked.
+
+5. **Query:** "which photos would do well on Etsy?" (working_pro persona)
+   **Expected:** Orchestrator → Print Sales Strategist → (calls `get_print_sales_history` + `vector_search_similar_to_top_sellers` + `generate_listing_metadata`). Returns ranked recommendations with draft listings.
+
+### Phase 3 — iPhone Field Coach + Triage Agent (Jun 3-6, 4 days)
+
+**[AUTO] Scaffold native iOS app in SwiftUI** (per §3.4 commitment).
+**[AUTO] Implement live camera capture via AVFoundation, frame throttling, agent call pipeline.**
+**[AUTO] Implement Field Coach flow:** frame → orchestrator → Field Coach sub-agent → (Coach for sighted OR Visual Describer for vision_impairment) → voice/haptic feedback.
+**[AUTO] Implement haptic feedback engine** (`UIImpactFeedbackGenerator` + composition guidance patterns).
+**[AUTO] Implement ARKit composition overlays** (rule of thirds, leading lines, golden ratio).
+**[AUTO] Implement voice synthesis via AVSpeechSynthesizer.**
+**[AUTO] Implement Triage Agent for web** (Backlog Triage UI + bulk operations + HITL approval flow per §5.7).
+
+**[MANUAL] Submit first TestFlight build for external review by Jun 5.**
+
+**Verification gate (concrete input → output):**
+- [ ] iPhone app captures frame, sends to orchestrator endpoint, receives feedback within 3 seconds
+- [ ] Persona toggle switches between visual+voice (sighted, ARKit overlays visible) and voice+haptic (vision_impairment, haptic pulses on subject centering)
+- [ ] Triage Agent processes 50+ photos, surfaces 3+ clusters, proposes tags via `pending_approvals` (no autonomous tag commits)
+- [ ] Deletion proposed by Triage requires explicit user approval card (no auto-delete)
+
+### Phase 4 — Print Sales Strategist + Visual Describer polish (Jun 6-8, 3 days)
+
+**[AUTO] Implement Print Sales Strategist sub-agent** with `propose_listing_publication` HITL gate.
+**[AUTO] Build Print Sales UI in working-pro mode** (web + mobile) with per-listing approval cards.
+**[AUTO] Polish Visual Describer voice flow and haptic patterns.**
+**[AUTO] Seed demo data for all three personas across all features.**
+
+**Verification gate:**
+- [ ] Working pro user can navigate to Print Sales tab, see 5 listing proposals, approve/modify/reject each individually
+- [ ] No batch-approve button unless `users.preferences.auto_approve_listings = true`
+- [ ] Vision impairment demo flow works end-to-end: camera open → scene narrated → user says "center the bench" → haptic guidance → confirmation pulse → capture
+- [ ] Cross-session recall: vision impairment user asks "what did I capture today?" → Visual Describer narrates day's captures from `capture_sessions`
+
+### Phase 5 — Demo polish + iOS approval + Devpost (Jun 9-10, 2 days)
+
+**[AUTO] Record demo video** (3 minutes, all three personas, persona-switching moment highlighted).
+**[AUTO] Write Devpost text** per §11.
+**[AUTO] Update README** with multi-agent architecture diagram + trace examples + LlmAgent count verification.
+**[AUTO] Confirm Apache-2.0 LICENSE visible in GitHub About.**
+**[MANUAL] Monitor App Store review status; respond to any rejection feedback.**
+
+**Verification gate:**
+- [ ] Devpost submission preview complete
+- [ ] Demo video shows persona-switching moment with visible architecture change
+- [ ] README's "Verify Multi-Agent" section includes the §2.4 commands and their expected output
+
+### Phase 6 — Submit (Jun 11)
+
+Submit by noon PT, not 2pm deadline. Buffer for unexpected issues.
 
 ---
 
-## Appendix C — Rules compliance checklist
+## 9. Deployment
 
-Run before final Devpost submission. Each item maps to a specific rules section.
+### 9.1 Backend
+
+- **Orchestrator + 8 sub-agents** deployed to **Vertex AI Agent Engine** as primary path
+- **Fallback path: Cloud Run** hosting an ADK-based FastAPI service if Agent Engine integration has issues
+- **MongoDB MCP Server** on Cloud Run (from v3 work; verify still functional)
+- **Change stream listener** on Cloud Run (already exists from v3 work; verify)
+
+### 9.2 Frontend (web)
+
+- React on **Firebase Hosting** (existing v3 setup)
+- Point `VITE_API_BASE_URL` at the Agent Engine endpoint (or Cloud Run fallback)
+
+### 9.3 iOS native app — SwiftUI
+
+- SwiftUI app deployed to **TestFlight** with public link (primary)
+- Submit to **App Store** by Jun 5 (gives 6 days for review + resubmit cycle)
+- Apple Developer Program enrollment required (Phase 0 prerequisite)
+- If no Mac available: Capacitor wrap of existing React PWA (fallback, 6-10 hours, loses native ARKit/voice/haptics)
+
+---
+
+## 10. Demo script (3 minutes)
+
+Structured around the **persona-switching moment** as the climax.
+
+**0:00-0:20 — Setup**
+Introduce the maker: hobbyist photographer using Practice Companion for two months. Show iPhone app.
+
+**0:20-0:50 — Live Field Coach in sighted mode**
+Open camera. Field Coach actively coaching. ARKit composition overlays + voice nudges. Show moment where Field Coach references active practice assignment ("you're working on backlit subjects, this is a good moment").
+
+**0:50-1:20 — Mentor Copilot conversation**
+Switch to web tab. Ask Mentor: "How am I improving on portraits?" **Show the trace:** Mentor invokes Atlas Search + portfolio aggregates + Reflection. Synthesizes narrative with citations. **This is where multiple sub-agents getting orchestrated is visible.**
+
+**1:20-1:50 — The persona switch (the climax)**
+Switch persona in settings to "photographer with vision impairment." Open iPhone camera again. **Same app. Same camera. Now fundamentally transformed.**
+- ARKit overlays disappear
+- Voice starts narrating the scene ("There's a wooden bench in the upper left, two meters away")
+- Haptic feedback engages as user composes
+- Confirmation pulse when subject is centered
+
+**This is the moment that demonstrates the multi-agent architecture is real. Same infrastructure, different sub-agent composition (Visual Describer invoked instead of Coach), structurally different product.**
+
+**1:50-2:20 — Working pro mode + HITL hard gate**
+Switch to working pro. Show Print Sales Strategist: "Which photos should I list on Society6?" Agent returns 5 ranked recommendations. **Show explicit per-listing approval** — user modifies one price, rejects one, approves the remaining 3. Approve is deliberate per-listing (HARD HITL gate visible).
+
+**2:20-2:50 — Backlog Triage moment**
+Show Triage Agent processing a 200-photo backlog. Clusters surfaced. Forgotten gems identified. User approves suggested tags. **Show deletion proposal requiring explicit approval** (no autonomous deletion).
+
+**2:50-3:00 — Close**
+Three personas. Same iPhone. Same memory layer (MongoDB Atlas as memory substrate — link to mongodb-story-document.md). Real multi-agent architecture (9 LlmAgents). Adaptive to who you are.
+
+**Trademark cautions:**
+- Lightroom: describe as "industry-standard photo management software"; brief incidental Lightroom UI OK but no sustained logo focus
+- MongoDB and Google Cloud logos: acceptable to show (partner and sponsor)
+- All demo photos must be Prasad's own work or explicitly license-cleared
+
+---
+
+## 11. Devpost text plan
+
+Structure (~700-900 words):
+
+1. **The problem (200 words)** — pedagogical gap in photography tools, three populations underserved, AOP 2026 stats on photographer economic pressure
+2. **The product (200 words)** — three personas with structurally different agentic behavior, five agentic features, three channels, persona-switching as the demonstration
+3. **The architecture (200 words)** — multi-agent orchestrator + 8 distinct sub-agents (9 total LlmAgents), MongoDB Atlas as memory substrate (link to mongodb-story-document.md), Agent Builder Data Store for principles, Gemini 3 Pro for reasoning, Vertex AI Agent Engine for hosting
+4. **Honest gaps (75 words)** — v3 had agent theater problems explicitly fixed in v5; transparent about deterministic vs agentic flows; prior work attribution (gemini3, gemma4)
+5. **Findings and learnings (150 words)** — what worked (ADK + Agent Engine + MongoDB MCP stack), what surprised (persona-based routing pattern), what we learned (kill-test discipline matters; partner-load-bearing claims need to be operationally honest)
+
+---
+
+## 12. Rules compliance checklist (inlined, no external reference)
 
 ### Submission essentials (rules §7.B)
-- [ ] Hosted project URL works (Firebase Hosting frontend + Agent Engine backend reachable).
-- [ ] Code repository public, Apache-2.0 LICENSE file detectable in About section.
-- [ ] Demo video ≤ 3 minutes, uploaded to YouTube or Vimeo, English (or English subtitles).
-- [ ] MongoDB track selected.
-- [ ] Devpost submission form complete with text description (§18).
+- [ ] Hosted project URL works (Firebase Hosting frontend + Agent Engine backend reachable)
+- [ ] TestFlight public link or App Store link active by Jun 11
+- [ ] Code repository public, Apache-2.0 LICENSE visible in About section
+- [ ] Demo video ≤ 3 minutes, YouTube or Vimeo, English (or English subtitled)
+- [ ] MongoDB track selected on Devpost
+- [ ] Devpost submission form complete with text description per §11
 
 ### Project requirements (rules §7.A, §7.B)
-- [ ] Built with Gemini 3 Pro for reasoning.
-- [ ] Built with Google Cloud Agent Builder (Data Store + ADK + Agent Engine all part of Agent Builder ecosystem).
-- [ ] Integrates MongoDB partner via MCP (MongoDB MCP Server is orchestrator's primary data tool).
-- [ ] Runs on at least one of: web, Android, iOS. (Web PWA + iOS via PWA install.)
-- [ ] Project newly created during contest period (May 5 – June 11, 2026). Submitted repo created during contest period; all commits within contest period; project conception and architecture are new; prior code reused as utility infrastructure with attribution in README.
+- [ ] Built with Gemini 3 Pro
+- [ ] Built with Google Cloud Agent Builder (Data Store + ADK + Agent Engine ecosystem)
+- [ ] Integrates MongoDB partner via MCP (MongoDB MCP Server is orchestrator's data interface)
+- [ ] Runs on web AND iOS (native SwiftUI app per §3.4)
+- [ ] Project newly created during contest period (May 5 - June 11, 2026); v5 rebuild from scratch in contest period; README attributes prior work
 
 ### Functionality restrictions (rules §7.B)
-- [ ] No services competing with Google Cloud for cloud platform capabilities (no Vercel, no AWS, no Azure for hosting). Using Firebase Hosting, Cloud Run, Vertex AI.
-- [ ] No services competing with MongoDB (our track partner) for database/search (no Pinecone, no Postgres+pgvector, no Elasticsearch). Using MongoDB Atlas exclusively.
-- [ ] Only Google Cloud AI tools and MongoDB AI features used. No Anthropic Claude, OpenAI, Cohere, or other third-party AI in the runtime. (Note: Claude Code used as a dev tool is fine — it's not in the deployed product.)
+- [ ] No services competing with Google Cloud for hosting (Firebase + Cloud Run + Agent Engine; no Vercel, AWS, Azure)
+- [ ] No services competing with MongoDB for database/search (MongoDB Atlas only; no Pinecone, Postgres+pgvector, Elasticsearch)
+- [ ] Only Google Cloud AI tools and MongoDB AI features used (no Anthropic Claude, OpenAI, Cohere in runtime; Claude Code as dev tool is fine)
 
 ### Demo video content (rules §7.B)
-- [ ] Shows project functioning on its target platform.
-- [ ] No content that is derogatory, offensive, discriminatory, etc.
-- [ ] No third-party trademarks featured prominently (Lightroom logo handled per §16).
-- [ ] No third-party publicity, privacy, or IP violations (all demo photos license-cleared per §3.4).
-- [ ] Original, unpublished work.
-- [ ] English or English-subtitled.
+- [ ] Shows project functioning on iPhone and web
+- [ ] No third-party trademarks featured prominently (Lightroom per §10)
+- [ ] No third-party IP violations (all demo photos Prasad's own or license-cleared)
+- [ ] Original, unpublished work
+- [ ] English or English-subtitled
 
 ### Repository content (rules §7.B)
-- [ ] Public.
-- [ ] Apache-2.0 LICENSE file at root, visible in GitHub About section.
-- [ ] README documents what's reused from prior projects (gemini3, gemma4) and what's new in Practice Companion.
-- [ ] All necessary source code, assets, and instructions present for the project to be functional.
-- [ ] No included credentials, API keys, or service account files (gcp-service-account.json, .env, etc. all in .gitignore).
+- [ ] Public
+- [ ] Apache-2.0 LICENSE at root, visible in GitHub About
+- [ ] README documents what's reused from prior projects (gemini3, gemma4) and what's new in Practice Companion
+- [ ] README includes "Verify Multi-Agent Architecture" section with §2.4 commands and expected output
+- [ ] All necessary source code, assets, instructions present for the project to be functional
+- [ ] No credentials, API keys, or service account files committed
+
+### Multi-agent architectural claim (NEW — v5 specific)
+- [ ] Exactly 9 LlmAgent instances in codebase (verified by §2.4 commands)
+- [ ] Each sub-agent has ≥1 unique tool (verified by inspecting tool surfaces per §7)
+- [ ] Persona enforcement at tool level (verified by inspecting `build_persona_filtered_tool_list`)
+- [ ] Sequential and parallel orchestration both demonstrated in traces
 
 ### Eligibility (rules §4)
-- [ ] Prasad is above age of majority (resident of Germany — confirmed eligible).
-- [ ] Not in any excluded jurisdiction.
-- [ ] Not an employee/contractor of Google, partners, Devpost.
+- [ ] Prasad above age of majority (German resident — confirmed eligible)
+- [ ] Not in excluded jurisdiction
+- [ ] Not Google/partner/Devpost employee
 
 ---
 
-**End of master spec (v3).**
+## 13. Risk register
+
+| Risk | Severity | Mitigation |
+|---|---|---|
+| Cursor/Claude Code reverts to anti-pattern 1 (Python services wrapped as FunctionTool) | **High** | §2 guardrails + §2.4 verification commands at every phase gate + §1.3 daily check-in prompt |
+| Phase 1 multi-agent rewire takes longer than 4 days | **High** | Formal 8-agent fallback profile in §8.0 (human-activated only, by Prasad's explicit authorization) |
+| App Store review delays beyond Jun 9 | Medium | TestFlight public link as fallback; PWA as primary submission URL regardless |
+| Vertex AI Agent Engine integration issues | Medium | Cloud Run + ADK as backup deployment path (documented) |
+| Persona-based routing collapses to "tone parameter" in practice | **High** | Tool-level enforcement per §4.3 (architectural, not prompt-level); verification in Phase 2 gate query #4 |
+| Visual Describer / haptic feedback half-baked due to lack of accessibility expertise | Medium | Reference Lens app implementation patterns; scope to composition guidance only (not full accessibility audit) |
+| No Mac available for SwiftUI development | **High** if discovered late | Phase 0 prerequisite check; fallback to Capacitor PWA wrap (lower quality, but still gets iOS submission) |
+| HITL implementation gets skipped under time pressure | **High** | §5.7 makes HITL implementation testable; phase gates verify approval flow exists |
+| Demo video doesn't make the persona-switching moment clear | High | Storyboard rehearsal with someone who hasn't seen the project; if they can't explain it in 30 sec, re-edit |
+
+---
+
+## 14. Build sequence summary
+
+```
+May 24-25 (2 days) — Phase 0: Setup verification + v3→v5 migration + Apple Developer enrollment
+May 26-29 (4 days) — Phase 1: MULTI-AGENT REWIRE [critical phase]
+May 30-Jun 2 (4 days) — Phase 2: Persona routing + Mentor Copilot
+Jun 3-6 (4 days) — Phase 3: iPhone Field Coach + Triage + TestFlight submit
+Jun 6-8 (3 days) — Phase 4: Print Sales + Visual Describer polish
+Jun 9-10 (2 days) — Phase 5: Demo polish + iOS approval + Devpost
+Jun 11 — Submit (target noon PT)
+
+Total: ~17 working days. Budget allows for ~3-5 hours/day at AI tooling velocity = ~55-85 effective build hours.
+```
+
+---
+
+## 15. Companion document
+
+See `/docs/mongodb-story-document.md` for the load-bearing MongoDB partner argument. Reference it from Devpost text per §11.
+
+---
+
+**End of master spec (v5).**

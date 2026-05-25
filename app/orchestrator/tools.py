@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from coach.service import analyze_photo as run_coach_analysis
+from sub_agents.coach import analyze_photo as run_coach_analysis
 
 
 def analyze_uploaded_photo(
