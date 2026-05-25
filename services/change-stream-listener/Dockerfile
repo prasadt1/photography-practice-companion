@@ -8,4 +8,5 @@ COPY app /app
 COPY services/change-stream-listener/main.py /listener/main.py
 
 ENV PYTHONPATH=/app
-CMD ["python", "/listener/main.py"]
+# uv sync installs deps into /app/.venv — system python has no pymongo/dotenv
+CMD ["/app/.venv/bin/python", "/listener/main.py"]

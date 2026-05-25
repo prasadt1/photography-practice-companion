@@ -17,11 +17,19 @@ import threading
 import time
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-load_dotenv(REPO_ROOT / ".env")
-sys.path.insert(0, str(REPO_ROOT / "app"))
+# Local dev: load repo .env. Cloud Run injects MONGODB_URI via env-vars-file.
+_env_file = REPO_ROOT / ".env"
+if _env_file.is_file():
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(_env_file)
+    except ImportError:
+        pass
+sys.path.insert(0, "/app")
+if str(REPO_ROOT / "app") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "app"))
 
 from bson import ObjectId  # noqa: E402
 
@@ -100,6 +108,44 @@ def watch_portfolio_changes() -> None:
                 debouncer.schedule(uid)
 
 
+def start_health_server() -> None:
+    """Cloud Run requires a process listening on PORT (default 8080)."""
+    import http.server
+    import socketserver
+
+    port = int(os.environ.get("PORT", "8080"))
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            if self.path in ("/", "/health"):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"ok")
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def log_message(self, *_args: object) -> None:
+            return
+
+    httpd = socketserver.TCPServer(("0.0.0.0", port), Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    logger.info("Health server listening on 0.0.0.0:%s", port)
+
+
+def _run_stream_with_retry() -> None:
+    while True:
+        try:
+            watch_portfolio_changes()
+        except Exception:
+            logger.exception("change stream ended; retrying in 10s")
+            time.sleep(10)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    watch_portfolio_changes()
+    start_health_server()
+    threading.Thread(target=_run_stream_with_retry, daemon=True).start()
+    while True:
+        time.sleep(3600)

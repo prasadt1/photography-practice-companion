@@ -135,18 +135,50 @@ Reactive profile updates when `portfolio_entries` change (consolidation item 2).
 cd app && uv run python ../services/change-stream-listener/main.py
 ```
 
-**Cloud Run (manual, min_instances=1):**
+**Cloud Run (min_instances=1):**
+
+`gcloud run deploy --source` does **not** support `--dockerfile`. The listener Dockerfile copies `app/` from the **repo root** — build with Cloud Build, then deploy by image:
 
 ```bash
-gcloud run deploy change-stream-listener \
-  --source services/change-stream-listener \
-  --region us-central1 \
-  --min-instances 1 \
-  --set-env-vars MONGODB_URI="$(grep MONGODB_URI .env | cut -d= -f2-)" \
-  --set-env-vars MONGODB_DB_NAME=practice_companion
+chmod +x scripts/deploy-change-stream-listener.sh
+./scripts/deploy-change-stream-listener.sh
 ```
 
-Verify: insert a portfolio entry; `aesthetic_profile` for that `user_id` updates within ~10s.
+Manual equivalent:
+
+```bash
+gcloud config set project practice-companion-hackathon
+gcloud config set account your.real.email@gmail.com   # not YOUR_USER@gmail.com, not *gserviceaccount.com
+
+gcloud builds submit . \
+  --config=services/change-stream-listener/cloudbuild.yaml
+
+python3 scripts/cloud-run-env-from-dotenv.py .env | grep -E '^(MONGODB_URI|MONGODB_DB_NAME):' > /tmp/listener-env.yaml
+echo 'CHANGE_STREAM_DEBOUNCE_SEC: "5"' >> /tmp/listener-env.yaml
+
+gcloud run deploy change-stream-listener \
+  --image gcr.io/practice-companion-hackathon/change-stream-listener:latest \
+  --region us-central1 \
+  --min-instances 1 \
+  --no-allow-unauthenticated \
+  --env-vars-file=/tmp/listener-env.yaml
+```
+
+Optional Secret Manager (only after `gcloud secrets create mongodb-uri ...`):
+
+```bash
+--set-secrets MONGODB_URI=mongodb-uri:latest
+```
+
+Verify:
+
+```bash
+gcloud run services logs read change-stream-listener --region=us-central1 --limit=30
+```
+
+Upload on prod → within ~10s `aesthetic_profile.computed_at` advances for that `user_id` (one doc per user, not a growing collection).
+
+The listener exposes `GET /health` on `PORT` (8080) so Cloud Run accepts the container; change-stream work runs in a background thread.
 
 ## Not in this deploy
 

@@ -118,6 +118,10 @@ def compute_aesthetic_summary(
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
 
+    total_photos = (
+        get_db().portfolio_entries.count_documents(query) if query else 0
+    )
+
     docs = list(
         get_db()
         .portfolio_entries.find(query, projection={"scores": 1, "aesthetic_tags": 1})
@@ -126,7 +130,8 @@ def compute_aesthetic_summary(
     )
     if not docs:
         return {
-            "photoCount": 0,
+            "photoCount": total_photos,
+            "profileSampleSize": 0,
             "dominantTags": [],
             "averageScores": {},
             "stylisticConsistencyScore": None,
@@ -156,7 +161,8 @@ def compute_aesthetic_summary(
         stored = get_db().aesthetic_profile.find_one({"user_id": uid})
 
     return {
-        "photoCount": n,
+        "photoCount": total_photos,
+        "profileSampleSize": n,
         "dominantTags": [t for t, _ in dominant],
         "averageScores": avg_scores,
         "stylisticConsistencyScore": round(consistency, 2),

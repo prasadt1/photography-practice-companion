@@ -1,0 +1,13 @@
+# Cloud Build: Dockerfile lives here but build context is repo root (needs app/).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --no-cache
+      - -t
+      - gcr.io/practice-companion-hackathon/change-stream-listener:latest
+      - -f
+      - services/change-stream-listener/Dockerfile
+      - .
+images:
+  - gcr.io/practice-companion-hackathon/change-stream-listener:latest

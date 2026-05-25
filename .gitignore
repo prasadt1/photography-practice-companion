@@ -36,3 +36,10 @@ firebase-debug.*.log
 
 # Cursor / local IDE (personal)
 .cursor/
+
+# Agent / design-review artifacts (keep locally; not part of shipped product)
+docs/design-reviews.md
+docs/design-review-brief.md
+docs/design-implementation-status.md
+docs/claude-code-handoff.md
+docs/MongoDB Story Document - Strategic Report.md

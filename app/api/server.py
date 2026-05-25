@@ -222,6 +222,12 @@ def portfolio_list(user_id: str | None = None, limit: int = 48) -> dict:
 @app.get("/api/v1/aesthetic-profile")
 def aesthetic_profile(user_id: str | None = None) -> dict:
     try:
+        from memory.aesthetic_profile import upsert_aesthetic_profile
+        from memory.session_context import resolve_effective_user_id
+
+        effective = resolve_effective_user_id(user_id)
+        if effective:
+            return upsert_aesthetic_profile(user_id=effective)
         return compute_aesthetic_summary(user_id=user_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
