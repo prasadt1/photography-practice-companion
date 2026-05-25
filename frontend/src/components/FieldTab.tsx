@@ -99,10 +99,10 @@ export const FieldTab: React.FC<Props> = ({
 
   if (!assignment) {
     return (
-      <div className="max-w-lg mx-auto text-center p-10 rounded-2xl border border-dashed border-slate-700">
-        <Target className="w-10 h-10 text-slate-600 mx-auto mb-3" aria-hidden />
+      <div className="max-w-lg mx-auto text-center p-10 rounded-2xl border border-dashed border-warm">
+        <Target className="w-10 h-10 text-stone-600 mx-auto mb-3" aria-hidden />
         <h2 className="text-xl font-bold text-white mb-2">Shoot Now</h2>
-        <p className="text-slate-400 text-sm mb-4">
+        <p className="text-muted text-sm mb-4">
           Accept a practice assignment first — then choose &quot;Shoot now&quot; to practice with
           your camera.
         </p>
@@ -123,17 +123,17 @@ export const FieldTab: React.FC<Props> = ({
     <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn pb-6">
       <div>
         <h2 className="text-2xl font-bold text-white mb-1">Shoot Now</h2>
-        <p className="text-slate-400 text-sm">
+        <p className="text-muted text-sm">
           Use your camera for the assignment you accepted — I&apos;ll critique the frame right away.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-brand-500/40 bg-slate-800/50 p-4">
+      <div className="rounded-2xl border border-brand-500/40 bg-surface-1 p-4">
         <p className="text-[10px] font-bold text-brand-400 uppercase tracking-wider mb-2">
           Active brief
         </p>
         <p
-          className={`text-sm text-slate-200 leading-relaxed ${
+          className={`text-sm text-stone-200 leading-relaxed ${
             briefExpanded || !briefLong ? '' : 'line-clamp-3'
           }`}
         >
@@ -158,12 +158,12 @@ export const FieldTab: React.FC<Props> = ({
         )}
       </div>
 
-      <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-700 min-h-[240px] sm:min-h-0 sm:aspect-[4/3]">
+      <div className="relative rounded-2xl overflow-hidden bg-photo-black border border-warm min-h-[320px] md:min-h-[420px] sm:aspect-[4/3]">
         <video
           ref={videoRef}
           playsInline
           muted
-          className="w-full h-full min-h-[240px] sm:min-h-0 object-cover sm:object-contain"
+          className="w-full h-full min-h-[320px] md:min-h-[420px] sm:min-h-0 object-cover sm:object-contain"
           aria-label="Camera preview for practice assignment"
         />
         <div
@@ -176,9 +176,9 @@ export const FieldTab: React.FC<Props> = ({
           <div className="absolute bottom-1/3 left-0 right-0 h-px bg-white/40" />
         </div>
         {analyzing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-canvas-elevated/80">
             <Loader2 className="w-10 h-10 animate-spin text-brand-400 mb-2" />
-            <p className="text-sm text-slate-300">Analyzing your shot…</p>
+            <p className="text-sm text-stone-300">Analyzing your shot…</p>
           </div>
         )}
       </div>
@@ -191,7 +191,7 @@ export const FieldTab: React.FC<Props> = ({
       )}
 
       {lastCaptureOk && (
-        <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+        <p className="text-sm text-brand-400 bg-brand-500/10 border border-brand-500/30 rounded-lg px-3 py-2">
           Captured and linked to this assignment. Mark complete in Practice when you are done, or
           take another shot.
         </p>
@@ -202,17 +202,19 @@ export const FieldTab: React.FC<Props> = ({
           type="button"
           disabled={!streaming || analyzing}
           onClick={captureFromVideo}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-500 text-slate-900 font-semibold text-sm disabled:opacity-50 min-h-[44px] flex-1 sm:flex-none"
+          className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-brand-500 text-on-brand font-bold text-sm disabled:opacity-50 min-h-[52px] flex-1 sm:flex-none shadow-lg shadow-brand-500/25 ring-2 ring-brand-400/30 ring-offset-2 ring-offset-canvas hover:bg-brand-400 transition-colors"
           aria-label="Capture and analyze"
         >
-          <Camera className="w-5 h-5 shrink-0" />
-          <span className="sm:inline">Capture</span>
+          <span className="w-10 h-10 rounded-full border-2 border-on-brand/40 flex items-center justify-center shrink-0">
+            <Camera className="w-5 h-5 shrink-0" />
+          </span>
+          <span className="sm:inline tracking-wide">Shutter · Capture</span>
         </button>
         <button
           type="button"
           disabled={analyzing}
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 min-h-[44px] flex-1 sm:flex-none"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-warm text-stone-200 text-sm font-medium hover:bg-surface-2 disabled:opacity-50 min-h-[44px] flex-1 sm:flex-none"
           aria-label="Pick from gallery"
         >
           <Upload className="w-5 h-5 shrink-0" />
@@ -233,7 +235,7 @@ export const FieldTab: React.FC<Props> = ({
         />
       </div>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted">
         HTTPS or localhost required for camera. On HTTP, use gallery pick (still tags the
         assignment).
       </p>

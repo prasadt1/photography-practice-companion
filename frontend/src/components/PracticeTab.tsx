@@ -18,6 +18,7 @@ import {
 } from '../services/practiceClient';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { formatSkillApplicationDelta } from '../lib/formatSkillDelta';
+import { HitlReasoningCallout } from './HitlReasoningCallout';
 import { ShootNowDialog } from './ShootNowDialog';
 import { PracticeCardsSkeleton } from './SkeletonBlocks';
 import type { Assignment, ReflectionResult, UserMode } from '../types/practice';
@@ -123,7 +124,7 @@ export const PracticeTab: React.FC<Props> = ({
     return (
       <div className="animate-fadeIn space-y-6 max-w-3xl mx-auto">
         <PracticeCardsSkeleton />
-        <p className="text-sm text-slate-500 text-center">Loading practice assignments…</p>
+        <p className="text-sm text-muted text-center">Loading practice assignments…</p>
       </div>
     );
   }
@@ -147,7 +148,7 @@ export const PracticeTab: React.FC<Props> = ({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">My Practice</h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-muted text-sm">
             I&apos;ll suggest a focused assignment — you accept or pass — then shoot in the field
             or Studio.
           </p>
@@ -156,7 +157,7 @@ export const PracticeTab: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm hover:bg-slate-800"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-2"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -165,7 +166,7 @@ export const PracticeTab: React.FC<Props> = ({
             type="button"
             disabled={acting !== null || proposed.length > 0}
             onClick={() => void handlePropose()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-slate-900 text-sm font-semibold disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold disabled:opacity-50"
           >
             {acting === 'propose' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -194,12 +195,12 @@ export const PracticeTab: React.FC<Props> = ({
       ))}
 
       {lastReflection && (
-        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 text-sm text-slate-200">
-          <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">
+        <div className="rounded-2xl border border-brand-500/40 bg-brand-500/10 p-5 text-sm text-stone-200">
+          <p className="text-[10px] font-bold text-brand-400 uppercase tracking-wider mb-2">
             Reflection complete
           </p>
           <p className="leading-relaxed mb-2">{lastReflection.summary}</p>
-          <p className="text-emerald-400 text-xs">
+          <p className="text-brand-400 text-xs">
             {formatSkillApplicationDelta(lastReflection.skillDelta.delta)} · applied brief:{' '}
             {lastReflection.appliedBrief ? 'yes' : 'not yet'}
           </p>
@@ -218,10 +219,10 @@ export const PracticeTab: React.FC<Props> = ({
       ))}
 
       {proposed.length === 0 && active.length === 0 && (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-slate-700">
-          <Target className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">No active practice yet.</p>
-          <p className="text-sm text-slate-500 mt-1">
+        <div className="text-center py-12 rounded-2xl border border-dashed border-warm">
+          <Target className="w-10 h-10 text-stone-600 mx-auto mb-3" />
+          <p className="text-muted">No active practice yet.</p>
+          <p className="text-sm text-muted mt-1">
             Upload a few photos in Studio, then tap Suggest practice.
           </p>
         </div>
@@ -229,7 +230,7 @@ export const PracticeTab: React.FC<Props> = ({
 
       {completed.length > 0 && (
         <section>
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
             Completed
           </h3>
           <ul className="space-y-3">
@@ -261,18 +262,18 @@ function CompletedCard({
 }) {
   const long = assignment.brief.length > 160;
   return (
-    <li className="rounded-xl bg-slate-800/40 border border-slate-700 text-sm overflow-hidden">
+    <li className="rounded-xl bg-surface-1 border border-warm text-sm overflow-hidden">
       <button
         type="button"
         onClick={long ? onToggle : undefined}
-        className={`w-full text-left px-4 py-3 ${long ? 'hover:bg-slate-800/60 cursor-pointer' : 'cursor-default'}`}
+        className={`w-full text-left px-4 py-3 ${long ? 'hover:bg-surface-1 cursor-pointer' : 'cursor-default'}`}
       >
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" aria-hidden />
+        <p className="text-[10px] font-bold text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+          <CheckCircle2 className="w-3.5 h-3.5 text-brand-400" aria-hidden />
           Completed
         </p>
         <p
-          className={`font-medium text-slate-200 leading-relaxed ${
+          className={`font-medium text-stone-200 leading-relaxed ${
             expanded || !long ? '' : 'line-clamp-2'
           }`}
         >
@@ -282,14 +283,14 @@ function CompletedCard({
           <span className="text-[10px] text-brand-400 mt-1 inline-block">Show full brief</span>
         )}
         {assignment.skillDelta && (
-          <p className="text-emerald-400 text-xs mt-2 flex items-center gap-1">
+          <p className="text-brand-400 text-xs mt-2 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden />
             {formatSkillApplicationDelta(assignment.skillDelta.delta)}
           </p>
         )}
       </button>
       {expanded && assignment.rationale && (
-        <p className="text-xs text-slate-400 border-t border-slate-700 px-4 py-3 leading-relaxed">
+        <p className="text-xs text-muted border-t border-warm px-4 py-3 leading-relaxed">
           {assignment.rationale}
         </p>
       )}
@@ -309,23 +310,25 @@ function ProposedCard({
   onDecline: () => void;
 }) {
   return (
-    <section className="rounded-2xl border-2 border-amber-500/40 bg-slate-800/50 p-6">
+    <section className="rounded-2xl border-2 border-amber-500/40 bg-surface-1 p-6">
       <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
         Proposed — your approval required
       </p>
       <p className="text-xs text-brand-400 mb-3 capitalize">
         Focus: {assignment.targetSkill.replace(/_/g, ' ')}
       </p>
-      <p className="text-slate-100 leading-relaxed mb-4">{assignment.brief}</p>
-      <p className="text-sm text-slate-400 border-l-2 border-slate-600 pl-3 mb-6">
-        {assignment.rationale}
-      </p>
+      <p className="text-stone-100 leading-relaxed mb-4">{assignment.brief}</p>
+      {assignment.rationale ? (
+        <div className="mb-6">
+          <HitlReasoningCallout reasoning={assignment.rationale} />
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
           disabled={busy}
           onClick={onAccept}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-900 font-semibold text-sm disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 text-on-brand font-semibold text-sm disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Accept
@@ -334,7 +337,7 @@ function ProposedCard({
           type="button"
           disabled={busy}
           onClick={onDecline}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-600 text-slate-300 font-semibold text-sm hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-warm text-stone-300 font-semibold text-sm hover:bg-surface-2 disabled:opacity-50"
         >
           <XCircle className="w-4 h-4" />
           Decline
@@ -365,24 +368,26 @@ function ActiveCard({
   }
 
   return (
-    <section className="rounded-2xl border border-brand-500/50 bg-slate-800/50 p-6">
+    <section className="rounded-2xl border border-brand-500/50 bg-surface-1 p-6">
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-400 uppercase tracking-wider">
           <Target className="w-3 h-3" aria-hidden />
           Active practice
         </span>
-        <span className="text-[10px] text-slate-400">{when}</span>
+        <span className="text-[10px] text-muted">{when}</span>
       </div>
-      <p className="text-xs text-slate-400 mb-3 capitalize">
+      <p className="text-xs text-muted mb-3 capitalize">
         Focus: {assignment.targetSkill.replace(/_/g, ' ')}
       </p>
-      <p className="text-slate-100 leading-relaxed mb-3">{assignment.brief}</p>
-      <p className="text-sm text-slate-400">{assignment.rationale}</p>
+      <p className="text-stone-100 leading-relaxed mb-3">{assignment.brief}</p>
+      {assignment.rationale ? (
+        <HitlReasoningCallout reasoning={assignment.rationale} />
+      ) : null}
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={onGoToField}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-slate-900 font-semibold text-sm hover:shadow-lg hover:shadow-brand-500/25 transition-shadow"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-on-brand font-semibold text-sm hover:shadow-lg hover:shadow-brand-500/25 transition-shadow"
         >
           <Camera className="w-4 h-4" />
           Field (camera)
@@ -390,7 +395,7 @@ function ActiveCard({
         <button
           type="button"
           onClick={onGoToStudio}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-600 text-slate-200 font-semibold text-sm hover:bg-slate-800"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-warm text-stone-200 font-semibold text-sm hover:bg-surface-2"
         >
           Studio upload
         </button>
@@ -398,7 +403,7 @@ function ActiveCard({
           type="button"
           onClick={onComplete}
           disabled={completing}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-500/50 text-emerald-400 font-semibold text-sm hover:bg-emerald-500/10 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-500/50 text-brand-400 font-semibold text-sm hover:bg-brand-500/10 disabled:opacity-50"
         >
           {completing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -407,7 +412,7 @@ function ActiveCard({
           )}
           Mark complete
         </button>
-        <p className="text-xs text-slate-500 w-full">
+        <p className="text-xs text-muted w-full">
           Shoot in Field or upload in Studio — then Mark complete for Reflection.
         </p>
       </div>

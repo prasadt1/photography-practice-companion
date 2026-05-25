@@ -78,7 +78,7 @@ const DimensionOverlay: React.FC<Props> = ({ dimension, analysis }) => {
           className="absolute inset-0 transition-opacity duration-300"
           style={{
             zIndex: 21,
-            background: `linear-gradient(135deg, rgba(251,191,36,0.22) 0%, transparent 55%, rgba(15,23,42,0.15) 100%)`,
+            background: `linear-gradient(135deg, rgba(251,191,36,0.22) 0%, transparent 55%, rgba(10,9,8,0.25) 100%)`,
           }}
         />
       )}
@@ -94,15 +94,15 @@ const DimensionOverlay: React.FC<Props> = ({ dimension, analysis }) => {
         <Spotlight
           key={i}
           region={r}
-          borderClass="border-slate-400"
+          borderClass="border-stone-400"
           glowClass=""
-          fillClass="bg-slate-400/8"
+          fillClass="bg-stone-400/8"
           dashed
         />
       ))}
 
       <div
-        className={`absolute left-3 bottom-3 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md bg-slate-900/90 border border-slate-600 ${highlight.accentClass}`}
+        className={`absolute left-3 bottom-3 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md bg-canvas-elevated/90 border border-warm ${highlight.accentClass}`}
       >
         <span className="w-2 h-2 rounded-full bg-current opacity-80" />
         <span className="text-white">{highlight.label}</span>

@@ -6,14 +6,14 @@
 
 ## Summary
 
-Practice Companion is an AI photography mentor that combines multimodal critique with adaptive practice planning, grounded in each photographer’s persistent aesthetic identity. Unlike single-shot graders, it remembers portfolios, assignments, and improvement over time — then plans what to practice next.
+**Iris** is an AI photography mentor that combines multimodal critique with adaptive practice planning, grounded in each photographer’s persistent aesthetic identity. Unlike single-shot graders, it remembers portfolios, assignments, and improvement over time — then plans what to practice next.
 
 ## Features
 
 - Glass Box multimodal critique (5-axis scores + spatial overlays)
 - Adaptive practice assignments with explicit rationale
 - Reflection and **Intentional Skill Application Rate (ISAR)** across shoots
-- MongoDB memory: portfolio embeddings, Atlas Vector Search, Atlas Search on critique text, change-stream-driven aesthetic profile
+- MongoDB memory: portfolio embeddings, Atlas Vector Search, Atlas Search on critique text; aesthetic profile recomputed on demand today (change-stream listener deployable via `services/change-stream-listener/`)
 - Agent Builder–grounded photography principles
 - XMP sidecar export for Lightroom workflows
 - Hobbyist vs working-pro modes

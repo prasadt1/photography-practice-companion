@@ -1,6 +1,6 @@
-# MongoDB as Practice Companion's Memory Substrate
+# Iris (Practice Companion) — MongoDB as Memory Substrate
 
-*Standalone document for Devpost text, judge pitch, README architecture section, and any place where the partner load-bearing argument needs to live coherently. Built to be quoted from, not summarized.*
+*Standalone document for Devpost text, judge pitch, README architecture section, and any place where the partner load-bearing argument needs to live coherently. Built to be quoted from, not summarized. Public product name: **Iris**; technical repo/database identifiers remain Practice Companion.*
 
 ---
 

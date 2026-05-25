@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Camera,
+  Aperture,
+  Focus,
+  LayoutGrid,
+  Layers,
   MessageCircle,
   Settings,
-  ShoppingBag,
-  Sparkles,
-  Target,
-  Layers,
+  Store,
 } from 'lucide-react';
+import { BRAND } from '../config/brand';
 import { fetchAestheticProfile, fetchPortfolio } from '../services/memoryClient';
 import { fetchPrintPending } from '../services/printSalesClient';
 import { fetchPendingApprovals } from '../services/triageClient';
@@ -62,21 +63,27 @@ export const HomeTab: React.FC<Props> = ({
       : null;
 
   return (
-    <div className="animate-fadeIn space-y-6 max-w-2xl">
+    <div className="animate-fadeIn space-y-5 max-w-2xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white">Home</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-400/90 mb-1">
+            {BRAND.name}
+          </p>
+          <h1 className="font-serif text-2xl md:text-3xl font-medium text-white">Your studio</h1>
+          <p className="text-muted text-sm mt-2 leading-relaxed">
             {photoCount > 0
               ? `${photoCount} photo${photoCount === 1 ? '' : 's'} in your library`
               : 'Upload your first photo to get started'}
             {consistency ? ` · ${consistency}` : ''}
           </p>
+          <p className="text-muted/80 text-xs mt-2 leading-relaxed">
+            Built for photographers who want memory, not another chatbot.
+          </p>
         </div>
         <button
           type="button"
           onClick={onOpenSettings}
-          className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800"
+          className="p-2 rounded-lg border border-warm text-muted hover:text-white hover:bg-surface-2"
           aria-label="Settings"
         >
           <Settings className="w-5 h-5" />
@@ -85,7 +92,7 @@ export const HomeTab: React.FC<Props> = ({
 
       {mode === 'working_pro' && (
         <HomeCard
-          icon={ShoppingBag}
+          icon={Store}
           title="Listings to approve"
           badge={pendingListings > 0 ? pendingListings : undefined}
           description={
@@ -101,7 +108,7 @@ export const HomeTab: React.FC<Props> = ({
 
       {activeAssignment ? (
         <HomeCard
-          icon={Target}
+          icon={Focus}
           title="Continue practice"
           description={activeAssignment.brief}
           cta="Open assignment"
@@ -110,7 +117,7 @@ export const HomeTab: React.FC<Props> = ({
         />
       ) : (
         <HomeCard
-          icon={Target}
+          icon={Focus}
           title={mode === 'hobbyist' ? 'Start practice' : 'Improve consistency'}
           description="I'll suggest a focused assignment based on your recent critiques."
           cta="My Practice"
@@ -120,16 +127,16 @@ export const HomeTab: React.FC<Props> = ({
       )}
 
       <HomeCard
-        icon={Camera}
-        title="Critique a photo"
+          icon={Aperture}
+          title="Critique a photo"
         description="Upload for scores and Glass Box reasoning — saved to My Work."
         cta="My Studio"
         onClick={() => onNavigate('studio')}
       />
 
       <HomeCard
-        icon={Sparkles}
-        title={mode === 'working_pro' ? 'Portfolio analytics' : 'Your progress'}
+          icon={LayoutGrid}
+          title={mode === 'working_pro' ? 'Portfolio analytics' : 'Your progress'}
         description={
           profile && profile.dominantTags.length > 0
             ? `Dominant themes: ${profile.dominantTags.slice(0, 3).join(', ').replace(/_/g, ' ')}`
@@ -154,7 +161,7 @@ export const HomeTab: React.FC<Props> = ({
 
       <HomeCard
         icon={MessageCircle}
-        title="Ask Mentor"
+        title={BRAND.mentorLabel}
         description="Ask how you are improving, what to practice next, or what stands out in your work."
         cta="Open chat"
         onClick={() => onNavigate('mentor')}
@@ -194,10 +201,10 @@ function HomeCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left rounded-2xl border p-5 transition-colors ${
+      className={`w-full text-left rounded-2xl border p-5 transition-all ${
         highlight
-          ? 'border-brand-500/50 bg-brand-500/5 hover:bg-brand-500/10'
-          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600 hover:bg-slate-800/70'
+          ? 'border-brand-500/40 bg-brand-500/8 hover:bg-brand-500/12 shadow-md shadow-black/20'
+          : 'border-warm bg-surface-1 hover:bg-surface-2 shadow-sm shadow-black/10'
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -206,12 +213,12 @@ function HomeCard({
           <h2 className="text-base font-bold text-white">{title}</h2>
         </div>
         {badge != null && badge > 0 && (
-          <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-500 text-slate-900 text-xs font-bold flex items-center justify-center">
+          <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-500 text-on-brand text-xs font-bold flex items-center justify-center">
             {badge}
           </span>
         )}
       </div>
-      <p className="text-sm text-slate-400 leading-relaxed mb-3">{description}</p>
+      <p className="text-sm text-muted leading-relaxed mb-3">{description}</p>
       <span className="text-sm font-semibold text-brand-400">{cta} →</span>
     </button>
   );

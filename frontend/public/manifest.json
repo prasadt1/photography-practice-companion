@@ -1,11 +1,11 @@
 {
-  "name": "Practice Companion",
-  "short_name": "PracComp",
-  "description": "AI photography mentor with persistent memory",
+  "name": "Iris",
+  "short_name": "Iris",
+  "description": "AI photography mentor with persistent portfolio memory",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#f59e0b",
-  "background_color": "#0c0f14",
+  "background_color": "#1a1816",
   "icons": [
     {
       "src": "/favicon.svg",

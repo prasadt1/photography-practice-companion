@@ -144,21 +144,21 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
       <div className="max-w-lg mx-auto space-y-6 py-8 animate-fadeIn">
         <div>
           <h1 className="text-2xl font-extrabold text-white">List for Sale</h1>
-          <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+          <p className="text-muted text-sm mt-2 leading-relaxed">
             Working pros get per-listing drafts with your approval before anything is saved. Hobbyists
             can still ask Ask Mentor which shots might sell as prints.
           </p>
         </div>
-        <div className="rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-5 text-left space-y-3">
+        <div className="rounded-xl border border-dashed border-warm bg-surface-1 p-5 text-left space-y-3">
           <p className="text-[10px] font-bold uppercase text-amber-400/90 tracking-wide">
             Example listing draft
           </p>
           <p className="text-sm font-semibold text-white">Coastal light — limited print</p>
-          <p className="text-xs text-slate-400 line-clamp-2">
+          <p className="text-xs text-muted line-clamp-2">
             Archival matte print, signed. Suggested $45 — you approve title, copy, and price on each
             card.
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted">
             Portfolio score 8.2/10 · Etsy-style draft (saved in your library only, not live API)
           </p>
         </div>
@@ -166,14 +166,14 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
           <button
             type="button"
             onClick={onOpenSettings}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-500 text-slate-900 font-semibold text-sm hover:bg-brand-400"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400"
           >
             <Settings className="w-4 h-4" />
             Switch to Working pro
           </button>
         )}
         {onGoToMentor && (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted">
             Or{' '}
             <button
               type="button"
@@ -197,10 +197,10 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
           <span className="text-xs font-bold uppercase tracking-wide">List for Sale</span>
         </div>
         <h1 className="text-2xl font-extrabold text-white">Approve marketplace listings</h1>
-        <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+        <p className="text-muted text-sm mt-2 leading-relaxed">
           I draft listing copy and price — nothing goes live until you approve each card one by one.
           You can also ask in Ask Mentor:{' '}
-          <em className="text-slate-400">&quot;Which photos should I list on Etsy?&quot;</em>
+          <em className="text-muted">&quot;Which photos should I list on Etsy?&quot;</em>
         </p>
       </div>
 
@@ -208,7 +208,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
         type="button"
         onClick={() => void handleScan()}
         disabled={scanning}
-        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 text-slate-900 font-semibold hover:bg-brand-400 disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 text-on-brand font-semibold hover:bg-brand-400 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {!scanning && <ShoppingBag className="w-4 h-4" />}
         {scanning ? 'Drafting listings…' : 'Draft listing proposals'}
@@ -221,7 +221,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
         />
       )}
 
-      {scanSummary && <p className="text-sm text-emerald-400/90">{scanSummary}</p>}
+      {scanSummary && <p className="text-sm text-brand-400/90">{scanSummary}</p>}
       {error && (
         <p className="text-sm text-red-400" role="alert">
           {error}
@@ -229,14 +229,14 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
       )}
 
       {loading && (
-        <p className="text-slate-500 text-sm flex items-center gap-2">
+        <p className="text-muted text-sm flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </p>
       )}
 
       {!loading && items.length === 0 && (
-        <p className="text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg p-6 text-center">
-          No drafts waiting. Run <strong className="text-slate-400">Draft listing proposals</strong>{' '}
+        <p className="text-muted text-sm border border-dashed border-warm rounded-lg p-6 text-center">
+          No drafts waiting. Run <strong className="text-muted">Draft listing proposals</strong>{' '}
           or ask Ask Mentor (working pro) which photos to list.
         </p>
       )}
@@ -249,10 +249,10 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
           return (
             <li
               key={item.id}
-              className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden"
+              className="rounded-xl border border-warm bg-surface-1 overflow-hidden"
             >
               <div className="flex flex-col sm:flex-row gap-4 p-4">
-                <div className="shrink-0 w-full sm:w-28 aspect-[3/4] sm:aspect-square rounded-lg overflow-hidden bg-black border border-slate-600">
+                <div className="shrink-0 w-full sm:w-28 aspect-[3/4] sm:aspect-square rounded-lg overflow-hidden bg-black border border-warm">
                   {entry?.imageUrl ? (
                     <img
                       src={entry.imageUrl}
@@ -260,7 +260,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full text-slate-600 min-h-[80px]">
+                    <div className="flex items-center justify-center h-full text-stone-600 min-h-[80px]">
                       <ImageIcon className="w-8 h-8" />
                     </div>
                   )}
@@ -271,17 +271,17 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
                       {draft.marketplace}
                     </span>
                     {entry?.overallAverage != null && (
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-muted">
                         Portfolio {entry.overallAverage}/10
                       </span>
                     )}
                   </div>
                   <h3 className="text-sm font-semibold text-white leading-snug">{draft.title}</h3>
-                  <p className="text-xs text-slate-400 line-clamp-3">{draft.description}</p>
+                  <p className="text-xs text-muted line-clamp-3">{draft.description}</p>
                   <HitlReasoningCallout reasoning={item.agentReasoning} />
                   <label
                     htmlFor={`price-${item.id}`}
-                    className="flex items-center gap-2 text-sm text-slate-300"
+                    className="flex items-center gap-2 text-sm text-stone-300"
                   >
                     <span className="shrink-0">Price ({draft.currency})</span>
                     <input
@@ -297,18 +297,18 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
                           [item.id]: parseFloat(e.target.value) || 0,
                         }))
                       }
-                      className="w-24 rounded-lg bg-slate-900 border border-slate-600 px-2 py-1 text-white text-sm"
+                      className="w-24 rounded-lg bg-canvas-elevated border border-warm px-2 py-1 text-white text-sm"
                       aria-label={`Listing price in ${draft.currency}`}
                     />
                   </label>
                 </div>
               </div>
-              <div className="flex gap-2 p-3 pt-0 border-t border-slate-700/80">
+              <div className="flex gap-2 p-3 pt-0 border-t border-warm/80">
                 <button
                   type="button"
                   disabled={acting === item.id || price < 1}
                   onClick={() => void handleApprove(item)}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-emerald-600/90 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-brand-600/90 text-white text-sm font-medium hover:bg-brand-500 disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" /> Approve listing
                 </button>
@@ -316,7 +316,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
                   type="button"
                   disabled={acting === item.id}
                   onClick={() => void handleReject(item.id)}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-slate-600 text-slate-300 text-sm hover:bg-slate-700 disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-3 disabled:opacity-50"
                 >
                   <X className="w-4 h-4" /> Reject
                 </button>
@@ -326,7 +326,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
         })}
       </ul>
 
-      <p className="text-xs text-slate-500 text-center">
+      <p className="text-xs text-muted text-center">
         Approved listings are saved to your library — not sent to Etsy or another shop in this
         preview.
       </p>

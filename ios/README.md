@@ -1,4 +1,6 @@
-# Practice Companion — iOS (SwiftUI)
+# Iris — iOS (SwiftUI)
+
+**Display name (when Xcode project ships):** `Iris` in `Info.plist`. **Bundle ID (unchanged):** `com.prasadtilloo.practicecompanion`.
 
 Phase 4+ native iPhone app per `docs/spec.md` §3.4.
 

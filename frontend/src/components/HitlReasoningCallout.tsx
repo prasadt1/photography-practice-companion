@@ -10,6 +10,6 @@ export const HitlReasoningCallout: React.FC<Props> = ({ reasoning }) => (
     <p className="text-[10px] font-bold uppercase text-amber-400/90 tracking-wide mb-1.5">
       Why I&apos;m suggesting this
     </p>
-    <p className="text-sm text-slate-200 leading-relaxed">{reasoning}</p>
+    <p className="text-sm text-stone-200 leading-relaxed">{reasoning}</p>
   </div>
 );

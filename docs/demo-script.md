@@ -9,7 +9,7 @@
 
 ## 0:00–0:15 — Setup
 
-> “Meet Maya, a hobbyist working on portraiture. Her last three shoots live in Practice Companion — an AI mentor that remembers who she is as a photographer.”
+> “Meet Maya, a hobbyist working on portraiture. Her last three shoots live in **Iris** — an AI mentor that remembers who she is as a photographer.”
 
 Open **Home** → **My Work** (`#memory`) — seed data timeline.
 

@@ -21,7 +21,7 @@ export const ChatErrorBanner: React.FC<Props> = ({ message, onRetry, onDismiss }
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 text-sm text-white hover:bg-slate-700 border border-slate-600"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-surface-2 text-sm text-white hover:bg-surface-3 border border-warm"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Try again
@@ -31,7 +31,7 @@ export const ChatErrorBanner: React.FC<Props> = ({ message, onRetry, onDismiss }
         <button
           type="button"
           onClick={onDismiss}
-          className="px-3 py-1.5 text-sm text-slate-400 hover:text-white"
+          className="px-3 py-1.5 text-sm text-muted hover:text-white"
         >
           Dismiss
         </button>

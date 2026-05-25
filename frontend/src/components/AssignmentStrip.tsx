@@ -21,21 +21,21 @@ export const AssignmentStrip: React.FC<Props> = ({
           <p className="text-[10px] font-bold uppercase text-brand-400 tracking-wide">
             Active practice
           </p>
-          <p className="text-sm text-slate-200 line-clamp-2">{assignment.brief}</p>
+          <p className="text-sm text-stone-200 line-clamp-2">{assignment.brief}</p>
         </div>
       </div>
       <div className="flex gap-2 shrink-0">
         <button
           type="button"
           onClick={onShootNow}
-          className="px-3 py-1.5 rounded-lg bg-brand-500 text-slate-900 text-sm font-semibold hover:bg-brand-400"
+          className="px-3 py-1.5 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400"
         >
           Shoot Now
         </button>
         <button
           type="button"
           onClick={onPractice}
-          className="px-3 py-1.5 rounded-lg border border-slate-600 text-slate-300 text-sm hover:bg-slate-800"
+          className="px-3 py-1.5 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-2"
         >
           My Practice
         </button>

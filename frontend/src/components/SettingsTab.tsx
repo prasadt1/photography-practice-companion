@@ -30,13 +30,13 @@ export const SettingsTab: React.FC<Props> = ({
           <span className="text-xs font-bold uppercase tracking-wide">Settings</span>
         </div>
         <h1 className="text-2xl font-extrabold text-white">Your profile</h1>
-        <p className="text-slate-400 text-sm mt-2">
+        <p className="text-muted text-sm mt-2">
           Switch between hobbyist and working pro. I&apos;ll adjust listings, suggestions, and how
           I coach you.
         </p>
       </div>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
+      <section className="rounded-xl border border-warm bg-surface-1 p-4">
         <ModeToggle
           mode={mode}
           onModeChange={onModeChange}
@@ -45,27 +45,27 @@ export const SettingsTab: React.FC<Props> = ({
         />
       </section>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 space-y-3">
+      <section className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3">
         <h2 className="text-sm font-semibold text-white">What I remember</h2>
-        <p className="text-sm text-slate-400 leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Your uploads, scores, Glass Box reasoning, tags, practice assignments, and approval
           history live in your private MongoDB library — tied to this demo profile in your browser.
           I do not publish listings or change labels until you approve each suggestion.
         </p>
       </section>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 space-y-3">
+      <section className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3">
         <h2 className="text-sm font-semibold text-white">Privacy</h2>
-        <p className="text-sm text-slate-400 leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Your photos and critiques stay in your private library. Listing and label changes only
           happen when you approve them.
         </p>
       </section>
 
       {isLocal && (
-        <section className="rounded-xl border border-slate-700/80 bg-slate-900 p-4 space-y-2">
-          <h2 className="text-sm font-semibold text-slate-400">Developer (local only)</h2>
-          <p className="text-xs text-slate-500">
+        <section className="rounded-xl border border-warm/80 bg-canvas-elevated p-4 space-y-2">
+          <h2 className="text-sm font-semibold text-muted">Developer (local only)</h2>
+          <p className="text-xs text-muted">
             API: run <code className="text-brand-400">make api-dev</code> on port 8081 before using
             Mentor or approvals.
           </p>
@@ -78,7 +78,7 @@ export const SettingsTab: React.FC<Props> = ({
           clearOnboardingComplete();
           onRestartOnboarding();
         }}
-        className="text-sm text-slate-500 hover:text-brand-400 underline"
+        className="text-sm text-muted hover:text-brand-400 underline"
       >
         Show welcome screen again
       </button>

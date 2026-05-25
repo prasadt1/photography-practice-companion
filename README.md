@@ -1,6 +1,8 @@
-# Practice Companion
+# Iris — AI Photography Mentor
 
-Adaptive AI photography mentor: multimodal critique, personalized practice plans, and persistent memory. Built with **Gemini 3**, **Google ADK**, **Agent Builder**, and **MongoDB Atlas** for the [Google Cloud Rapid Agent Hackathon](https://googlecloudrapidagents2026.devpost.com/) (MongoDB track).
+**Iris** — AI photography mentor with persistent portfolio memory. Multimodal critique, personalized practice plans, and a MongoDB-backed memory layer. Built with **Gemini 3**, **Google ADK**, **Agent Builder**, and **MongoDB Atlas** for the [Google Cloud Rapid Agent Hackathon](https://googlecloudrapidagents2026.devpost.com/) (MongoDB track).
+
+*Repository and cloud identifiers remain `practice-companion` / `practice_companion` for deployment continuity.*
 
 ## Documentation
 

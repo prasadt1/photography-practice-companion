@@ -1,6 +1,8 @@
 # Practice Companion — Master Spec & Build Prompt (v5)
 
-**Project:** Photography Practice Companion
+**Public brand (Devpost / UI):** **Iris** — *AI photography mentor with persistent portfolio memory*. Do not rename the GitHub repo, Firebase project, Cloud Run services, or MongoDB database (`practice_companion`).
+
+**Project:** Photography Practice Companion (internal codename; user-facing: Iris)
 **Repository:** `photography-practice-companion`
 **Hackathon:** Google Cloud Rapid Agent Hackathon — MongoDB partner track
 **Deadline:** June 11, 2026, 2:00 PM PT
@@ -1403,6 +1405,8 @@ Three personas. Same iPhone. Same memory layer (MongoDB Atlas as memory substrat
 ---
 
 ## 11. Devpost text plan
+
+**Submission title / product name:** **Iris** (subtitle: AI photography mentor with persistent portfolio memory). Reference internal architecture as Practice Companion where needed for repo links.
 
 Structure (~700-900 words):
 

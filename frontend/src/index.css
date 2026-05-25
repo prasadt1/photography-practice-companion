@@ -3,7 +3,12 @@
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
-  /* Warm amber accent (Pass 3) */
+  --color-canvas: #1a1816;
+  --color-canvas-elevated: #242120;
+  --color-surface-1: #2a2724;
+  --color-surface-2: #332f2b;
+  --color-surface-3: #3d3834;
+  --color-warm-border: #44403c;
   --color-brand-50: #fffbeb;
   --color-brand-100: #fef3c7;
   --color-brand-200: #fde68a;
@@ -30,8 +35,8 @@
 }
 
 body {
-  background-color: #0c0f14;
-  color: #e2e8f0;
+  background-color: var(--color-canvas);
+  color: #e7e5e4;
   font-family: var(--font-sans);
 }
 
@@ -43,6 +48,35 @@ h1,
 h2,
 h3 {
   font-family: var(--font-serif);
+}
+
+/* Warm gallery surfaces (Pass 3) */
+.bg-canvas {
+  background-color: var(--color-canvas);
+}
+.bg-canvas-elevated {
+  background-color: var(--color-canvas-elevated);
+}
+.bg-surface-1 {
+  background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent);
+}
+.bg-surface-2 {
+  background-color: var(--color-surface-2);
+}
+.bg-surface-3 {
+  background-color: var(--color-surface-3);
+}
+.border-warm {
+  border-color: var(--color-warm-border);
+}
+.text-muted {
+  color: #a8a29e;
+}
+.bg-photo-black {
+  background-color: #0a0908;
+}
+.text-on-brand {
+  color: #1a1816;
 }
 
 .sr-only {
@@ -69,8 +103,8 @@ h3 {
   top: 0.5rem;
   left: 0.5rem;
   z-index: 200;
-  background: #1e293b;
-  color: #fbbf24;
+  background: var(--color-surface-2);
+  color: var(--color-brand-400);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -85,14 +119,14 @@ h3 {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0c0f14;
+  background: var(--color-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--color-warm-border);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #57534e;
 }
 
 button:focus-visible,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Sparkles, Target, Upload } from 'lucide-react';
+import { FilmGrain } from './components/FilmGrain';
 import { AppSidebar } from './components/AppSidebar';
 import { AssignmentStrip } from './components/AssignmentStrip';
 import { BottomNav } from './components/BottomNav';
@@ -118,7 +118,7 @@ function App() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-500 text-sm">
+      <div className="min-h-screen bg-canvas flex items-center justify-center text-muted text-sm">
         Loading…
       </div>
     );
@@ -139,7 +139,7 @@ function App() {
     activeTab !== 'practice';
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-brand-500/30 flex">
+    <div className="min-h-screen bg-canvas text-stone-200 font-sans selection:bg-brand-500/30 flex">
       <a href="#main-content" className="sr-only">
         Skip to main content
       </a>
@@ -175,39 +175,24 @@ function App() {
           )}
 
           {activeTab === 'studio' && (
-            <div className="animate-fadeIn">
+            <div className="animate-fadeIn relative">
+              <FilmGrain className="rounded-2xl" />
               {!result && (
-                <div className="flex flex-col items-center space-y-8">
+                <div className="relative z-10 flex flex-col items-center space-y-10 py-4 md:py-8">
                   {activeAssignment && (
                     <ActivePracticeBanner assignment={activeAssignment} />
                   )}
-                  <div className="text-center max-w-2xl space-y-6">
-                    <div>
-                      <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 leading-tight">
-                        Critique a photo
-                      </h2>
-                      <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-                        Upload once for honest scores, Glass Box reasoning you can read, and
-                        practice ideas tied to your real work.
-                      </p>
-                    </div>
-                    <div className="grid sm:grid-cols-3 gap-4 text-left">
-                      <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-                        <Upload className="w-5 h-5 text-brand-400 mb-2" aria-hidden />
-                        <p className="text-sm font-semibold text-white">1. Upload</p>
-                        <p className="text-xs text-slate-500 mt-1">Any shot from camera or files</p>
-                      </div>
-                      <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-                        <Sparkles className="w-5 h-5 text-brand-400 mb-2" aria-hidden />
-                        <p className="text-sm font-semibold text-white">2. Get critique</p>
-                        <p className="text-xs text-slate-500 mt-1">Scores plus why they matter</p>
-                      </div>
-                      <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-                        <Target className="w-5 h-5 text-brand-400 mb-2" aria-hidden />
-                        <p className="text-sm font-semibold text-white">3. Practice</p>
-                        <p className="text-xs text-slate-500 mt-1">Assignments from your weak spots</p>
-                      </div>
-                    </div>
+                  <div className="text-center max-w-xl space-y-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400/90">
+                      Glass Box critique
+                    </p>
+                    <h2 className="font-serif text-4xl md:text-5xl font-medium text-white leading-[1.15] tracking-tight">
+                      Critique a photo
+                    </h2>
+                    <p className="text-muted text-sm md:text-base leading-relaxed max-w-md mx-auto">
+                      Upload once for honest scores, reasoning you can read, and practice tied to
+                      your real work.
+                    </p>
                   </div>
                   <PhotoUploader onImageSelected={handleImageSelected} isAnalyzing={analyzing} />
                 </div>
@@ -267,8 +252,8 @@ function App() {
           )}
         </main>
 
-        <footer className="hidden lg:block border-t border-slate-800 py-6 text-center text-xs text-slate-500 px-4 mb-0">
-          <p>Practice Companion — your photos stay in your private library.</p>
+        <footer className="hidden lg:block border-t border-warm py-6 text-center text-xs text-muted px-4 mb-0 bg-canvas">
+          <p>Iris — your photos stay in your private library.</p>
         </footer>
       </div>
 

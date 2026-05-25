@@ -24,7 +24,7 @@ const SEVERITY_STYLES = {
   moderate: {
     border: 'border-amber-400',
     bg: 'bg-amber-400/10',
-    pin: 'bg-amber-400 text-slate-900 ring-amber-300',
+    pin: 'bg-amber-400 text-on-brand ring-amber-300',
     glow: 'shadow-[0_0_20px_rgba(251,191,36,0.5)]',
   },
   minor: {

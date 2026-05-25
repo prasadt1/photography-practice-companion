@@ -4,19 +4,19 @@ import remarkGfm from 'remark-gfm';
 
 const components: Components = {
   p: ({ children }) => (
-    <p className="mb-2.5 last:mb-0 leading-relaxed text-slate-100">{children}</p>
+    <p className="mb-2.5 last:mb-0 leading-relaxed text-stone-100">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="mb-2.5 last:mb-0 list-disc pl-5 space-y-1.5 text-slate-200">{children}</ul>
+    <ul className="mb-2.5 last:mb-0 list-disc pl-5 space-y-1.5 text-stone-200">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="mb-2.5 last:mb-0 list-decimal pl-5 space-y-1.5 text-slate-200">{children}</ol>
+    <ol className="mb-2.5 last:mb-0 list-decimal pl-5 space-y-1.5 text-stone-200">{children}</ol>
   ),
   li: ({ children }) => <li className="leading-relaxed pl-0.5">{children}</li>,
   strong: ({ children }) => (
     <strong className="font-semibold text-white">{children}</strong>
   ),
-  em: ({ children }) => <em className="text-slate-300 not-italic">{children}</em>,
+  em: ({ children }) => <em className="text-stone-300 not-italic">{children}</em>,
   h1: ({ children }) => (
     <h3 className="text-base font-bold text-white mt-3 mb-2 first:mt-0">{children}</h3>
   ),
@@ -27,7 +27,7 @@ const components: Components = {
     <h4 className="text-sm font-semibold text-brand-300 mt-2.5 mb-1.5 first:mt-0">{children}</h4>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-brand-500/60 pl-3 my-2 text-slate-300 italic">
+    <blockquote className="border-l-2 border-brand-500/60 pl-3 my-2 text-stone-300 italic">
       {children}
     </blockquote>
   ),
@@ -39,13 +39,13 @@ const components: Components = {
       );
     }
     return (
-      <code className="px-1 py-0.5 rounded bg-slate-900/80 text-brand-300 text-[0.85em] font-mono">
+      <code className="px-1 py-0.5 rounded bg-canvas-elevated/80 text-brand-300 text-[0.85em] font-mono">
         {children}
       </code>
     );
   },
   pre: ({ children }) => (
-    <pre className="my-2 p-3 rounded-lg bg-slate-900/90 border border-slate-600 overflow-x-auto text-xs">
+    <pre className="my-2 p-3 rounded-lg bg-canvas-elevated/90 border border-warm overflow-x-auto text-xs">
       {children}
     </pre>
   ),
@@ -59,7 +59,7 @@ const components: Components = {
       {children}
     </a>
   ),
-  hr: () => <hr className="my-3 border-slate-600" />,
+  hr: () => <hr className="my-3 border-warm" />,
 };
 
 interface Props {

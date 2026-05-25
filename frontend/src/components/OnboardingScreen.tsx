@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Camera, Headphones, Loader2, Briefcase } from 'lucide-react';
+import { Aperture, Loader2, ScanEye, Store } from 'lucide-react';
+import { BRAND } from '../config/brand';
+import { BrandLogo } from './BrandLogo';
+import { FilmGrain } from './FilmGrain';
 import type { UserMode } from '../types/practice';
 
 interface Props {
@@ -24,14 +27,16 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 flex items-center justify-center p-6">
-      <div className="max-w-3xl w-full space-y-8 animate-fadeIn">
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white">Practice Companion</h1>
-          <p className="text-slate-400 text-base md:text-lg max-w-lg mx-auto leading-relaxed">
-            I&apos;ll remember every photo you take — and help you get better, faster.
+    <div className="relative min-h-screen bg-canvas text-stone-200 flex items-center justify-center p-6 overflow-hidden">
+      <FilmGrain />
+      <div className="max-w-3xl w-full space-y-8 animate-fadeIn relative z-10">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <BrandLogo size="lg" className="justify-center" />
+          <p className="font-serif text-xl md:text-2xl text-stone-100 max-w-lg leading-relaxed">
+            {BRAND.tagline} — I remember every frame you upload and coach you like a mentor in the
+            darkroom, not a generic chatbot.
           </p>
-          <p className="text-sm text-slate-500">Choose your path to get started.</p>
+          <p className="text-sm text-stone-500">Choose your path to get started.</p>
         </div>
 
         {error && (
@@ -45,13 +50,13 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
             type="button"
             disabled={saving}
             onClick={() => void choose('hobbyist')}
-            className="text-left rounded-2xl border border-slate-600 bg-slate-800/60 p-6 hover:border-brand-500 hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="text-left rounded-2xl border border-warm bg-surface-2 p-6 hover:border-brand-500/60 hover:bg-surface-3 transition-colors disabled:opacity-50 shadow-lg shadow-black/20"
           >
-            <Camera className="w-8 h-8 text-brand-400 mb-3" />
+            <Aperture className="w-8 h-8 text-brand-400 mb-3" aria-hidden />
             <h2 className="text-lg font-bold text-white mb-2">Hobbyist</h2>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              I shoot for creative fun and learning. I want critique, practice assignments, and a
-              library that grows with me.
+            <p className="text-sm text-muted leading-relaxed">
+              Critique, practice assignments, and a contact-sheet library that grows with every
+              shoot.
             </p>
             <span className="inline-block mt-4 text-sm font-semibold text-brand-400">
               Start as hobbyist →
@@ -62,13 +67,13 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
             type="button"
             disabled={saving}
             onClick={() => void choose('working_pro')}
-            className="text-left rounded-2xl border border-slate-600 bg-slate-800/60 p-6 hover:border-brand-500 hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="text-left rounded-2xl border border-warm bg-surface-2 p-6 hover:border-brand-500/60 hover:bg-surface-3 transition-colors disabled:opacity-50 shadow-lg shadow-black/20"
           >
-            <Briefcase className="w-8 h-8 text-brand-400 mb-3" />
+            <Store className="w-8 h-8 text-brand-400 mb-3" aria-hidden />
             <h2 className="text-lg font-bold text-white mb-2">Working pro</h2>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              I sell prints and need listing drafts, portfolio insight, and practice — with my
-              approval before anything goes live.
+            <p className="text-sm text-muted leading-relaxed">
+              Listing drafts, portfolio insight, and print-ready picks — nothing goes live until
+              you approve each card.
             </p>
             <span className="inline-block mt-4 text-sm font-semibold text-brand-400">
               Start as working pro →
@@ -77,30 +82,30 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
         </div>
 
         <div
-          className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/50 p-6 flex gap-4 opacity-70"
+          className="rounded-2xl border border-dashed border-warm bg-surface-1 p-6 flex gap-4 opacity-80"
           aria-disabled="true"
         >
-          <Headphones className="w-8 h-8 text-slate-500 shrink-0" />
+          <ScanEye className="w-8 h-8 text-stone-500 shrink-0" aria-hidden />
           <div>
-            <h2 className="text-lg font-bold text-slate-400 mb-1">Accessible mode</h2>
-            <p className="text-sm text-slate-500">
-              Voice-first photography with scene narration — coming soon on web and iPhone.
+            <h2 className="text-lg font-bold text-stone-400 mb-1">Accessible mode</h2>
+            <p className="text-sm text-stone-500">
+              Voice-first field coaching with scene narration — coming soon on web and iPhone.
             </p>
-            <span className="inline-block mt-2 text-xs uppercase tracking-wide text-slate-600">
+            <span className="inline-block mt-2 text-xs uppercase tracking-wide text-stone-600">
               Coming soon
             </span>
           </div>
         </div>
 
         {saving && (
-          <p className="text-center text-sm text-slate-400 flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Setting up your companion…
+          <p className="text-center text-sm text-muted flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
+            Setting up your studio…
           </p>
         )}
 
-        <p className="text-center text-xs text-slate-500">
-          You can switch between Hobbyist and Working pro anytime in Settings.
+        <p className="text-center text-xs text-stone-500">
+          Switch between Hobbyist and Working pro anytime in Settings.
         </p>
       </div>
     </div>

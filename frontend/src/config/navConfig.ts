@@ -1,11 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  BookOpen,
-  Camera,
+  Aperture,
   Home,
+  LayoutGrid,
   Layers,
   MessageCircle,
-  ShoppingBag,
+  ScanEye,
+  Store,
 } from 'lucide-react';
 import type { UserMode } from '../types/practice';
 
@@ -25,10 +26,11 @@ export interface NavItem {
 }
 
 const HOME: NavItem = { id: 'home', label: 'Home', icon: Home };
-const STUDIO: NavItem = { id: 'studio', label: 'My Studio', icon: Camera };
-const MEMORY: NavItem = { id: 'memory', label: 'My Work', icon: BookOpen };
+const STUDIO: NavItem = { id: 'studio', label: 'My Studio', icon: Aperture };
+const MEMORY: NavItem = { id: 'memory', label: 'My Work', icon: LayoutGrid };
+const FIELD: NavItem = { id: 'field', label: 'Shoot Now', icon: ScanEye };
 const MENTOR: NavItem = { id: 'mentor', label: 'Ask Mentor', icon: MessageCircle };
-const PRINT: NavItem = { id: 'print', label: 'List for Sale', icon: ShoppingBag };
+const PRINT: NavItem = { id: 'print', label: 'List for Sale', icon: Store };
 const LABEL: NavItem = { id: 'triage', label: 'Label Photos', icon: Layers };
 
 /** Mobile bottom bar — max 4 items (print via Home for working pro). */
@@ -39,9 +41,9 @@ export function bottomNavItems(_mode: UserMode): NavItem[] {
 /** Desktop sidebar — working pro gets List for Sale in the rail. */
 export function sidebarNavItems(mode: UserMode): NavItem[] {
   if (mode === 'working_pro') {
-    return [HOME, STUDIO, MEMORY, PRINT, LABEL, MENTOR];
+    return [HOME, STUDIO, MEMORY, FIELD, PRINT, LABEL, MENTOR];
   }
-  return [HOME, STUDIO, MEMORY, LABEL, MENTOR];
+  return [HOME, STUDIO, MEMORY, FIELD, LABEL, MENTOR];
 }
 
 export const CORE_TAB_IDS: CoreTab[] = ['home', 'studio', 'memory', 'mentor'];

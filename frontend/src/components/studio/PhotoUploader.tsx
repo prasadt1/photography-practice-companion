@@ -9,12 +9,12 @@ import {
   Loader2,
   Aperture,
   ArrowUp,
-  Brain,
+  BookOpen,
   Zap,
   Target,
   Eye,
-  Sparkles,
 } from 'lucide-react';
+import { FilmGrain } from '../FilmGrain';
 
 interface PhotoUploaderProps {
   onImageSelected: (file: File, previewUrl: string) => void;
@@ -22,11 +22,11 @@ interface PhotoUploaderProps {
 }
 
 const THINKING_STEPS = [
-  { text: 'Grounding in photography principles…', icon: Brain },
+  { text: 'Grounding in photography principles…', icon: BookOpen },
   { text: 'Analyzing composition and framing…', icon: Target },
   { text: 'Evaluating lighting and exposure…', icon: Zap },
   { text: 'Assessing technique and sharpness…', icon: Eye },
-  { text: 'Building Glass Box critique…', icon: Sparkles },
+  { text: 'Building Glass Box critique…', icon: Aperture },
 ];
 
 const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyzing }) => {
@@ -68,19 +68,22 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
 
   return (
     <div className="w-full max-w-4xl mx-auto relative z-10">
+      {/* Double matte bezel (Pass 3) */}
+      <div className="p-3 md:p-4 rounded-[2.25rem] bg-surface-1 border border-warm shadow-2xl shadow-black/40">
       <div
-        className={`relative group flex flex-col items-center justify-center w-full min-h-[320px] md:min-h-[400px] rounded-[2rem] border-2 border-dashed transition-all duration-500 cursor-pointer overflow-hidden
+        className={`relative group flex flex-col items-center justify-center w-full min-h-[320px] md:min-h-[400px] rounded-[1.75rem] border-2 border-dashed transition-all duration-500 cursor-pointer overflow-hidden
           ${
             dragActive
-              ? 'border-brand-400 bg-brand-500/10 scale-[1.02] shadow-2xl shadow-brand-500/20'
-              : 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10'
+              ? 'border-brand-400 bg-brand-500/10 scale-[1.01] shadow-xl shadow-brand-500/20'
+              : 'border-warm bg-surface-2/80 hover:bg-surface-3 hover:border-brand-500/50'
           }
-          ${isAnalyzing ? 'border-brand-500/20 bg-slate-900/80 cursor-default' : ''}`}
+          ${isAnalyzing ? 'border-brand-500/20 bg-canvas cursor-default' : ''}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
+        <FilmGrain />
         <input
           type="file"
           className={`absolute inset-0 w-full h-full opacity-0 z-20 ${isAnalyzing ? 'pointer-events-none' : 'cursor-pointer'}`}
@@ -102,7 +105,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                 <Loader2 className="w-16 h-16 text-brand-400 animate-spin relative z-10" />
               </div>
               <h3 className="text-xl md:text-2xl font-bold text-white mb-4">Coach is analyzing…</h3>
-              <div className="w-full mt-2 bg-slate-800/80 rounded-xl border border-slate-700 p-4 font-mono text-sm text-left shadow-inner">
+              <div className="w-full mt-2 bg-surface-1 rounded-xl border border-warm p-4 font-mono text-sm text-left shadow-inner">
                 <div className="space-y-3">
                   {THINKING_STEPS.map((step, index) => {
                     const isActive = index === currentThinkingStep;
@@ -115,14 +118,14 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                       >
                         <div
                           className={`p-1.5 rounded-md ${
-                            isActive ? 'bg-brand-500/20 text-brand-400' : 'bg-slate-700 text-slate-500'
+                            isActive ? 'bg-brand-500/20 text-brand-400' : 'bg-surface-3 text-muted'
                           }`}
                         >
                           <step.icon className={`w-3.5 h-3.5 ${isActive ? 'animate-pulse' : ''}`} />
                         </div>
                         <span
                           className={
-                            isActive ? 'text-slate-100 font-semibold' : 'text-slate-400'
+                            isActive ? 'text-stone-100 font-semibold' : 'text-muted'
                           }
                         >
                           {step.text}
@@ -136,20 +139,20 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
           ) : (
             <>
               <div className="mb-6 md:mb-8 relative group-hover:scale-110 transition-transform duration-500">
-                <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center shadow-xl group-hover:border-brand-500/50 transition-colors">
-                  <Upload className="w-8 h-8 md:w-10 md:h-10 text-slate-400 group-hover:text-brand-400 transition-colors" />
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-surface-2 rounded-full border border-warm flex items-center justify-center shadow-xl group-hover:border-brand-500/50 transition-colors">
+                  <Upload className="w-8 h-8 md:w-10 md:h-10 text-muted group-hover:text-brand-400 transition-colors" />
                 </div>
-                <Aperture className="absolute -top-2 -right-2 w-6 h-6 text-slate-600 group-hover:text-brand-500/50 animate-pulse" />
-                <ImageIcon className="absolute -bottom-2 -left-2 w-6 h-6 text-slate-600 group-hover:text-brand-500/50" />
+                <Aperture className="absolute -top-2 -right-2 w-6 h-6 text-stone-600 group-hover:text-brand-500/50 animate-pulse" />
+                <ImageIcon className="absolute -bottom-2 -left-2 w-6 h-6 text-stone-600 group-hover:text-brand-500/50" />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
                 Upload for{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-brand-500">
                   Glass Box
                 </span>{' '}
                 critique
               </h3>
-              <p className="text-base text-slate-400 max-w-md mb-8">
+              <p className="text-base text-muted max-w-md mb-8">
                 Drag and drop or click to browse. JPG, PNG, WEBP.
               </p>
               <div className="px-6 py-3 bg-brand-600 hover:bg-brand-500 rounded-full text-white text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-colors">
@@ -159,6 +162,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

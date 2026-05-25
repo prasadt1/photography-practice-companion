@@ -14,7 +14,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, mode, onNavigate }) => {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-warm bg-canvas-elevated/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
       aria-label="Main navigation"
     >
       <div className="flex justify-around items-stretch h-16 max-w-lg mx-auto">
@@ -30,7 +30,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, mode, onNavigate }) => {
               aria-label={item.label}
               onClick={() => onNavigate(item.id)}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 min-h-[44px] min-w-[44px] text-[10px] font-semibold transition-colors ${
-                selected ? 'text-brand-400' : 'text-slate-500 hover:text-slate-300'
+                selected ? 'text-brand-400' : 'text-stone-500 hover:text-stone-300'
               }`}
             >
               <Icon className="w-5 h-5" aria-hidden />

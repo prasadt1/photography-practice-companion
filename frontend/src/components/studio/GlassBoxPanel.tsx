@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Brain, ChevronDown, ChevronUp, Eye, Target, Database } from 'lucide-react';
+import { Aperture, ChevronDown, ChevronUp, Eye, Target, Database } from 'lucide-react';
 import { dimensionForText, textMatchesDimension } from '../../lib/glassBoxHighlight';
 import type { StudioAnalysis, EvidenceItem } from '../../types/studio';
 import EvidencePanel from './EvidencePanel';
@@ -53,38 +53,37 @@ const GlassBoxPanel: React.FC<Props> = ({
         </p>
       )}
 
-      <div className="rounded-2xl p-[1px] bg-gradient-to-r from-emerald-500 to-purple-600 shadow-xl shadow-brand-500/10">
-        <div className="bg-slate-950/60 rounded-2xl overflow-hidden backdrop-blur-md border border-slate-800/80">
+      <div className="rounded-2xl border border-brand-500/25 shadow-xl shadow-black/30 bg-photo-black/90 overflow-hidden backdrop-blur-md">
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-900/50 transition-colors text-left"
+            className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-surface-2/40 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg text-white shadow-lg">
-                <Brain className="w-5 h-5" aria-hidden />
+              <div className="p-2 bg-brand-500/15 border border-brand-500/30 rounded-lg text-brand-400">
+                <Aperture className="w-5 h-5" aria-hidden />
               </div>
               <div>
-                <h3 className="text-white font-bold text-sm md:text-base">Why I scored it this way</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <h3 className="text-white font-bold text-sm md:text-base font-serif">Why I scored it this way</h3>
+                <p className="text-xs text-muted mt-0.5">
                   Glass Box — my reasoning steps, so you can learn from the critique
                 </p>
               </div>
             </div>
             {expanded ? (
-              <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" aria-hidden />
+              <ChevronUp className="w-5 h-5 text-muted shrink-0" aria-hidden />
             ) : (
-              <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" aria-hidden />
+              <ChevronDown className="w-5 h-5 text-muted shrink-0" aria-hidden />
             )}
           </button>
 
           {expanded && (
-            <div className="p-5 md:p-6 border-t border-slate-800 bg-slate-950/80 text-sm leading-relaxed space-y-6">
+            <div className="p-5 md:p-6 border-t border-warm bg-photo-black text-sm leading-relaxed space-y-6">
               <div>
-                <h4 className="flex items-center gap-2 text-emerald-400 font-bold mb-3 uppercase text-xs tracking-wider">
+                <h4 className="flex items-center gap-2 text-brand-400 font-bold mb-3 uppercase text-xs tracking-wider">
                   <Eye className="w-4 h-4" aria-hidden /> Key observations
                 </h4>
-                <ul className="space-y-2.5 list-disc list-outside pl-5 marker:text-emerald-500/60" role="list">
+                <ul className="space-y-2.5 list-disc list-outside pl-5 marker:text-brand-500/50" role="list">
                   {rationale.observations.map((obs, i) => {
                     const match = textMatchesDimension(obs, focusDimension);
                     const dim = dimensionForText(obs);
@@ -99,7 +98,7 @@ const GlassBoxPanel: React.FC<Props> = ({
                       <li
                         key={i}
                         ref={ref}
-                        className={`text-slate-200 ${highlightClass(match)} ${
+                        className={`text-stone-200 ${highlightClass(match)} ${
                           onFocusDimension && dim ? 'cursor-pointer hover:text-white' : ''
                         }`}
                         onClick={() => onFocusDimension?.(dim)}
@@ -120,8 +119,8 @@ const GlassBoxPanel: React.FC<Props> = ({
               </div>
 
               <div>
-                <h4 className="flex items-center gap-2 text-purple-400 font-bold mb-3 uppercase text-xs tracking-wider">
-                  <Brain className="w-4 h-4" aria-hidden /> Reasoning steps
+                <h4 className="flex items-center gap-2 text-amber-400/90 font-bold mb-3 uppercase text-xs tracking-wider">
+                  <Aperture className="w-4 h-4" aria-hidden /> Reasoning steps
                 </h4>
                 <ol className="space-y-3" role="list">
                   {rationale.reasoningSteps.map((step, i) => {
@@ -130,7 +129,7 @@ const GlassBoxPanel: React.FC<Props> = ({
                     return (
                       <li
                         key={i}
-                        className={`flex gap-3 text-slate-300 ${highlightClass(match)} ${
+                        className={`flex gap-3 text-stone-300 ${highlightClass(match)} ${
                           onFocusDimension && dim ? 'cursor-pointer' : ''
                         }`}
                         onClick={() => onFocusDimension?.(dim)}
@@ -143,7 +142,7 @@ const GlassBoxPanel: React.FC<Props> = ({
                         role={onFocusDimension && dim ? 'button' : undefined}
                         tabIndex={onFocusDimension && dim ? 0 : undefined}
                       >
-                        <span className="text-purple-500/70 font-bold">{i + 1}.</span>
+                        <span className="text-brand-500/70 font-bold">{i + 1}.</span>
                         <span>{step}</span>
                       </li>
                     );
@@ -161,14 +160,14 @@ const GlassBoxPanel: React.FC<Props> = ({
                       <div
                         key={i}
                         role="listitem"
-                        className={`flex items-center gap-3 p-2 rounded bg-slate-900 border border-slate-800 ${highlightClass(
+                        className={`flex items-center gap-3 p-2 rounded bg-canvas-elevated border border-warm ${highlightClass(
                           textMatchesDimension(fix, focusDimension),
                         )}`}
                       >
                         <div className="w-4 h-4 rounded border border-amber-500/50 flex items-center justify-center shrink-0">
                           <div className="w-2 h-2 bg-amber-500 rounded-sm" />
                         </div>
-                        <span className="text-slate-300">{fix}</span>
+                        <span className="text-stone-300">{fix}</span>
                       </div>
                     ))}
                   </div>
@@ -176,7 +175,7 @@ const GlassBoxPanel: React.FC<Props> = ({
               )}
 
               {(groundingCitations.length > 0 || groundingPrinciples.length > 0) && (
-                <div className="pt-2 border-t border-slate-800">
+                <div className="pt-2 border-t border-warm">
                   <h4 className="flex items-center gap-2 text-brand-400 font-bold mb-3 uppercase text-xs tracking-wider">
                     <Database className="w-4 h-4" aria-hidden /> Photography principles I used
                   </h4>
@@ -191,7 +190,7 @@ const GlassBoxPanel: React.FC<Props> = ({
                       >
                         <span className="font-semibold text-brand-400">{c.title}</span>
                         {c.excerpt && (
-                          <p className="text-slate-400 mt-1 leading-relaxed">{c.excerpt}</p>
+                          <p className="text-muted mt-1 leading-relaxed">{c.excerpt}</p>
                         )}
                       </div>
                     ))}
@@ -200,7 +199,6 @@ const GlassBoxPanel: React.FC<Props> = ({
               )}
             </div>
           )}
-        </div>
       </div>
 
       {evidence.length > 0 && <EvidencePanel evidence={evidence} />}

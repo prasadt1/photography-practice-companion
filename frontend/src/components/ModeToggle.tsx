@@ -33,11 +33,11 @@ export const ModeToggle: React.FC<Props> = ({
 
   return (
     <div className="py-3 flex flex-wrap items-center gap-4">
-      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+      <span className="text-xs font-semibold text-muted uppercase tracking-wide">
         I&apos;m here as a
       </span>
       <div
-        className="flex p-1 bg-slate-800 rounded-lg border border-slate-700"
+        className="flex p-1 bg-surface-2 rounded-lg border border-warm"
         role="group"
         aria-label="Photographer profile mode"
       >
@@ -55,15 +55,15 @@ export const ModeToggle: React.FC<Props> = ({
             disabled={saving}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
               mode === m.id
-                ? 'bg-brand-500 text-slate-900'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-brand-500 text-on-brand'
+                : 'text-muted hover:text-white'
             }`}
           >
             {m.label}
           </button>
         ))}
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {saving
           ? 'Saving your mode…'
           : 'Working pro unlocks print listing drafts. Everything else stays in sync.'}

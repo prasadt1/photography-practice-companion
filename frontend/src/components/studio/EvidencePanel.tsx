@@ -13,17 +13,17 @@ const SOURCE_CONFIG: Record<
   EXIF: {
     label: 'Camera metadata',
     icon: <Camera className="w-3.5 h-3.5" aria-hidden />,
-    color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    color: 'text-stone-300 bg-surface-2 border-warm',
   },
   CV: {
     label: 'What I see in the image',
     icon: <Eye className="w-3.5 h-3.5" aria-hidden />,
-    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    color: 'text-brand-400 bg-brand-500/10 border-brand-500/25',
   },
   Coach: {
     label: 'Photography principles',
     icon: <BookOpen className="w-3.5 h-3.5" aria-hidden />,
-    color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+    color: 'text-amber-400/90 bg-amber-500/10 border-amber-500/25',
   },
 };
 
@@ -51,14 +51,14 @@ const EvidencePanel: React.FC<{ evidence: EvidenceItem[]; className?: string }> 
 
   return (
     <div
-      className={`rounded-xl bg-slate-800/40 border border-slate-700 overflow-hidden ${className}`}
+      className={`rounded-xl bg-surface-1 border border-warm overflow-hidden ${className}`}
     >
-      <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
-        <Eye className="w-4 h-4 text-slate-400" aria-hidden />
-        <h4 className="text-sm font-semibold text-slate-200">How I backed this critique</h4>
-        <span className="ml-auto text-xs text-slate-400">{evidence.length} signals</span>
+      <div className="px-4 py-3 border-b border-warm flex items-center gap-2">
+        <Eye className="w-4 h-4 text-muted" aria-hidden />
+        <h4 className="text-sm font-semibold text-stone-200">How I backed this critique</h4>
+        <span className="ml-auto text-xs text-muted">{evidence.length} signals</span>
       </div>
-      <ul className="divide-y divide-slate-700/50" role="list">
+      <ul className="divide-y divide-warm/60" role="list">
         {evidence.map((item, idx) => {
           const cfg = SOURCE_CONFIG[item.source];
           return (
@@ -69,8 +69,8 @@ const EvidencePanel: React.FC<{ evidence: EvidenceItem[]; className?: string }> 
                 {cfg.icon}
                 {cfg.label}
               </div>
-              <div className="flex-1 min-w-0 text-xs text-slate-300">
-                <span className="text-slate-400">{humanField(item.field)}: </span>
+              <div className="flex-1 min-w-0 text-xs text-stone-300">
+                <span className="text-muted">{humanField(item.field)}: </span>
                 {item.value}
               </div>
             </li>

@@ -1,16 +1,15 @@
 /**
- * Studio analysis UI — layout from gemma4; visual theme from gemini3 (slate + emerald).
+ * Studio analysis UI — Gallery Atelier warm theme.
  */
 
 import React, { useState } from 'react';
 import {
   LayoutDashboard,
-  Brain,
+  Aperture,
   Target,
   Star,
   ScanEye,
   Download,
-  Aperture,
   Clock,
   Gauge,
 } from 'lucide-react';
@@ -53,7 +52,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
   let badgeClass = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
   if (avg >= 7.5) {
     skillLevel = 'Advanced';
-    badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    badgeClass = 'bg-brand-500/20 text-brand-400 border-brand-500/30';
   } else if (avg >= 5.5) {
     skillLevel = 'Intermediate';
     badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
@@ -88,7 +87,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
 
   const tabs: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'glass-box', label: 'Why I scored it', icon: Brain },
+    { id: 'glass-box', label: 'Why I scored it', icon: Aperture },
     { id: 'fix', label: 'How to Fix', icon: Target },
   ];
 
@@ -97,7 +96,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: image */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="relative rounded-2xl bg-black border border-slate-700 shadow-2xl flex justify-center p-4">
+          <div className="relative rounded-2xl bg-photo-black border border-warm shadow-2xl flex justify-center p-4">
             <div className="relative inline-block max-w-full">
               <img
                 src={imageSrc}
@@ -123,7 +122,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowOverlays((s) => !s)}
-                className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/90 text-white border border-slate-600 backdrop-blur-md"
+                className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-canvas-elevated/90 text-white border border-warm backdrop-blur-md"
               >
                 <ScanEye className="w-3.5 h-3.5" />
                 {showOverlays ? 'Hide pins' : 'Show pins'}
@@ -132,23 +131,23 @@ const StudioAnalysisResults: React.FC<Props> = ({
           </div>
 
           {(analysis.sceneDescription || analysis.colourNotes) && (
-            <div className="space-y-3 rounded-2xl bg-slate-800/50 border border-slate-700 p-4">
+            <div className="space-y-3 rounded-2xl bg-surface-1 border border-warm p-4">
               {analysis.sceneDescription && (
                 <div>
                   <p className="text-[10px] font-semibold text-brand-400 uppercase tracking-wider mb-1.5">
                     What I see
                   </p>
-                  <p className="text-sm text-slate-200 leading-relaxed">
+                  <p className="text-sm text-stone-200 leading-relaxed">
                     {analysis.sceneDescription}
                   </p>
                 </div>
               )}
               {analysis.colourNotes && (
-                <div className="pt-2 border-t border-slate-700">
+                <div className="pt-2 border-t border-warm">
                   <p className="text-[10px] font-semibold text-amber-400/90 uppercase tracking-wider mb-1.5">
                     Colour &amp; palette
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">{analysis.colourNotes}</p>
+                  <p className="text-sm text-stone-300 leading-relaxed">{analysis.colourNotes}</p>
                 </div>
               )}
             </div>
@@ -163,11 +162,11 @@ const StudioAnalysisResults: React.FC<Props> = ({
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
-                className="bg-slate-800/50 p-2 rounded-xl border border-slate-700 flex flex-col items-center text-center"
+                className="bg-surface-1 p-2 rounded-xl border border-warm flex flex-col items-center text-center"
               >
                 <Icon className="w-4 h-4 text-brand-400 mb-1" />
-                <span className="text-[9px] text-slate-400 uppercase">{label}</span>
-                <span className="text-xs font-semibold text-slate-100">{value}</span>
+                <span className="text-[9px] text-muted uppercase">{label}</span>
+                <span className="text-xs font-semibold text-stone-100">{value}</span>
               </div>
             ))}
           </div>
@@ -177,7 +176,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
               {analysis.aestheticTags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs px-2 py-1 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700"
+                  className="text-xs px-2 py-1 rounded-full bg-surface-1 text-muted border border-warm"
                 >
                   {tag}
                 </span>
@@ -196,8 +195,8 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-brand-500 text-slate-900 shadow-lg shadow-brand-500/20'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+                    ? 'bg-brand-500 text-on-brand shadow-lg shadow-brand-500/20'
+                    : 'bg-surface-2 text-muted border border-warm hover:text-white'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -212,12 +211,12 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('glass-box')}
-                  className="w-full text-left rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 hover:bg-emerald-500/10 transition-colors"
+                  className="w-full text-left rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 hover:bg-brand-500/10 transition-colors"
                 >
-                  <p className="text-[10px] font-bold uppercase text-emerald-400/90 tracking-wide mb-1">
+                  <p className="text-[10px] font-bold uppercase text-brand-400/90 tracking-wide mb-1">
                     Glass Box preview
                   </p>
-                  <p className="text-sm text-slate-200 line-clamp-2">
+                  <p className="text-sm text-stone-200 line-clamp-2">
                     {analysis.rationale.observations[0]}
                   </p>
                   <span className="text-xs text-brand-400 mt-2 inline-block">
@@ -226,8 +225,8 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 </button>
               )}
 
-              <div className="bg-slate-800/50 rounded-3xl p-6 border border-slate-700">
-                <h2 className="text-xl font-bold text-slate-100 flex items-start gap-2 mb-3">
+              <div className="bg-surface-1 rounded-3xl p-6 border border-warm">
+                <h2 className="text-xl font-bold text-stone-100 flex items-start gap-2 mb-3">
                   <Star className="w-6 h-6 text-brand-400 fill-brand-400 shrink-0" />
                   {analysis.critique.overall.split(/[.!?]/)[0]}.
                 </h2>
@@ -235,16 +234,16 @@ const StudioAnalysisResults: React.FC<Props> = ({
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}>
                     {skillLevel}
                   </span>
-                  <span className="text-sm text-slate-400">{avg.toFixed(1)}/10 overall</span>
+                  <span className="text-sm text-muted">{avg.toFixed(1)}/10 overall</span>
                 </div>
-                <p className="text-sm text-slate-400 leading-relaxed border-l-2 border-slate-700 pl-4">
+                <p className="text-sm text-muted leading-relaxed border-l-2 border-warm pl-4">
                   {analysis.critique.overall}
                 </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase mb-4">
+                <div className="bg-surface-1 rounded-2xl p-5 border border-warm">
+                  <h3 className="text-xs font-semibold text-muted uppercase mb-4">
                     Score breakdown
                   </h3>
                   <div className="space-y-3">
@@ -252,7 +251,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
                       const isActive =
                         hoveredDimension === item.subject || selectedDimension === item.subject;
                       const barColor =
-                        item.score >= 8 ? 'bg-emerald-500' : item.score >= 5 ? 'bg-amber-500' : 'bg-rose-500';
+                        item.score >= 8 ? 'bg-amber-500' : item.score >= 5 ? 'bg-amber-500/70' : 'bg-rose-500';
                       return (
                         <button
                           key={item.subject}
@@ -263,24 +262,24 @@ const StudioAnalysisResults: React.FC<Props> = ({
                           onFocus={() => setHoveredDimension(item.subject)}
                           onBlur={() => setHoveredDimension(null)}
                           className={`w-full flex items-center gap-3 text-left p-2 -m-2 rounded-lg transition-all ${
-                            isActive ? 'bg-brand-500/10 ring-1 ring-brand-500/30' : 'hover:bg-slate-700/40'
+                            isActive ? 'bg-brand-500/10 ring-1 ring-brand-500/30' : 'hover:bg-surface-3/40'
                           }`}
                           title={`Preview ${item.subject} on photo`}
                         >
                           <span
                             className={`w-24 text-xs truncate ${
-                              isActive ? 'text-brand-400 font-semibold' : 'text-slate-400'
+                              isActive ? 'text-brand-400 font-semibold' : 'text-muted'
                             }`}
                           >
                             {item.subject}
                           </span>
-                          <div className="flex-1 h-2.5 bg-slate-700 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2.5 bg-surface-3 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${barColor}`}
                               style={{ width: `${item.score * 10}%` }}
                             />
                           </div>
-                          <span className="w-8 text-sm font-bold text-slate-100">
+                          <span className="w-8 text-sm font-bold text-stone-100">
                             {item.score.toFixed(1)}
                           </span>
                           <span
@@ -306,13 +305,13 @@ const StudioAnalysisResults: React.FC<Props> = ({
                     })}
                   </div>
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700 min-h-[200px]">
+                <div className="bg-surface-1 rounded-2xl p-5 border border-warm min-h-[200px]">
                   {selectedDimension ? (
-                    <p className="text-sm text-slate-100 leading-relaxed">
+                    <p className="text-sm text-stone-100 leading-relaxed">
                       {chartData.find((c) => c.subject === selectedDimension)?.critique}
                     </p>
                   ) : (
-                    <p className="text-sm text-slate-400 text-center mt-12">
+                    <p className="text-sm text-muted text-center mt-12">
                       Hover a score to highlight that area on the photo, or click for detail
                     </p>
                   )}
@@ -320,9 +319,9 @@ const StudioAnalysisResults: React.FC<Props> = ({
               </div>
 
               {analysis.learningPath.length > 0 && (
-                <div className="bg-slate-800/80 rounded-xl p-5 border border-slate-700">
-                  <h3 className="text-sm font-bold text-slate-100 mb-3">Next skills to practice</h3>
-                  <ul className="space-y-2 text-sm text-slate-100">
+                <div className="bg-surface-1 rounded-xl p-5 border border-warm">
+                  <h3 className="text-sm font-bold text-stone-100 mb-3">Next skills to practice</h3>
+                  <ul className="space-y-2 text-sm text-stone-100">
                     {analysis.learningPath.map((s, i) => (
                       <li key={i} className="flex gap-2">
                         <span className="text-brand-400">→</span>
@@ -361,25 +360,25 @@ const StudioAnalysisResults: React.FC<Props> = ({
                   className={`p-4 rounded-xl border transition-all ${
                     activeBoxIndex === idx
                       ? 'border-brand-500 bg-brand-500/5'
-                      : 'border-slate-700 bg-slate-800/50'
+                      : 'border-warm bg-surface-1'
                   }`}
                   onMouseEnter={() => setActiveBoxIndex(idx)}
                   onMouseLeave={() => setActiveBoxIndex(null)}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold uppercase text-slate-400">
+                    <span className="text-xs font-bold uppercase text-muted">
                       #{idx + 1} · {box.severity}
                     </span>
-                    <span className="text-[10px] text-slate-400">{box.type}</span>
+                    <span className="text-[10px] text-muted">{box.type}</span>
                   </div>
-                  <p className="text-sm font-medium text-slate-100 mb-2">{box.description}</p>
+                  <p className="text-sm font-medium text-stone-100 mb-2">{box.description}</p>
                   <p className="text-sm text-brand-400 flex gap-1">
                     <span>→</span>
                     {box.suggestion}
                   </p>
                 </div>
               ))}
-              <div className="mt-6 p-4 rounded-xl bg-slate-900/80 text-slate-200 text-sm border border-slate-700">
+              <div className="mt-6 p-4 rounded-xl bg-canvas-elevated/80 text-stone-200 text-sm border border-warm">
                 <h4 className="font-semibold mb-2">Lighting map</h4>
                 <p>Key: {analysis.lightingMap.key_light_direction}</p>
                 <p>Fill: {analysis.lightingMap.fill_light_strength}</p>
@@ -388,11 +387,11 @@ const StudioAnalysisResults: React.FC<Props> = ({
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-slate-700">
+          <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-warm">
             <button
               type="button"
               onClick={handleExportXMP}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-600 border border-slate-600"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-white text-sm font-semibold hover:bg-surface-3 border border-warm"
             >
               <Download className="w-4 h-4" />
               Export XMP for Lightroom

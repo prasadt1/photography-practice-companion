@@ -22,10 +22,10 @@ export const ScoreTrendRow: React.FC<Props> = ({ dimension }) => {
     trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
   const trendColor =
     trend === 'up'
-      ? 'text-emerald-400'
+      ? 'text-brand-400'
       : trend === 'down'
         ? 'text-rose-400'
-        : 'text-slate-400';
+        : 'text-muted';
 
   const deltaText =
     delta == null
@@ -34,13 +34,13 @@ export const ScoreTrendRow: React.FC<Props> = ({ dimension }) => {
 
   return (
     <li className="flex items-center gap-3 py-1.5">
-      <span className="w-24 text-xs text-slate-300 shrink-0">{label}</span>
+      <span className="w-24 text-xs text-stone-300 shrink-0">{label}</span>
       <MiniSparkline
         values={values}
         className="shrink-0 text-brand-400"
         aria-label={`${label} scores over ${values.length} uploads`}
       />
-      <span className="w-10 text-xs tabular-nums font-semibold text-slate-100 text-right shrink-0">
+      <span className="w-10 text-xs tabular-nums font-semibold text-stone-100 text-right shrink-0">
         {latest != null ? latest.toFixed(1) : '—'}
       </span>
       <span className={`flex items-center gap-0.5 text-[10px] shrink-0 min-w-[4.5rem] ${trendColor}`}>

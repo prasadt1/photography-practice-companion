@@ -40,7 +40,7 @@ function ProposalThumbnails({
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+      <p className="text-[10px] text-muted uppercase tracking-wide">
         {entryIds.length === 1 ? 'This photo' : `${entryIds.length} photos in this suggestion`}
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -51,7 +51,7 @@ function ProposalThumbnails({
             <div
               key={id}
               className={`shrink-0 w-20 rounded-lg overflow-hidden border bg-black relative ${
-                isDeleteTarget ? 'border-red-500/80 ring-1 ring-red-500/50' : 'border-slate-600'
+                isDeleteTarget ? 'border-red-500/80 ring-1 ring-red-500/50' : 'border-warm'
               }`}
               title={
                 isDeleteTarget
@@ -67,12 +67,12 @@ function ProposalThumbnails({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-slate-600 bg-slate-900">
+                  <div className="flex items-center justify-center h-full text-stone-600 bg-canvas-elevated">
                     <ImageIcon className="w-6 h-6" />
                   </div>
                 )}
                 {entry?.overallAverage != null && (
-                  <span className="absolute bottom-0.5 right-0.5 px-1 py-0.5 rounded text-[9px] font-bold bg-slate-900/90 text-brand-400">
+                  <span className="absolute bottom-0.5 right-0.5 px-1 py-0.5 rounded text-[9px] font-bold bg-canvas-elevated/90 text-brand-400">
                     {entry.overallAverage}
                   </span>
                 )}
@@ -86,7 +86,7 @@ function ProposalThumbnails({
           );
         })}
         {extra > 0 && (
-          <div className="shrink-0 w-20 aspect-square rounded-lg border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500">
+          <div className="shrink-0 w-20 aspect-square rounded-lg border border-dashed border-warm flex items-center justify-center text-xs text-muted">
             +{extra}
           </div>
         )}
@@ -206,7 +206,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
 
   if (mode !== 'hobbyist' && mode !== 'working_pro') {
     return (
-      <p className="text-slate-400 text-center py-12">
+      <p className="text-muted text-center py-12">
         Label Photos is available in Hobbyist and Working pro modes.
       </p>
     );
@@ -220,25 +220,25 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
           <span className="text-xs font-bold uppercase tracking-wide">Label Photos</span>
         </div>
         <h1 className="text-2xl font-extrabold text-white">Label your photo library</h1>
-        <p className="text-slate-400 text-sm mt-2 leading-relaxed">
-          You already get tags when you upload in <strong className="text-slate-300">My Studio</strong>.
+        <p className="text-muted text-sm mt-2 leading-relaxed">
+          You already get tags when you upload in <strong className="text-stone-300">My Studio</strong>.
           When you have many photos, I can suggest consistent labels across a shoot — like
           &quot;still life&quot; on a group so you can find them later in My Work.
         </p>
       </div>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 text-sm text-slate-300 space-y-3">
+      <section className="rounded-xl border border-warm bg-surface-1 p-4 text-sm text-stone-300 space-y-3">
         <p className="font-semibold text-white">What you do here (3 steps)</p>
-        <ol className="list-decimal list-inside space-y-2 text-slate-400">
+        <ol className="list-decimal list-inside space-y-2 text-muted">
           <li>
-            <span className="text-slate-300">Scan</span> — groups similar photos in Memory.
+            <span className="text-stone-300">Scan</span> — groups similar photos in Memory.
           </li>
           <li>
-            <span className="text-slate-300">Review</span> — approve or decline each suggestion (nothing
+            <span className="text-stone-300">Review</span> — approve or decline each suggestion (nothing
             changes until you approve).
           </li>
           <li>
-            <span className="text-slate-300">See result</span> — open{' '}
+            <span className="text-stone-300">See result</span> — open{' '}
             {onGoToMemory ? (
               <button
                 type="button"
@@ -253,7 +253,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
             → Refresh → tags appear on each photo; dominant themes at the top of My Work update too.
           </li>
         </ol>
-        <p className="text-xs text-slate-500 border-t border-slate-700 pt-3">
+        <p className="text-xs text-muted border-t border-warm pt-3">
           Mentor can also search past critiques by theme (e.g. &quot;backlit&quot;) — tags and Glass Box
           text make that work better.
         </p>
@@ -263,7 +263,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
         type="button"
         onClick={() => void handleScan()}
         disabled={scanning}
-        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 text-slate-900 font-semibold hover:bg-brand-400 disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 text-on-brand font-semibold hover:bg-brand-400 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {!scanning && <Layers className="w-4 h-4" />}
         {scanning ? 'Scanning…' : 'Scan my library'}
@@ -276,7 +276,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
         />
       )}
 
-      {scanSummary && <p className="text-sm text-emerald-400/90">{scanSummary}</p>}
+      {scanSummary && <p className="text-sm text-brand-400/90">{scanSummary}</p>}
       {error && (
         <p className="text-sm text-red-400" role="alert">
           {error}
@@ -284,20 +284,20 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
       )}
 
       {loading && (
-        <p className="text-slate-500 text-sm flex items-center gap-2">
+        <p className="text-muted text-sm flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </p>
       )}
 
       {!loading && items.length === 0 && (
-        <p className="text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg p-6 text-center">
+        <p className="text-muted text-sm border border-dashed border-warm rounded-lg p-6 text-center">
           No suggestions waiting. Scan after you have photos in Memory (upload in Studio or run{' '}
           <code className="text-brand-400">make seed-demo</code>).
         </p>
       )}
 
       {items.length > 0 && (
-        <p className="text-xs text-slate-500 uppercase tracking-wide">Waiting for your decision</p>
+        <p className="text-xs text-muted uppercase tracking-wide">Waiting for your decision</p>
       )}
 
       <ul className="space-y-4">
@@ -308,7 +308,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
           return (
           <li
             key={item.id}
-            className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-3"
+            className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3"
           >
             <ProposalThumbnails
               entryIds={affectedIds}
@@ -327,7 +327,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
                 type="button"
                 disabled={acting === item.id}
                 onClick={() => void handleDecision(item.id, 'approve')}
-                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-emerald-600/90 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-brand-600/90 text-white text-sm font-medium hover:bg-brand-500 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" /> Yes, do this
               </button>
@@ -335,7 +335,7 @@ export const TriageTab: React.FC<Props> = ({ mode, onGoToMemory }) => {
                 type="button"
                 disabled={acting === item.id}
                 onClick={() => void handleDecision(item.id, 'reject')}
-                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-slate-600 text-slate-300 text-sm hover:bg-slate-700 disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-3 disabled:opacity-50"
               >
                 <X className="w-4 h-4" /> No thanks
               </button>

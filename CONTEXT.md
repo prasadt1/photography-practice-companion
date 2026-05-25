@@ -1,4 +1,4 @@
-# Practice Companion — Agent context
+# Iris (Practice Companion) — Agent context
 
 **Canonical spec:** [`docs/spec.md`](docs/spec.md) (v3)  
 **Doc index:** [`docs/doc-map.md`](docs/doc-map.md)  
@@ -10,7 +10,7 @@
 
 ## Product (one line)
 
-Adaptive AI photography mentor: multimodal critique, practice planning, persistent memory on MongoDB Atlas, grounded in Agent Builder photography principles.
+**Iris** — AI photography mentor with persistent portfolio memory: multimodal critique, practice planning, MongoDB Atlas memory, Agent Builder photography principles. Repo IDs stay `practice-companion`.
 
 ## Stack
 
