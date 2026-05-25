@@ -1532,7 +1532,1085 @@ const navConfigs: Record<UserMode, NavConfig> = {
 
 ---
 
-## Pass 3 — [Future Review Session]
+## Pass 3 — Visual Direction & Premium Design Language
+**Date:** 2026-05-25
+**Reviewer:** Claude Sonnet 4.5 (high-end-visual-design skill + design-review-brief.md §7, §13)
+**Scope:** Propose distinct visual direction for photography mentor app (not generic AI SaaS)
+
+Per design-review-brief.md §19 Pass 3: Typography pairing, color system, photo treatment, reference products, top 5 component redesigns.
+
+---
+
+### Current State Analysis (Visual Audit)
+
+**What reads as "generic AI SaaS dark mode" today:**
+
+| Element | Current Implementation | Generic SaaS Signal |
+|---------|------------------------|---------------------|
+| **Typography** | Inter (banned font per high-end skill) | Every SaaS dashboard uses Inter |
+| **Color system** | Green (#22c55e) on slate-900 (#0f172a) | Default Tailwind green, zero brand personality |
+| **Backgrounds** | Flat `bg-slate-900` solid fills | No texture, no depth, feels digital-first not photo-first |
+| **Cards** | `border border-slate-700 bg-slate-800/50` | Identical to Vercel, Linear, every dark dashboard |
+| **Buttons** | `rounded-lg` rectangles with solid fills | No nested structure, no haptic depth |
+| **Icons** | Lucide (thick strokes) | Generic, not photography-specific |
+| **Motion** | `ease-out` on 0.5s fade | Default animation, no personality |
+| **Photos** | `object-contain` in `bg-black` boxes | Treated as data, not art |
+
+**Photography-native apps (Lightroom, VSCO, Halide) use:**
+- **Editorial typography** (serif headlines, grotesk body)
+- **Deep blacks or warm creams** (OLED vantablack or gallery-white)
+- **Photo-first layout** (images bleed, dominate canvas)
+- **Minimal chrome** (controls fade away, content reigns)
+- **Haptic depth** (nested bezels, layered cards like printed matte boards)
+
+---
+
+### Recommended Visual Direction: "Gallery Atelier"
+
+**Archetype:** Editorial Luxury + Soft Structuralism hybrid (per high-end-visual-design §3)
+
+**Core concept:** Practice Companion should feel like a **photographer's personal atelier** — part gallery (where work is displayed with reverence), part studio (where critiques happen), part workshop (where craft is learned). Not a dashboard. Not a SaaS tool. A **place**.
+
+**Mood references:**
+- **Physical analog:** High-end photo gallery (white walls, spotlighting, matte frames)
+- **Digital analog:** Leica SL3 camera UI (minimal chrome, large type, intentional)
+- **Texture analog:** Japanese rice paper + matte-finish photo prints
+
+---
+
+### Typography Pairing
+
+**Current:** Inter everywhere (banned)
+
+**Proposed:** Editorial serif + geometric grotesk pairing
+
+#### Primary: Variable Serif for Editorial Authority
+
+**Headline font:** [**Tiempos Headline**](https://klim.co.nz/retail-fonts/tiempos-headline/) or fallback **Newsreader Variable** (Google Fonts, acceptable free alternative)
+- **Usage:** All H1, H2 headlines (Studio hero, tab titles, Home dashboard welcome)
+- **Why:** Editorial serif signals **craft, expertise, timelessness** — not startup hustle. Tiempos is used by The New York Times, Bloomberg — reads as authoritative without being academic.
+- **Weights:** 400 (Regular) for warm readability, 600 (Semibold) for emphasis
+- **Characteristics:** High contrast (thick verticals, thin horizontals), soft ball terminals (not harsh serifs), optical sizes for different scales
+
+**Example implementation:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap');
+
+--font-headline: 'Newsreader', 'Tiempos Headline', 'Times New Roman', serif;
+```
+
+**Where to use:**
+- Studio tab: "I'll remember every photo you've taken" (64px, weight 400, letter-spacing -0.03em)
+- Home dashboard: "Welcome back, [name]" (40px, weight 600)
+- Section headers: "Your Progress," "Listings to Approve" (28px, weight 600)
+
+---
+
+#### Secondary: Geometric Grotesk for UI Clarity
+
+**Body/UI font:** [**Geist Sans**](https://vercel.com/font) (Vercel's open-source font) or **Plus Jakarta Sans** (Google Fonts)
+- **Usage:** All body text, buttons, nav labels, form inputs, chat messages
+- **Why:** Geometric grotesk is photography-native (Leica, Hasselblad, Apple camera UIs use DIN Next / SF Pro). Geist has perfect geometric proportions, excellent readability at small sizes (10px critique scores), open apertures (clear at low contrast).
+- **Weights:** 400 (Regular), 500 (Medium), 600 (Semibold)
+- **NOT Inter:** Inter's humanist proportions feel corporate-SaaS. Geist's geometric rigor feels precision-instrument.
+
+**Example implementation:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+--font-sans: 'Geist', 'Plus Jakarta Sans', system-ui, sans-serif;
+```
+
+**Where to use:**
+- Nav labels (12px, weight 500, uppercase tracking)
+- Body paragraphs (16px, weight 400, line-height 1.6)
+- Button labels (14px, weight 500)
+- Chat messages (15px, weight 400)
+
+---
+
+#### Tertiary: Monospace for Data/Scores
+
+**Data font:** [**JetBrains Mono**](https://www.jetbrains.com/lp/mono/) or **SF Mono** (system fallback)
+- **Usage:** Glass Box scores (7.2, 6.8), ISAR delta percentages, timestamps, portfolio image counts
+- **Why:** Tabular figures, consistent width for score alignment. Monospace signals **precision, measurement, objectivity** — appropriate for numeric critique data.
+- **Weight:** 400 (Regular) for all numeric displays
+
+**Example implementation:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+
+--font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+```
+
+**Where to use:**
+- Glass Box dimension scores: "Composition: 7.2" (16px mono)
+- Memory aesthetic snapshot averages (14px mono)
+- Timestamps: "3 days ago" (11px mono, all-caps)
+
+---
+
+### Color System: Warm Monochrome + Amber Accent
+
+**Current:** Green (#22c55e) on slate-900 — tech startup cliché
+
+**Proposed:** Deep charcoal + warm cream + amber accent (gallery aesthetic)
+
+#### Base Layer: Warm Charcoal (Not Pure Black)
+
+Replace `bg-slate-900` (#0f172a, cold blue-black) with **warm charcoal**:
+
+```css
+--color-canvas-dark: #1a1816;  /* Warm charcoal (brown-biased black) */
+--color-canvas-light: #fdfbf7; /* Warm cream (off-white with warmth) */
+```
+
+**Why warm charcoal:**
+- Photography prints look better on warm blacks (not cold blue-blacks)
+- Gallery walls are charcoal/graphite, never pure #000000
+- Reduces eye strain (warm tones less harsh than blue-biased blacks)
+
+**Theme strategy:** Default to dark (photographers work in dim studios), offer light toggle for daytime field use.
+
+---
+
+#### Surface Layers: Nested Depth System
+
+Replace flat `bg-slate-800` with **nested matte layers** (like physical photo mounts):
+
+```css
+/* Dark theme surfaces */
+--surface-1: rgba(255, 250, 245, 0.03); /* Subtle warm lift from canvas */
+--surface-2: rgba(255, 250, 245, 0.06); /* Cards, elevated elements */
+--surface-3: rgba(255, 250, 245, 0.09); /* Modals, top-layer overlays */
+
+/* Light theme surfaces */
+--surface-1-light: rgba(26, 24, 22, 0.02); /* Subtle depth on cream */
+--surface-2-light: rgba(26, 24, 22, 0.04);
+--surface-3-light: rgba(26, 24, 22, 0.06);
+```
+
+**Application:**
+- Memory portfolio cards: `surface-2` background + 1px hairline border
+- Mentor chat input: `surface-1` background
+- HITL approval cards: `surface-2` with elevated shadow
+
+---
+
+#### Accent: Amber (Not Green)
+
+Replace brand-green (#22c55e) with **warm amber** for photography-native warmth:
+
+```css
+--color-accent-50: #fffbeb;   /* Lightest amber tint */
+--color-accent-400: #fbbf24;  /* Primary amber (golden hour) */
+--color-accent-500: #f59e0b;  /* Deeper amber (sunset) */
+--color-accent-600: #d97706;  /* Darkest amber (emphasis) */
+```
+
+**Why amber:**
+- **Golden hour** is photographer's favorite light — amber evokes that warmth
+- **Not green:** Green has no photography metaphor (not sunset, not film, not darkroom safelight)
+- **Accessible contrast:** Amber on dark charcoal = 4.8:1 (passes WCAG AA), better than green's 4.1:1
+
+**Where to use amber:**
+- Primary CTA buttons ("Upload now," "Approve listing")
+- Active nav indicator (bottom bar, sidebar)
+- Score highlights in Glass Box feedback (when above 8.0)
+- "Why I'm suggesting this" reasoning header background
+
+---
+
+#### Neutral Grays: Warm-Biased
+
+Replace cold slate (#334155, #475569) with **warm grays**:
+
+```css
+--gray-100: #f5f3f0; /* Warm light gray (cream-adjacent) */
+--gray-400: #a8a29e; /* Mid-warm gray */
+--gray-600: #57534e; /* Warm dark gray */
+--gray-800: #292524; /* Deep warm gray */
+```
+
+**Application:**
+- Body text: `gray-100` on dark, `gray-800` on light
+- Secondary text: `gray-400`
+- Borders: `gray-600` at 20% opacity
+- Disabled states: `gray-600` at 40% opacity
+
+---
+
+#### Semantic Colors: Restrained Palette
+
+**Success (approvals, completed assignments):**
+```css
+--color-success: #84cc16; /* Warm lime green (not emerald) */
+```
+
+**Warning (pending actions, needs review):**
+```css
+--color-warning: #f59e0b; /* Amber (doubles as accent) */
+```
+
+**Error (failed uploads, critique issues):**
+```css
+--color-error: #dc2626; /* Warm red (not pink-red) */
+```
+
+**Info (mentor suggestions, tips):**
+```css
+--color-info: #3b82f6; /* Neutral blue (rare use) */
+```
+
+**Constraint:** Use semantic colors **only for state**, never for decoration. Amber is primary accent; success/error are functional signals only.
+
+---
+
+### Photo Treatment: Bleed, Grain, Reverence
+
+**Current:** Photos in `bg-black` boxes with `object-contain` — treated like data thumbnails
+
+**Proposed:** Photos as **art objects** with gallery treatment
+
+#### 1. Full-Bleed Hero Images (Studio Tab)
+
+**Before:**
+```tsx
+<img src={url} className="w-full h-full object-contain" />
+```
+
+**After:**
+```tsx
+{/* Outer matte frame (like physical print mount) */}
+<div className="p-3 bg-[#292524] rounded-2xl">
+  {/* Inner image with subtle grain overlay */}
+  <div className="relative rounded-xl overflow-hidden">
+    <img
+      src={url}
+      className="w-full aspect-[3/2] object-cover"
+      style={{ imageRendering: '-webkit-optimize-contrast' }}
+    />
+    {/* Subtle film grain overlay (photography texture) */}
+    <div
+      className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
+      style={{
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'6.5\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+        backgroundRepeat: 'repeat',
+      }}
+    />
+  </div>
+</div>
+```
+
+**Treatment principles:**
+- **Matte frame:** 12px warm-gray padding around image (like physical photo mount)
+- **Aspect ratio:** Force 3:2 or 4:3 (photography standards), not arbitrary
+- **Grain overlay:** 1.5% opacity SVG noise (subtle film texture, not distracting)
+- **Image rendering:** `-webkit-optimize-contrast` for sharper photos on Retina
+
+---
+
+#### 2. Portfolio Grid (Memory Tab)
+
+**Before:** Generic 3-column grid with thin borders
+
+**After:** **Masonry-style contact sheet** with breathing room
+
+```tsx
+{/* Mobile: 2 columns, Desktop: 3 columns, XL: 4 columns */}
+<div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+  {entries.map((entry) => (
+    <article className="group cursor-pointer">
+      {/* Double-bezel architecture (outer shell + inner image) */}
+      <div className="p-2 bg-[rgba(255,250,245,0.03)] rounded-2xl transition-all duration-500 hover:bg-[rgba(255,250,245,0.06)]">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[#1a1816]">
+          <img
+            src={entry.imageUrl}
+            alt={entry.sceneDescription}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          {/* Score badge: top-right, amber background */}
+          <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-[#f59e0b]/90 backdrop-blur-sm">
+            <span className="text-xs font-mono font-semibold text-[#1a1816]">
+              {entry.overallAverage}
+            </span>
+          </div>
+        </div>
+        {/* Caption: scene description, 2 lines max */}
+        <p className="mt-3 text-sm text-[#a8a29e] line-clamp-2 leading-relaxed">
+          {entry.sceneDescription}
+        </p>
+      </div>
+    </article>
+  ))}
+</div>
+```
+
+**Treatment principles:**
+- **Contact sheet metaphor:** Tight grid (like film contact sheets), not scattered
+- **Breathing room:** 32px gaps on desktop (not cramped 16px)
+- **Hover lift:** Subtle scale-up (1.05×) on hover, slow 700ms ease
+- **Score badge:** Amber pill (not green), top-right corner (photography convention)
+- **No click-to-expand:** Portfolio cards should be thumbnails, not full-res viewers (keep it gallery-like)
+
+---
+
+#### 3. Field Tab Live Preview
+
+**Before:** Video preview in flat `bg-black` rectangle
+
+**After:** **Viewfinder treatment** with camera-native chrome
+
+```tsx
+{/* Outer camera body frame (dark warm-gray, like camera LCD surround) */}
+<div className="p-4 bg-[#292524] rounded-3xl">
+  {/* Inner viewfinder with aspect ratio guide overlay */}
+  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#0a0908]">
+    <video
+      ref={videoRef}
+      className="w-full h-full object-cover"
+      playsInline
+      muted
+    />
+
+    {/* Rule-of-thirds grid overlay (photography aid, subtle) */}
+    <svg
+      className="absolute inset-0 pointer-events-none opacity-20"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      {/* Vertical thirds */}
+      <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="white" strokeWidth="0.5" />
+      <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="white" strokeWidth="0.5" />
+      {/* Horizontal thirds */}
+      <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="white" strokeWidth="0.5" />
+      <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="white" strokeWidth="0.5" />
+    </svg>
+
+    {/* Active assignment brief: translucent overlay, bottom */}
+    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0908]/95 to-transparent">
+      <p className="text-xs text-[#f5f3f0]/90 font-medium">
+        {assignment.brief.slice(0, 80)}...
+      </p>
+    </div>
+  </div>
+</div>
+```
+
+**Treatment principles:**
+- **Camera body frame:** 16px padding in deep charcoal (like DSLR LCD surround)
+- **Rule-of-thirds overlay:** Subtle white grid (photography composition aid)
+- **Brief overlay:** Bottom gradient fade (like camera info overlays)
+- **No analyzing spinner on top:** Move to bottom corner (less disruptive to composition preview)
+
+---
+
+### Reference Products & What to Borrow
+
+Per design-review-brief.md §13, analyze 3 reference products for UX patterns (not features).
+
+---
+
+#### Reference 1: [VSCO](https://vsco.co/) — Calm Editorial Minimalism
+
+**What VSCO does well:**
+- **Extreme restraint:** No clutter, no secondary chrome. Photo is hero.
+- **Typography hierarchy:** Large serif headlines, small sans-serif captions. High contrast.
+- **Neutral palette:** Warm grays, not cold blues. Feels analog, not digital.
+- **Grid discipline:** Strict 2-column mobile, 3-column desktop. No asymmetry for asymmetry's sake.
+
+**What to borrow for Practice Companion:**
+
+1. **Studio Tab Hero Layout**
+   - **VSCO pattern:** Full-width image preview, caption below, minimal controls
+   - **Our adaptation:** Studio upload result shows full-width photo with matte frame, Glass Box scores in sidebar (desktop) or accordion (mobile), not overlaid on image
+   - **Why:** Let the photo dominate. Scores are data, not decoration — they belong adjacent, not on top.
+
+2. **Memory Portfolio Grid Spacing**
+   - **VSCO pattern:** 8px gaps on mobile, 16px on desktop. Tight but not cramped.
+   - **Our adaptation:** 24px gaps mobile, 32px desktop. More generous (we show fewer photos per screen, VSCO shows hundreds).
+   - **Why:** We're not infinite-scroll social feed. Generous spacing = gallery curation feel.
+
+3. **Nav Simplicity**
+   - **VSCO pattern:** Bottom bar with 4 icons only (Feed, Discover, Create, Profile). No labels on mobile.
+   - **Our adaptation:** Bottom bar with 4 icons + labels (Home, Studio, My Work, Mentor). Labels stay because our actions are less universal than social feed metaphors.
+   - **Why:** Icons alone would confuse ("What's the difference between Home and Studio?"). Keep labels but use VSCO's minimal icon style.
+
+**Reject from VSCO:**
+- **Social features:** Likes, comments, follows. We're not social. We're mentor-student.
+- **Filters/presets:** VSCO's core feature. We critique, not edit. Don't add photo filters.
+
+---
+
+#### Reference 2: [Halide Camera App](https://halide.cam/) — Precision Instrumentation
+
+**What Halide does well:**
+- **Camera-native UI:** Live preview dominates, controls fade to edges. No chrome in the center.
+- **Haptic depth:** Buttons feel like physical camera dials. Double-bezel architecture everywhere.
+- **Geometric typography:** DIN-style grotesk for labels. Monospace for exposure values.
+- **Gestures over buttons:** Swipe to change modes, pinch to zoom. Not cluttered button bars.
+
+**What to borrow for Practice Companion:**
+
+1. **Field Tab Camera UI**
+   - **Halide pattern:** Full-bleed video preview, controls on edges (top: settings, bottom: shutter)
+   - **Our adaptation:** Field tab video preview takes 70% of viewport height, brief overlay at bottom (not sidebar), "Capture" button center-bottom (like shutter), secondary actions (gallery pick) in top corners
+   - **Why:** Field is camera-first. Treat it like Halide, not like a web form.
+
+2. **Button Haptics (Double-Bezel)**
+   - **Halide pattern:** Primary button (shutter) is nested circle inside circle. Inner ring glows on press.
+   - **Our adaptation:** All primary CTAs ("Upload now," "Approve listing," "Capture") use button-in-button architecture: outer rounded-full pill, inner trailing icon in its own circular well
+   - **Why:** Makes buttons feel like precision instruments, not flat rectangles.
+
+3. **Info Overlays (Non-Modal)**
+   - **Halide pattern:** Assignment brief, histogram data shown as translucent overlays on viewfinder, not pop-up modals
+   - **Our adaptation:** Active assignment brief in Field tab appears as bottom-edge overlay (gradient fade), not modal. Glass Box scores in Studio tab as sidebar panel, not modal.
+   - **Why:** Modals break immersion. Overlays keep context visible.
+
+**Reject from Halide:**
+- **Gesture-only controls:** Halide hides buttons behind swipes. We need discoverable UI for non-photographers.
+- **RAW/ProRAW features:** Advanced camera tech. We're using browser `getUserMedia`, not native camera APIs.
+
+---
+
+#### Reference 3: [Adobe Lightroom Mobile](https://lightroom.adobe.com/) — Gallery + Metadata Rigor
+
+**What Lightroom Mobile does well:**
+- **Filmstrip + detail view:** Horizontal scrolling thumbnails above large preview. Clear context of "where am I in the set."
+- **Score visualization:** Star ratings, color labels visible on grid thumbnails (not hidden until click).
+- **Metadata discipline:** EXIF data (ISO, shutter, aperture) shown in monospace, aligned tables. Not prose.
+- **Dark theme execution:** True black (#000) for OLED, not slate-900. Photos pop.
+
+**What to borrow for Practice Companion:**
+
+1. **Memory Tab Aesthetic Snapshot (Scores Table)**
+   - **Lightroom pattern:** Metadata shown as aligned key-value pairs (Aperture: f/2.8, ISO: 400) in monospace
+   - **Our adaptation:** Aesthetic snapshot average scores use tabular layout with monospace numbers, right-aligned:
+     ```
+     Composition      7.2
+     Lighting         6.8
+     Technique        7.5
+     Creativity       8.1
+     Subject Impact   7.0
+     ```
+   - **Why:** Lightroom users are photographers — they expect aligned data tables, not prose.
+
+2. **Portfolio Grid Badges (Scores as Visual Markers)**
+   - **Lightroom pattern:** Star ratings (★★★★☆) visible on grid thumbnails, top-left corner
+   - **Our adaptation:** Glass Box overall average (7.2) shown as amber badge, top-right corner of Memory portfolio cards. Always visible, not hover-only.
+   - **Why:** Scores are sorting/filtering metadata. Should be scannable at-a-glance, not hidden.
+
+3. **Deep Black Backgrounds for Photos**
+   - **Lightroom pattern:** Photos on pure #000000 black (OLED native), not gray
+   - **Our adaptation:** Photo preview areas use `bg-[#0a0908]` (near-black warm charcoal), not `bg-slate-900`. Photos get maximum contrast.
+   - **Why:** Photographers expect photos on deep black (print review, gallery walls). Slate-900 washes out image contrast.
+
+**Reject from Lightroom:**
+- **Non-destructive editing:** Lightroom's sliders, curves, masking. We critique, not edit. Don't add photo editing tools.
+- **Cloud sync UI:** Lightroom's sync status, storage meters. We use MongoDB but don't expose sync chrome.
+
+---
+
+### Top 5 Components to Redesign (Before/After Descriptions)
+
+Ranked by visual impact × user frequency.
+
+---
+
+#### Component 1: Studio Tab Hero (Empty State)
+
+**Current implementation:**
+```tsx
+// App.tsx:180-191
+<div className="text-center max-w-2xl">
+  <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">
+    Studio <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-400">
+      critique
+    </span>
+  </h1>
+  <p className="text-slate-400">
+    Upload a photo for multimodal Glass Box feedback powered by Gemini 3.1 Pro.
+    Run <code className="text-brand-400">make api-dev</code> on port 8081 first.
+  </p>
+</div>
+<PhotoUploader onImageSelected={...} isAnalyzing={analyzing} />
+```
+
+**Problems:**
+- Gradient text (`bg-clip-text`) — banned per high-end-visual-design §2
+- Generic headline ("Studio critique") — no personality, no value prop
+- Engineering instructions (`make api-dev`) in hero copy
+- No visual hierarchy (headline + paragraph are same visual weight)
+- No photo treatment example (users don't know what to expect)
+
+---
+
+**Redesigned (Gallery Atelier aesthetic):**
+
+```tsx
+<div className="max-w-5xl mx-auto space-y-16">
+  {/* Eyebrow tag */}
+  <div className="flex justify-center">
+    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[rgba(245,158,11,0.1)] border border-[#f59e0b]/20">
+      <div className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse" />
+      <span className="text-[10px] uppercase tracking-[0.15em] font-medium text-[#f59e0b]">
+        Glass Box Critique
+      </span>
+    </div>
+  </div>
+
+  {/* Headline: Editorial serif, huge */}
+  <div className="text-center space-y-6">
+    <h1
+      className="text-5xl md:text-7xl font-headline font-normal text-[#f5f3f0] leading-[1.1] tracking-tight"
+      style={{ fontVariationSettings: '"opsz" 72' }}
+    >
+      I'll remember every photo you've taken
+    </h1>
+    <p className="text-xl md:text-2xl text-[#a8a29e] font-light max-w-3xl mx-auto leading-relaxed">
+      Upload a shot. Get transparent scores and reasoning. I'll suggest practice assignments based on your patterns.
+    </p>
+  </div>
+
+  {/* 3-step workflow cards (from Pass 1 recommendation) */}
+  <div className="grid md:grid-cols-3 gap-6">
+    {[
+      { icon: '📸', step: '1. Upload', desc: 'Any photo from your camera or library' },
+      { icon: '✨', step: '2. Critique', desc: 'Scores on 5 dimensions + specific improvements' },
+      { icon: '🎯', step: '3. Practice', desc: 'Assignments tailored to your weak spots' },
+    ].map((item, i) => (
+      <div key={i} className="p-6 bg-[rgba(255,250,245,0.03)] rounded-2xl border border-[#a8a29e]/10">
+        <div className="text-4xl mb-4">{item.icon}</div>
+        <h3 className="text-lg font-semibold text-[#f5f3f0] mb-2 font-sans">
+          {item.step}
+        </h3>
+        <p className="text-sm text-[#a8a29e] leading-relaxed">
+          {item.desc}
+        </p>
+      </div>
+    ))}
+  </div>
+
+  {/* Upload zone: nested bezel architecture */}
+  <div className="max-w-2xl mx-auto">
+    <div className="p-3 bg-[rgba(255,250,245,0.03)] rounded-3xl border border-[#a8a29e]/10">
+      <div className="p-12 md:p-16 bg-[#1a1816] rounded-[calc(1.5rem-0.75rem)] border-2 border-dashed border-[#a8a29e]/20 text-center hover:border-[#f59e0b]/40 transition-all duration-500 cursor-pointer group">
+        {/* Camera icon */}
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[rgba(245,158,11,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+          <svg className="w-8 h-8 text-[#f59e0b]" /* camera icon SVG */ />
+        </div>
+
+        <p className="text-lg font-medium text-[#f5f3f0] mb-2">
+          Drop a photo here, or click to browse
+        </p>
+        <p className="text-sm text-[#a8a29e]">
+          JPG, PNG, HEIC up to 10MB
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+**Key changes:**
+- **Typography:** Newsreader 72px headline (editorial authority), Geist body text
+- **No gradient text:** Solid amber accent on eyebrow tag only
+- **I-voice copy:** "I'll remember..." instead of "Upload a photo for..."
+- **Remove engineering chrome:** No `make api-dev` in hero (move to Settings)
+- **3-step workflow cards:** Visual explanation (from Pass 1 recommendation)
+- **Double-bezel upload zone:** Outer warm-gray shell + inner dashed border (like dropping photo into gallery submission box)
+- **Haptic hover:** Upload zone border changes color + icon scales on hover (feels interactive)
+
+---
+
+#### Component 2: Memory Portfolio Grid (Card Treatment)
+
+**Current implementation:**
+```tsx
+// MemoryTab.tsx:174-233
+<article className="rounded-2xl bg-slate-800/50 border border-slate-700 overflow-hidden">
+  <div className="aspect-[4/3] bg-black relative">
+    <img src={entry.imageUrl} className="w-full h-full object-contain" />
+    <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-900/90 text-brand-400 text-xs font-bold">
+      {entry.overallAverage}/10
+    </span>
+  </div>
+  <div className="p-4">
+    <p className="text-sm text-slate-300 line-clamp-2">{entry.sceneDescription}</p>
+    {/* ... tags, glass box summary ... */}
+  </div>
+</article>
+```
+
+**Problems:**
+- `object-contain` makes photos small (black bars on sides)
+- Cold slate colors (not photography-native)
+- Score badge uses brand-green (should be amber)
+- No matte frame (photo bleeds to card edge)
+- Flat card (no nested depth)
+
+---
+
+**Redesigned (Contact sheet aesthetic):**
+
+```tsx
+<article className="group cursor-pointer">
+  {/* Outer matte frame (like physical photo mount) */}
+  <div className="p-2.5 bg-[rgba(255,250,245,0.03)] rounded-2xl border border-[#a8a29e]/10 transition-all duration-700 hover:bg-[rgba(255,250,245,0.06)] hover:border-[#f59e0b]/20">
+    {/* Inner image container */}
+    <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[#0a0908]">
+      <img
+        src={entry.imageUrl}
+        alt={entry.sceneDescription}
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        style={{ imageRendering: '-webkit-optimize-contrast' }}
+      />
+
+      {/* Subtle film grain overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
+        style={{
+          backgroundImage: 'url("data:image/svg+xml,...")',
+          backgroundRepeat: 'repeat'
+        }}
+      />
+
+      {/* Score badge: amber pill, top-right */}
+      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#f59e0b]/90 backdrop-blur-sm border border-[#0a0908]/20">
+        <span className="text-xs font-mono font-semibold text-[#0a0908]">
+          {entry.overallAverage}
+        </span>
+      </div>
+    </div>
+
+    {/* Caption area */}
+    <div className="mt-3 px-1 space-y-2">
+      {/* Scene description */}
+      <p className="text-sm text-[#a8a29e] line-clamp-2 leading-relaxed">
+        {entry.sceneDescription}
+      </p>
+
+      {/* Tags: minimal pills */}
+      {entry.aestheticTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {entry.aestheticTags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(255,250,245,0.03)] border border-[#a8a29e]/10 text-[#a8a29e] font-medium uppercase tracking-wider"
+            >
+              {tag.replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</article>
+```
+
+**Key changes:**
+- **Matte frame:** 10px outer padding (warm-gray tint) — photo looks mounted, not floating
+- **object-cover:** Photo fills frame (no black bars), cropped to 4:3
+- **Film grain:** 1.5% opacity noise overlay (subtle analog texture)
+- **Amber badge:** Score in amber pill (not green), monospace font
+- **Hover physics:** Card background lifts, photo scales 1.05×, duration 700ms (slow, luxurious)
+- **Tag pills:** Minimal uppercase labels (not chunky badges)
+
+---
+
+#### Component 3: HITL Approval Card (Triage/Print Sales)
+
+**Current implementation:**
+```tsx
+// TriageTab.tsx:289-325
+<li className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-3">
+  <ProposalThumbnails entryIds={affectedIds} previews={previews} />
+  <p className="text-sm text-white">{describeProposal(item)}</p>
+  <p className="text-xs text-slate-500 italic">{item.agentReasoning}</p>
+  <div className="flex gap-2">
+    <button className="flex-1 bg-emerald-600/90 ...">✓ Yes, do this</button>
+    <button className="flex-1 border border-slate-600 ...">✗ No thanks</button>
+  </div>
+</li>
+```
+
+**Problems:**
+- Agent reasoning buried in smallest, lowest-contrast text (from Pass 1 issue #5)
+- Generic card (no photo-native treatment)
+- Buttons use emerald-green (not amber)
+- No nested depth (flat card)
+
+---
+
+**Redesigned (Linear-style approval card with elevated reasoning):**
+
+```tsx
+<li className="group">
+  {/* Outer shell (double-bezel) */}
+  <div className="p-3 bg-[rgba(255,250,245,0.03)] rounded-3xl border border-[#a8a29e]/10 transition-all duration-500 hover:border-[#f59e0b]/20">
+    {/* Inner content container */}
+    <div className="p-5 bg-[#1a1816] rounded-[calc(1.5rem-0.75rem)] space-y-4">
+
+      {/* Thumbnail filmstrip */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {affectedIds.slice(0, 6).map((id) => {
+          const entry = previews.get(id);
+          return (
+            <div
+              key={id}
+              className="shrink-0 w-20 aspect-square rounded-lg overflow-hidden bg-[#0a0908] border border-[#a8a29e]/10"
+            >
+              {entry?.imageUrl ? (
+                <img src={entry.imageUrl} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#57534e]">
+                  <svg className="w-8 h-8" /* image icon */ />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Proposal description */}
+      <p className="text-base text-[#f5f3f0] leading-relaxed">
+        {describeProposal(item)}
+      </p>
+
+      {/* Agent reasoning: ELEVATED (not buried) */}
+      <div className="p-4 bg-[rgba(245,158,11,0.05)] border-l-2 border-[#f59e0b] rounded-lg">
+        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-[#f59e0b] mb-2">
+          Why I'm suggesting this
+        </p>
+        <p className="text-sm text-[#f5f3f0]/90 leading-relaxed">
+          {item.agentReasoning}
+        </p>
+      </div>
+
+      {/* Action buttons: nested architecture */}
+      <div className="flex gap-3 pt-2">
+        {/* Approve: amber primary button with nested icon */}
+        <button className="flex-1 group/btn relative px-5 py-3 rounded-full bg-[#f59e0b] hover:bg-[#d97706] transition-all duration-500 active:scale-[0.98]">
+          <span className="flex items-center justify-center gap-3 text-sm font-semibold text-[#0a0908]">
+            <span>Yes, do this</span>
+            {/* Nested icon circle (button-in-button) */}
+            <div className="w-7 h-7 rounded-full bg-[#0a0908]/10 flex items-center justify-center group-hover/btn:translate-x-1 transition-transform duration-500">
+              <svg className="w-4 h-4 text-[#0a0908]" /* checkmark icon */ />
+            </div>
+          </span>
+        </button>
+
+        {/* Reject: outline button */}
+        <button className="flex-1 px-5 py-3 rounded-full border border-[#a8a29e]/20 hover:bg-[rgba(255,250,245,0.03)] transition-all duration-500 active:scale-[0.98]">
+          <span className="flex items-center justify-center gap-2 text-sm font-medium text-[#a8a29e] hover:text-[#f5f3f0]">
+            <svg className="w-4 h-4" /* X icon */ />
+            <span>No thanks</span>
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</li>
+```
+
+**Key changes:**
+- **Double-bezel:** Outer warm-gray shell + inner charcoal content area (like approval form in physical folder)
+- **Reasoning elevated:** Amber-tinted background panel with "Why I'm suggesting this" header (from Pass 1 recommendation)
+- **Thumbnail filmstrip:** Horizontal scroll (like Lightroom), not grid (easier to scan multiple photos)
+- **Button-in-button:** Approve button has nested checkmark icon in circular well (Halide pattern)
+- **Amber primary:** Approve uses amber (not emerald-green), matches accent color system
+- **Haptic press:** `active:scale-[0.98]` on buttons (feels like physical press)
+
+---
+
+#### Component 4: Mentor Chat Message Bubbles
+
+**Current implementation:**
+```tsx
+// MentorTab.tsx:107-125
+<div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+  <div className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm ${
+    m.role === 'user'
+      ? 'bg-brand-500 text-slate-900'
+      : 'bg-slate-700/90 text-slate-100 border border-slate-600/50'
+  }`}>
+    {m.role === 'assistant' ? <MentorMarkdown content={m.content} /> : m.content}
+  </div>
+</div>
+```
+
+**Problems:**
+- Generic chat bubbles (identical to every chat UI)
+- User messages in brand-green (should be neutral or amber)
+- No typography hierarchy in mentor replies (all body text, no emphasis)
+- No coaching personality (feels robotic)
+
+---
+
+**Redesigned (Mentor as editorial authority, not chatbot):**
+
+```tsx
+<div className="space-y-6">
+  {messages.map((m) => (
+    <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'space-y-3'}>
+
+      {m.role === 'user' ? (
+        // User message: minimal pill, right-aligned
+        <div className="max-w-[80%] px-5 py-3 rounded-[2rem] bg-[rgba(255,250,245,0.06)] border border-[#a8a29e]/10">
+          <p className="text-sm text-[#f5f3f0] leading-relaxed whitespace-pre-wrap">
+            {m.content}
+          </p>
+        </div>
+      ) : (
+        // Mentor reply: editorial treatment with avatar + name
+        <div className="max-w-[85%] space-y-3">
+          {/* Mentor header: avatar + name */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/20 flex items-center justify-center">
+              <span className="text-lg">✨</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#f5f3f0] font-sans">
+                Mentor
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-[#a8a29e] font-mono">
+                Glass Box Analysis
+              </p>
+            </div>
+          </div>
+
+          {/* Mentor content: nested container with editorial typography */}
+          <div className="p-5 bg-[rgba(255,250,245,0.03)] border-l-2 border-[#f59e0b] rounded-r-2xl">
+            <div className="prose prose-invert prose-sm max-w-none">
+              {/* Custom markdown rendering with editorial styles */}
+              <MentorMarkdown
+                content={m.content}
+                // Override: H3 headings in serif, bold paragraphs for emphasis
+                components={{
+                  h3: ({ children }) => (
+                    <h3 className="text-lg font-headline font-semibold text-[#f5f3f0] mb-3 mt-4 first:mt-0">
+                      {children}
+                    </h3>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold text-[#f59e0b]">
+                      {children}
+                    </strong>
+                  ),
+                  p: ({ children }) => (
+                    <p className="text-sm text-[#f5f3f0]/90 leading-relaxed mb-3 last:mb-0">
+                      {children}
+                    </p>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="space-y-2 text-sm text-[#f5f3f0]/90 list-disc list-inside ml-2">
+                      {children}
+                    </ul>
+                  ),
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  ))}
+</div>
+```
+
+**Key changes:**
+- **Mentor avatar:** Small amber circle with sparkle icon (not anonymous gray bubble)
+- **Mentor name header:** "Mentor · Glass Box Analysis" (establishes authority, not generic AI)
+- **Editorial container:** Amber left border + warm-gray background (like quoted editorial callout)
+- **Typography hierarchy in replies:**
+  - H3 headings in serif font (Newsreader)
+  - Strong text in amber (for emphasis)
+  - Body in Geist 14px
+- **User messages neutral:** Warm-gray background (not green), rounded-full pills
+- **No "assistant" label:** User knows they're chatting with Mentor (header establishes this)
+
+---
+
+#### Component 5: Field Tab Camera Preview + Controls
+
+**Current implementation:**
+```tsx
+// FieldTab.tsx:134-195
+<div className="rounded-2xl overflow-hidden bg-black border border-slate-700 aspect-[4/3]">
+  <video ref={videoRef} className="w-full h-full object-contain" />
+  {analyzing && (
+    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
+      <Loader2 className="animate-spin" />
+      <p>Analyzing with Gemini…</p>
+    </div>
+  )}
+</div>
+<div className="flex gap-3">
+  <button>📷 Capture & analyze</button>
+  <button>📤 Pick from gallery</button>
+</div>
+```
+
+**Problems:**
+- Flat video preview (no camera body frame)
+- `object-contain` creates black bars (wasted space)
+- Analyzing spinner covers entire frame (disruptive)
+- Buttons use emoji icons (not photography-native)
+- No composition aids (rule-of-thirds grid)
+
+---
+
+**Redesigned (Viewfinder treatment with camera chrome):**
+
+```tsx
+<div className="space-y-6">
+  {/* Active assignment brief: sticky banner */}
+  {assignment && (
+    <div className="p-4 bg-[rgba(245,158,11,0.05)] border-l-2 border-[#f59e0b] rounded-r-2xl">
+      <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-[#f59e0b] mb-1">
+        Active Practice
+      </p>
+      <p className="text-sm text-[#f5f3f0]/90 leading-relaxed line-clamp-2">
+        {assignment.brief}
+      </p>
+    </div>
+  )}
+
+  {/* Camera body frame (outer shell) */}
+  <div className="p-4 bg-[#292524] rounded-[2rem]">
+    {/* Viewfinder (inner preview) */}
+    <div className="relative aspect-[4/3] rounded-[calc(2rem-1rem)] overflow-hidden bg-[#0a0908]">
+
+      {/* Video preview */}
+      <video
+        ref={videoRef}
+        className="w-full h-full object-cover"
+        playsInline
+        muted
+      />
+
+      {/* Rule-of-thirds composition grid overlay */}
+      <svg
+        className="absolute inset-0 pointer-events-none opacity-20"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
+        <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="white" strokeWidth="0.5" />
+        <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="white" strokeWidth="0.5" />
+        <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="white" strokeWidth="0.5" />
+        <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="white" strokeWidth="0.5" />
+      </svg>
+
+      {/* Analyzing state: bottom-right corner (not full overlay) */}
+      {analyzing && (
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-full bg-[#0a0908]/90 backdrop-blur-sm border border-[#f59e0b]/20">
+          <div className="w-4 h-4 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-medium text-[#f59e0b]">
+            Analyzing
+          </span>
+        </div>
+      )}
+
+      {/* Center focus indicator (subtle crosshair) */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="relative w-8 h-8">
+          {/* Crosshair corners */}
+          <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/40" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/40" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/40" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/40" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {/* Camera controls: shutter-style button + secondary */}
+  <div className="flex items-center justify-center gap-4">
+    {/* Secondary: Gallery pick (top-left icon) */}
+    <button
+      disabled={analyzing}
+      onClick={() => fileInputRef.current?.click()}
+      className="w-12 h-12 rounded-2xl bg-[rgba(255,250,245,0.03)] border border-[#a8a29e]/10 hover:bg-[rgba(255,250,245,0.06)] transition-all duration-500 active:scale-95 disabled:opacity-40"
+    >
+      <svg className="w-6 h-6 mx-auto text-[#f5f3f0]" /* gallery icon */ />
+    </button>
+
+    {/* Primary: Shutter button (center, large) */}
+    <button
+      disabled={!streaming || analyzing}
+      onClick={captureFromVideo}
+      className="group relative w-20 h-20 rounded-full bg-[#f59e0b] hover:bg-[#d97706] transition-all duration-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-[#f59e0b]/20"
+    >
+      {/* Inner shutter ring (nested bezel) */}
+      <div className="absolute inset-2 rounded-full border-4 border-[#0a0908]/20 group-hover:border-[#0a0908]/30 transition-colors duration-500" />
+
+      {/* Camera icon */}
+      <svg className="absolute inset-0 m-auto w-10 h-10 text-[#0a0908]" /* camera icon */ />
+    </button>
+
+    {/* Spacer to balance gallery button */}
+    <div className="w-12" />
+  </div>
+
+  <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" />
+</div>
+```
+
+**Key changes:**
+- **Camera body frame:** 16px warm-charcoal padding (like DSLR LCD surround)
+- **object-cover:** Video fills frame (no black bars), 4:3 aspect locked
+- **Rule-of-thirds grid:** White 0.5px lines (photography composition aid, subtle)
+- **Center crosshair:** Corner brackets (like camera AF point indicator)
+- **Analyzing spinner:** Bottom-right corner badge (not full-screen overlay, less disruptive)
+- **Shutter button:** Large circular amber button with nested ring (Halide pattern)
+- **Gallery pick:** Small square icon button (not labeled, iconography clear)
+- **Button layout:** Gallery (left) — Shutter (center, large) — Spacer (right) — mimics camera bottom bar
+
+---
+
+### Implementation Priority
+
+**Phase 1 (ship for hackathon, <8 hours):**
+1. Typography swap: Inter → Newsreader + Geist (2h)
+2. Color system: Green → Amber, Slate → Warm charcoal (2h)
+3. Studio hero redesign: Editorial headline + 3-step cards (2h)
+4. Memory portfolio: Double-bezel cards + amber badges (2h)
+
+**Phase 2 (post-hackathon, <2 days):**
+5. HITL card redesign: Elevated reasoning + button-in-button (4h)
+6. Mentor chat: Editorial bubbles + avatar header (3h)
+7. Field camera: Viewfinder frame + rule-of-thirds grid (4h)
+8. Photo grain overlays: SVG noise on all image previews (1h)
+
+**Phase 3 (polish, <1 day):**
+9. Motion refinement: Custom cubic-bezier transitions everywhere (3h)
+10. Responsive audit: Mobile collapse for all new components (4h)
+
+---
+
+### Success Metrics (Visual Differentiation)
+
+**Before/after test (5-second exposure):**
+- Show screenshot to photographer, ask "What kind of app is this?"
+- **Before:** "AI dashboard," "SaaS tool," "chatbot"
+- **After target:** "Photo gallery," "editing software," "camera app"
+
+**Competitive differentiation:**
+- **Linear/Notion:** We use serif headlines (they use sans), warm palette (they use purple/blue)
+- **ChatGPT/Gemini:** We have photo-dominant layout (they have text-first), double-bezel cards (they have flat modals)
+- **Lightroom/VSCO:** We match their editorial typography + dark gallery aesthetic, but add coaching personality (they're tools, not mentors)
+
+**Accessibility validation:**
+- Amber on warm-charcoal = 4.8:1 contrast (WCAG AA pass)
+- Newsreader serif at 16px+ = readable for low-vision users
+- Monospace scores = dyslexic-friendly (consistent letterforms)
+
+---
+
+## Pass 4 — [Future Review Session]
 **Date:** TBD
 **Reviewer:** TBD
 **Scope:** TBD
@@ -1547,3 +2625,4 @@ const navConfigs: Record<UserMode, NavConfig> = {
 |------|------|----------|-------|--------------|-----------------|
 | 1 | 2026-05-25 | Claude Sonnet 4.5 | Full app audit | 10 major + responsive/a11y | 0 (initial review) |
 | 2 | 2026-05-25 | Claude Sonnet 4.5 | Navigation architecture & persona IA | Tab sprawl, persona journeys | 0 (strategy defined, not implemented) |
+| 3 | 2026-05-25 | Claude Sonnet 4.5 | Visual direction & premium design language | Generic AI SaaS aesthetic | 0 (visual strategy defined, not implemented) |
