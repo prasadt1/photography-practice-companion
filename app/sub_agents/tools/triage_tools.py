@@ -35,11 +35,15 @@ def cluster_portfolio_by_embedding(user_id: str | None = None, k: int = 5) -> di
     uid = _resolve_user_id(user_id)
     if not uid:
         return {"clusters": [], "message": "No user"}
-    docs = list(
-        get_db()
-        .portfolio_entries.find({"user_id": uid}, projection={"aesthetic_tags": 1, "scores": 1})
-        .sort("created_at", -1)
-        .limit(50)
+    from memory import mcp_reads
+
+    coll = get_db().portfolio_entries
+    docs = mcp_reads.find(
+        coll,
+        {"user_id": uid},
+        projection={"aesthetic_tags": 1, "scores": 1},
+        limit=50,
+        sort=[("created_at", -1)],
     )
     tag_buckets: dict[str, list[str]] = {}
     for d in docs:

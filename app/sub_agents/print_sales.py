@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from google.adk.agents import Agent as LlmAgent
 
-from sub_agents._common import gemini_model, load_prompt
+from memory import mcp_reads as _mcp_reads  # noqa: F401
+from sub_agents._common import gemini_model, load_sub_agent_prompt
 from sub_agents._toolsets import print_sales_tool_list
 
 print_sales_agent = LlmAgent(
     name="print_sales",
     model=gemini_model(),
-    instruction=load_prompt("print_sales"),
+    instruction=load_sub_agent_prompt("print_sales"),
     description="Marketplace listing strategy and HITL publication proposals.",
     tools=print_sales_tool_list(),
 )

@@ -1,4 +1,4 @@
-"""Orchestrator read tools — portfolio & assignments (PyMongo; same data as MCP)."""
+"""Orchestrator read tools — MCP-primary reads via memory.mcp_reads."""
 
 from __future__ import annotations
 
@@ -60,6 +60,9 @@ def search_glass_box_feedback(query: str, limit: int = 5) -> dict[str, Any]:
     if not q:
         return {"matches": [], "message": "Provide a search query."}
 
+    from memory import mcp_reads
+    from memory.atlas_features import atlas_fallback_allowed, require_atlas_features
+
     coll = get_db().portfolio_entries
     try:
         pipeline: list[dict[str, Any]] = [
@@ -81,15 +84,19 @@ def search_glass_box_feedback(query: str, limit: int = 5) -> dict[str, Any]:
                 },
             ]
         )
-        docs = list(coll.aggregate(pipeline))
+        docs = mcp_reads.aggregate(coll, pipeline)
         mode = "atlas_search"
-    except Exception:
+    except Exception as exc:
+        if require_atlas_features() and not atlas_fallback_allowed():
+            raise RuntimeError(f"Atlas Search required: {exc}") from exc
         regex = {"$regex": q, "$options": "i"}
         filt = {**match, "$or": [{"glass_box.observations": regex}, {"scene_description": regex}]}
-        docs = list(
-            coll.find(filt, projection={"scores": 1, "glass_box": 1, "scene_description": 1})
-            .sort("created_at", -1)
-            .limit(limit)
+        docs = mcp_reads.find(
+            coll,
+            filt,
+            projection={"scores": 1, "glass_box": 1, "scene_description": 1},
+            limit=limit,
+            sort=[("created_at", -1)],
         )
         mode = "regex_fallback"
 

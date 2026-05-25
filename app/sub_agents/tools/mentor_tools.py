@@ -26,8 +26,15 @@ def vector_search_similar_photos(
 
     from memory.db import get_db
 
+    from memory import mcp_reads
+    from memory.atlas_features import atlas_fallback_allowed, require_atlas_features
+
     coll = get_db().portfolio_entries
-    source = coll.find_one({"_id": ObjectId(portfolio_entry_id)}, projection={"embedding": 1, "user_id": 1})
+    source = mcp_reads.find_one(
+        coll,
+        {"_id": ObjectId(portfolio_entry_id)},
+        projection={"embedding": 1, "user_id": 1},
+    )
     if not source or not source.get("embedding"):
         return {
             "matches": [],
@@ -54,7 +61,7 @@ def vector_search_similar_photos(
                 }
             },
         ]
-        matches = list(coll.aggregate(pipeline))
+        matches = mcp_reads.aggregate(coll, pipeline)
         out = []
         for m in matches:
             if str(m["_id"]) == portfolio_entry_id:
@@ -71,6 +78,8 @@ def vector_search_similar_photos(
                 break
         return {"matches": out}
     except Exception as exc:
+        if require_atlas_features() and not atlas_fallback_allowed():
+            raise RuntimeError(f"Atlas Vector Search required: {exc}") from exc
         return {"matches": [], "message": f"Vector search unavailable: {exc}"}
 
 

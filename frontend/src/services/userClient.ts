@@ -12,8 +12,11 @@ export interface UserProfile {
   preferences: Record<string, unknown>;
 }
 
-export async function fetchUserProfile(): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/api/v1/users/me`);
+export async function fetchUserProfile(userId?: string | null): Promise<UserProfile> {
+  const q = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+  const res = await fetch(`${API_BASE}/api/v1/users/me${q}`, {
+    headers: userId ? { 'X-User-Id': userId } : {},
+  });
   if (!res.ok) {
     throw new Error(await res.text());
   }

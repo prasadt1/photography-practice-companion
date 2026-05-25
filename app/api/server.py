@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -39,8 +40,20 @@ from memory.pending_approvals import apply_decision, list_pending  # noqa: E402
 from memory.users import get_user_profile, set_persona  # noqa: E402
 from api.triage_scan import run_triage_scan  # noqa: E402
 from api.print_sales_scan import run_print_sales_scan  # noqa: E402
+from memory.session_context import set_request_user_id  # noqa: E402
 
-app = FastAPI(title="Practice Companion API", version="0.4.0")
+
+class UserScopeMiddleware(BaseHTTPMiddleware):
+    """Propagate X-User-Id / userId query into session context for multi-tenant reads."""
+
+    async def dispatch(self, request: Request, call_next):
+        uid = request.headers.get("X-User-Id") or request.query_params.get("userId")
+        set_request_user_id(uid)
+        return await call_next(request)
+
+
+app = FastAPI(title="Practice Companion API", version="0.5.0")
+app.add_middleware(UserScopeMiddleware)
 
 
 class ChatRequest(BaseModel):

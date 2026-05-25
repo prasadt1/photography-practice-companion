@@ -15,16 +15,45 @@ from sub_agents.tools.coach_tools import analyze_image_multimodal
 def analyze_frame_for_description(
     image_base64: str,
     mime_type: str = "image/jpeg",
-    detail_level: str = "concise",
+    detail_level: str | None = None,
+    user_id: str | None = None,
 ) -> dict[str, Any]:
     """Description-focused frame analysis (uses Coach pipeline; narration fields emphasized)."""
-    result = analyze_image_multimodal(image_base64=image_base64, mime_type=mime_type)
+    from memory.description_style import get_description_style
+
+    style = detail_level or get_description_style(user_id)
+    result = analyze_image_multimodal(
+        image_base64=image_base64,
+        mime_type=mime_type,
+        user_id=user_id,
+    )
+    scene = result.get("sceneDescription") or ""
+    if style == "concise":
+        scene = " ".join(scene.split()[:28])
+    elif style == "detailed" and len(scene.split()) < 40:
+        scene = f"{scene} Additional context: {result.get('colourNotes') or ''}".strip()
     return {
-        "sceneDescription": result.get("sceneDescription"),
+        "sceneDescription": scene,
         "colourNotes": result.get("colourNotes"),
-        "detailLevel": detail_level,
+        "detailLevel": style,
         "portfolioEntryId": result.get("portfolioEntryId"),
     }
+
+
+def visual_describer_describe_frame(
+    *,
+    scene_description: str = "A subject in soft natural light.",
+    user_id: str | None = None,
+) -> str:
+    """Return narration text adapted to users.preferences.description_style."""
+    from memory.description_style import get_description_style
+
+    style = get_description_style(user_id)
+    if style == "concise":
+        return " ".join(scene_description.split()[:28])
+    if style == "technical":
+        return f"Technical view: {scene_description}"
+    return scene_description
 
 
 def compute_spatial_position(image_base64: str) -> dict[str, Any]:
@@ -55,6 +84,9 @@ def narrate_capture_session(session_id: str) -> dict[str, Any]:
 def atlas_search_scene_descriptions(query: str, limit: int = 5) -> dict[str, Any]:
     uid = _resolve_user_id(None)
     match: dict[str, Any] = {"user_id": uid} if uid else {}
+    from memory import mcp_reads
+    from memory.atlas_features import atlas_fallback_allowed, require_atlas_features
+
     coll = get_db().portfolio_entries
     try:
         pipeline: list[dict[str, Any]] = [
@@ -63,13 +95,15 @@ def atlas_search_scene_descriptions(query: str, limit: int = 5) -> dict[str, Any
         if match:
             pipeline.append({"$match": match})
         pipeline.extend([{"$limit": limit}, {"$project": {"scene_description": 1, "capture_intent": 1}}])
-        hits = list(coll.aggregate(pipeline))
-    except Exception:
-        hits = list(
-            coll.find(
-                {**match, "scene_description": {"$regex": query, "$options": "i"}},
-                projection={"scene_description": 1},
-            ).limit(limit)
+        hits = mcp_reads.aggregate(coll, pipeline)
+    except Exception as exc:
+        if require_atlas_features() and not atlas_fallback_allowed():
+            raise RuntimeError(f"scene_search Atlas index required: {exc}") from exc
+        hits = mcp_reads.find(
+            coll,
+            {**match, "scene_description": {"$regex": query, "$options": "i"}},
+            projection={"scene_description": 1},
+            limit=limit,
         )
     return {
         "matches": [

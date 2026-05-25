@@ -12,11 +12,11 @@ from memory.db import get_db
 
 
 def _resolve_user_id(user_id: str | None) -> ObjectId | None:
-    if user_id:
-        return ObjectId(user_id)
-    demo = os.environ.get("DEMO_USER_ID")
-    if demo:
-        return ObjectId(demo)
+    from memory.session_context import resolve_effective_user_id
+
+    effective = resolve_effective_user_id(user_id)
+    if effective:
+        return ObjectId(effective)
     latest = get_db().portfolio_entries.find_one(
         sort=[("created_at", -1)],
         projection={"user_id": 1},

@@ -6,9 +6,11 @@ from datetime import datetime, timezone
 from typing import Any, Literal
 
 from bson import ObjectId
+from pymongo import ReturnDocument
 
 from memory.assignments import _resolve_user_id
 from memory.db import get_db
+from memory.prompt_overrides import write_override_history
 
 DecisionAction = Literal["approve", "reject", "modify"]
 
@@ -89,14 +91,23 @@ def _execute_approved(doc: dict[str, Any], override_payload: dict[str, Any] | No
         marketplace = payload.get("marketplace") or "etsy"
         price = payload.get("suggestedListPrice") or payload.get("list_price") or 45.0
         now = datetime.now(timezone.utc)
+        from sub_agents.print_sales_marketplace_schemas import generate_listing_document
+
+        listing_base = generate_listing_document(
+            marketplace if marketplace in ("etsy", "society6", "redbubble", "saatchi_art") else "etsy",
+            portfolio_entry_id=str(eid),
+            title=payload.get("title") or "Fine art print",
+            description=payload.get("description") or "",
+            list_price=float(price),
+        )
         listing_doc = {
             "user_id": doc.get("user_id"),
             "portfolio_entry_id": eid,
-            "marketplace": marketplace,
-            "title": payload.get("title") or "Fine art print",
-            "description": payload.get("description") or "",
-            "tags": payload.get("tags") or [],
-            "list_price": float(price),
+            "marketplace": listing_base["marketplace"],
+            "title": listing_base["title"],
+            "description": listing_base["description"],
+            "tags": payload.get("tags") or listing_base["marketplace_listing_metadata"].get("tags", []),
+            "list_price": listing_base["list_price"],
             "currency": payload.get("currency") or "USD",
             "status": "listed",
             "listed_at": now,
@@ -104,6 +115,7 @@ def _execute_approved(doc: dict[str, Any], override_payload: dict[str, Any] | No
             "revenue": 0.0,
             "hitl_approval_id": str(doc["_id"]),
             "created_at": now,
+            "marketplace_listing_metadata": listing_base["marketplace_listing_metadata"],
         }
         get_db().print_sales.insert_one(listing_doc)
 
@@ -118,13 +130,13 @@ def apply_decision(
     uid = _resolve_user_id(user_id)
     oid = ObjectId(approval_id)
     coll = get_db().pending_approvals
-    doc = coll.find_one({"_id": oid})
-    if not doc:
+    existing = coll.find_one({"_id": oid})
+    if not existing:
         raise ValueError("Pending approval not found")
-    if uid and doc.get("user_id") != uid:
+    if uid and existing.get("user_id") != uid:
         raise ValueError("Not authorized for this approval")
-    if doc.get("status") != "pending":
-        raise ValueError(f"Approval already {doc.get('status')}")
+    if existing.get("status") != "pending":
+        raise ValueError(f"Approval already {existing.get('status')}")
 
     now = datetime.now(timezone.utc)
     if action == "reject":
@@ -134,22 +146,29 @@ def apply_decision(
     else:
         status = "approved"
 
-    if status in ("approved", "modified"):
-        _execute_approved(doc, override_payload)
+    user_decision = {
+        "action": action,
+        "override_payload": override_payload,
+        "decided_at": now,
+    }
 
-    coll.update_one(
-        {"_id": oid},
-        {
-            "$set": {
-                "status": status,
-                "user_decision": {
-                    "action": action,
-                    "override_payload": override_payload,
-                    "decided_at": now,
-                },
-            }
-        },
+    updated = coll.find_one_and_update(
+        {"_id": oid, "status": "pending"},
+        {"$set": {"status": status, "user_decision": user_decision}},
+        return_document=ReturnDocument.AFTER,
     )
-    updated = coll.find_one({"_id": oid})
-    assert updated
+    if not updated:
+        raise ValueError("Approval was already decided (race)")
+
+    if status in ("approved", "modified"):
+        _execute_approved(updated, override_payload)
+        if action == "modify" and override_payload:
+            write_override_history(
+                updated["user_id"],
+                updated.get("agent_name", ""),
+                override_type="hitl_modify",
+                original=(updated.get("proposed_action") or {}).get("payload"),
+                modified=override_payload,
+            )
+
     return _serialize(updated)

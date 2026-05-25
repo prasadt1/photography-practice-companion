@@ -33,6 +33,15 @@ def load_prompt(stem: str) -> str:
     return (PROMPTS_DIR / f"{stem}.txt").read_text(encoding="utf-8")
 
 
+def load_sub_agent_prompt(stem: str, user_id: str | None = None) -> str:
+    """Base prompt + recent user overrides (Coach, Planner, Triage, Print Sales, Visual Describer)."""
+    from memory.prompt_overrides import load_prompt_with_user_overrides
+    from memory.session_context import get_request_user_id
+
+    uid = user_id or get_request_user_id()
+    return load_prompt_with_user_overrides(stem, uid)
+
+
 def gemini_model() -> Gemini:
     return Gemini(
         model=os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview"),

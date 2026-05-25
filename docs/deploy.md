@@ -126,7 +126,28 @@ Set `DEMO_USER_ID=6577a1f2b3c4d5e6f7a8b9c0` on Cloud Run env for consistent Memo
 | `nosite name or target name` on `firebase deploy` | Firebase not linked or Hosting never enabled — see Prerequisites above |
 | `projects:addfirebase` 403 | Use Firebase console to add the project, or get Owner on GCP |
 
+## Change-stream listener (aesthetic_profile)
+
+Reactive profile updates when `portfolio_entries` change (consolidation item 2).
+
+```bash
+# Local (requires MONGODB_URI + change stream permissions on Atlas)
+cd app && uv run python ../services/change-stream-listener/main.py
+```
+
+**Cloud Run (manual, min_instances=1):**
+
+```bash
+gcloud run deploy change-stream-listener \
+  --source services/change-stream-listener \
+  --region us-central1 \
+  --min-instances 1 \
+  --set-env-vars MONGODB_URI="$(grep MONGODB_URI .env | cut -d= -f2-)" \
+  --set-env-vars MONGODB_DB_NAME=practice_companion
+```
+
+Verify: insert a portfolio entry; `aesthetic_profile` for that `user_id` updates within ~10s.
+
 ## Not in this deploy
 
 - Vertex Agent Engine (`make deploy` from ADK scaffold) — optional; playground + Cloud Run API suffice for UI demo
-- Change-stream listener — Phase 4 buffer
