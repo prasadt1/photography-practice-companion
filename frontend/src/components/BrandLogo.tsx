@@ -37,7 +37,7 @@ export const BrandLogo: React.FC<Props> = ({
         alt=""
         width={px}
         height={px}
-        className="shrink-0 rounded-xl object-cover ring-1 ring-brand-400/25 shadow-lg shadow-brand-500/20"
+        className="shrink-0 rounded-xl object-contain bg-transparent"
         aria-hidden
       />
       {showWordmark && (
