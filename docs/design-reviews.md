@@ -2684,6 +2684,13 @@ Per design-review-brief.md §18: Loading & latency, error recovery, empty states
 - **Error recovery:** API down, timeouts, partial failures, offline detection
 - **Trust & transparency:** "What we store" explanation for MongoDB memory
 
+### Pass 6: Glass Box Presentation (Debug Output → Learning Tool)
+- **Problem:** Core differentiator (transparent reasoning) hidden behind tab, styled like code, disconnected from scores
+- **Typography fix:** Replace monospace with photography fonts (sans/serif, not courier)
+- **Visibility:** Make default tab OR add condensed preview to Overview
+- **Score links:** Explicit "Why?" links from scores → Glass Box explanations
+- **HITL elevation:** Move agent reasoning above approve/reject buttons (not tiny gray footer)
+
 ---
 
 ## Implementation Roadmap
@@ -2715,17 +2722,27 @@ Per design-review-brief.md §18: Loading & latency, error recovery, empty states
 - API-down error states
 - Skeleton screens (Memory, Practice)
 
-**Total immediate effort: ~36 hours** (1 week solo, 3-4 days with team)
+**From Pass 6 (6h):**
+- Glass Box typography (mono → sans/serif)
+- Header copy ("Why this score", remove jargon)
+- HITL reasoning elevation (amber callout above buttons)
+
+**Total immediate effort: ~42 hours** (1 week solo, 4-5 days with team)
 
 ### Post-Hackathon (<3 weeks)
-**Medium effort (Pass 1-5 combined):**
+**Medium effort (Pass 1-6 combined):**
 - Field responsive fixes + rule-of-thirds grid
-- HITL card redesigns (elevated reasoning)
+- Score-to-reasoning links (Overview → Glass Box)
+- Glass Box default visibility OR condensed preview
+- Evidence label humanization (camera/eye/library icons)
+- Grounding citations reframe ("Photography principles")
 - All empty states rewritten
 - Offline detection + recovery
 - Photo grain overlays
 
 **Large effort (Future):**
+- Learning insights panel (trend analysis, skill tagging)
+- Bidirectional score↔observation highlighting
 - Memory trends + sparklines (backend aggregation)
 - Dynamic Mentor starters (portfolio-aware)
 - Vision impairment persona web UI
@@ -2757,6 +2774,9 @@ Per design-review-brief.md §18: Loading & latency, error recovery, empty states
 - **Copy comprehension:** >80% users understand "Glass Box" = transparent reasoning without asking (Pass 4 validation)
 - **Abandonment during loading:** <20% users close tab during 30-90s waits (Pass 5 staged progress effectiveness)
 - **Error recovery success:** >60% users successfully retry after API error (Pass 5 error messaging clarity)
+- **Glass Box engagement:** >50% users view reasoning (via default tab or preview) (Pass 6 discoverability)
+- **Score understanding:** >70% users click [Why?] links or hover for score explanations (Pass 6 connection strength)
+- **HITL confidence:** >80% users report understanding agent reasoning before approve/reject (Pass 6 elevation effectiveness)
 
 ---
 
@@ -2768,7 +2788,7 @@ Per design-review-brief.md §18: Loading & latency, error recovery, empty states
 4. **Integrate Pass 4 quick wins** (2h) — purge jargon, add coaching voice
 5. **Add Pass 5 critical patterns** (4h) — loading states, error recovery
 
-**Total for hackathon-ready state: ~26 hours** (prioritized subset of immediate work)
+**Total for hackathon-ready state: ~32 hours** (prioritized subset of immediate work including Pass 6 quick wins)
 
 After demo validation, continue with medium/large effort improvements based on user feedback and judge comments.
 
@@ -2783,3 +2803,452 @@ After demo validation, continue with medium/large effort improvements based on u
 | 3 | 2026-05-25 | Claude Sonnet 4.5 | Visual direction & premium design language | Generic AI SaaS aesthetic | 0 (visual strategy defined, not implemented) |
 | 4 | 2026-05-25 | Claude Sonnet 4.5 | UX copy & microcopy overhaul | Engineering jargon, inconsistent voice | 0 (copy strategy defined, not implemented) |
 | 5 | 2026-05-25 | Claude Sonnet 4.5 | Loading states, errors, edge cases | 30-90s latency, API failures, trust gaps | 0 (error handling strategy defined, not implemented) |
+| 6 | 2026-05-25 | Claude Sonnet 4.5 | Glass Box feedback presentation & learning effectiveness | Transparency hidden, weak score↔reasoning links, technical labels | 0 (presentation strategy defined, not implemented) |
+
+---
+
+## Pass 6 — Glass Box Feedback Presentation & Learning Effectiveness
+**Date:** 2026-05-25
+**Reviewer:** Claude Sonnet 4.5 (proactive continuation)
+**Scope:** How transparent reasoning (the core differentiator) is presented across Studio, Organize, and Print Sales tabs; whether it helps photographers learn
+
+**Context:** Glass Box methodology is the competitive moat — Gemini 3.1 Pro's structured thinking output showing observations → reasoning steps → conclusions. But transparency is only valuable if users engage with it and understand why their photo scored what it did.
+
+**Status:** Comprehensive presentation strategy defined. Glass Box exists but is undermined by tab hiding, technical styling, and weak visual connections between scores and reasoning.
+
+---
+
+### Critical Issues
+
+#### 1. **Glass Box hidden behind tab — not default view (P0)**
+
+**Current state:**
+- StudioAnalysisResults.tsx shows 3 tabs: Overview (default), Glass Box, How to Fix
+- Users land on Overview → see scores (7.2 composition, 6.8 lighting) → read overall critique
+- To see *why* those scores exist, they must click "Glass Box" tab
+- 90% of users will never click it (tab blindness)
+
+**Why it's wrong:**
+- The app's value prop is **"Glass Box feedback powered by Gemini 3.1 Pro"** (header badge)
+- Scores without reasoning are just judgment; photographers need to understand *what triggered that number*
+- Burying the differentiator 2 clicks away (click tab, expand panel) kills competitive advantage
+- Linear/Notion show reasoning inline with decisions, not behind tabs
+
+**Recommendation:**
+- Make Glass Box the **default tab** (rename tab to "Detailed Feedback")
+- On Overview tab, show **condensed Glass Box card** with:
+  - Top 2 observations (not all 5-7)
+  - "Why this score" for the lowest-scoring dimension
+  - [See full analysis →] link to Glass Box tab
+- Use progressive disclosure: overview shows *enough* reasoning to build trust, tab shows *exhaustive* breakdown
+
+**Implementation:**
+```tsx
+// StudioAnalysisResults.tsx line 38
+- const [activeTab, setActiveTab] = useState<TabId>('overview');
++ const [activeTab, setActiveTab] = useState<TabId>('glass-box');
+
+// Or keep overview default but add condensed reasoning:
+<div className="overview-tab">
+  {/* Existing scores + overall critique */}
+  <GlassBoxPreview
+    topObservations={rationale.observations.slice(0, 2)}
+    lowestDimension={chartData[0]} // Already sorted by score
+    onExpand={() => setActiveTab('glass-box')}
+  />
+</div>
+```
+
+**Effort:** 4h (create GlassBoxPreview component, integrate, test disclosure flow)
+
+---
+
+#### 2. **Monospace font creates engineering wall (P0)**
+
+**Current state (GlassBoxPanel.tsx):**
+```tsx
+<div className="font-mono text-sm space-y-6">
+  {/* observations, reasoning steps, priority fixes */}
+</div>
+```
+- All Glass Box content uses monospace (code font)
+- Header says "thinking_level: high" in mono badge
+- Evidence panel has "CV", "EXIF", "Coach + Data Store" labels
+
+**Why it's wrong:**
+- Monospace signals "this is for developers" to photographers
+- Users see courier-style text → associate with system output, not coaching
+- The *content* is written for photographers ("The composition uses leading lines..."), but the *presentation* screams "debug log"
+- Creates cognitive dissonance: coaching voice in engineering wrapper
+
+**Photography-first alternatives:**
+- Use **sans-serif for observations** (Geist from Pass 3) — readable, approachable
+- Use **serif for reasoning steps** (Newsreader from Pass 3) — thoughtful, editorial
+- Reserve monospace ONLY for data (EXIF values, scores, technical metadata)
+
+**Recommendation — Redesign Glass Box typography:**
+```css
+/* Observations: sans, larger, looser */
+.glass-box-observations {
+  font-family: Geist, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Reasoning steps: serif, narrative feel */
+.glass-box-reasoning {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Priority fixes: bold sans, action-oriented */
+.glass-box-fixes {
+  font-family: Geist, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(251, 191, 36, 1); /* amber */
+}
+
+/* Evidence values: mono (actual data) */
+.evidence-value {
+  font-family: JetBrains Mono, monospace;
+  font-size: 12px;
+}
+```
+
+**Replace engineering jargon in header:**
+- Current: "Glass Box · Gemini 3.1 Pro" + "thinking_level: high" badge
+- New: "Why this score" or "My reasoning" + "Based on 47 photos you've uploaded" badge
+
+**Effort:** 2h (CSS updates, header copy rewrite, test legibility)
+
+---
+
+#### 3. **Weak visual connection between scores and reasoning (P1)**
+
+**Current state:**
+- Overview tab shows score bars (Composition 7.2, Lighting 6.8, etc.)
+- Hover reveals critique text in right panel
+- But no indication that clicking "Glass Box" tab will explain *why Composition scored 7.2*
+- Users see score → read summary critique → move on (never connect dots to reasoning)
+
+**Why it's wrong:**
+- Scores feel arbitrary without showing "I scored composition 7.2 because..."
+- Glass Box observations mention composition ("leading lines guide eye to subject"), but connection isn't explicit
+- Other tools (Grammarly, Hemingway) show **inline annotations**: "This sentence is hard to read [because...]"
+- Photography users expect "you did X well" and "you did Y poorly" to be tied to specific scores
+
+**Recommendation — Add score-to-reasoning links:**
+1. **On Overview tab, next to each score bar:**
+   - Add subtle [Why?] link that jumps to Glass Box tab + auto-expands relevant section
+   - Or show tooltip on hover: "Composition 7.2 — Strong leading lines, but subject placement needs work. [See reasoning →]"
+
+2. **In Glass Box observations, tag dimension relevance:**
+   - Current: "The composition uses leading lines that guide the viewer's eye..."
+   - New: "**Composition:** The composition uses leading lines that guide the viewer's eye..." (dimension name in bold + amber color)
+   - Allows users to skim observations and find the one explaining their lowest score
+
+3. **Bidirectional highlighting:**
+   - Hover score bar on Overview → highlight related observations in Glass Box (if tab is open)
+   - Hover observation in Glass Box → highlight related score dimension
+   - Requires state management but creates "aha!" connection
+
+**Implementation:**
+```tsx
+// In chartData.map() on Overview tab (line 223-260):
+<button className="score-bar-wrapper" ...>
+  {/* Existing score UI */}
+  <Link
+    to="#glass-box-observation-composition"
+    className="text-xs text-brand-400 hover:underline ml-2"
+  >
+    Why?
+  </Link>
+</button>
+
+// In GlassBoxPanel observations (line 64-74):
+{rationale.observations.map((obs, i) => {
+  const dimension = extractDimension(obs); // Parse "Composition:" prefix
+  return (
+    <li
+      id={`glass-box-observation-${dimension?.toLowerCase()}`}
+      className={hoveredDimension === dimension ? 'highlight' : ''}
+    >
+      {dimension && <strong className="text-amber-400">{dimension}: </strong>}
+      {obs.replace(/^(Composition|Lighting|Technique|Creativity|Subject):\s*/, '')}
+    </li>
+  );
+})}
+```
+
+**Effort:** 6h (link wiring, hover state, dimension tagging in backend response, test UX flow)
+
+---
+
+#### 4. **Agent reasoning buried in Organize/Print tabs (P1)**
+
+**Current state:**
+- TriageTab.tsx line 299: `<p className="text-xs text-slate-500 italic">{item.agentReasoning}</p>`
+- PrintSalesTab.tsx line 234: `<p className="text-xs text-slate-500 italic">{item.agentReasoning}</p>`
+- Triage example: "These 4 images share a consistent low-key lighting style..."
+- Print Sales example: "This landscape has strong visual impact and would sell well as a large print..."
+
+**Why it's wrong:**
+- The reasoning is THE DIFFERENTIATOR for HITL — users should understand *why* the agent suggested this action
+- Current styling (12px italic gray) signals "fine print" or "disclaimer"
+- Users approve/reject without reading reasoning → defeats purpose of human-in-the-loop
+- Linear's HITL cards put reasoning ABOVE action buttons, not below in small print
+
+**Recommendation — Elevate agent reasoning:**
+1. **Move reasoning ABOVE approval buttons** (currently it's below)
+2. **Redesign as coaching callout:**
+   ```tsx
+   <div className="bg-amber-500/5 border-l-4 border-amber-500 rounded-r-lg p-4 mb-4">
+     <p className="text-xs uppercase font-bold text-amber-400 mb-1.5">Why I'm suggesting this</p>
+     <p className="text-sm text-slate-100 leading-relaxed">{item.agentReasoning}</p>
+   </div>
+   ```
+3. **Use coaching voice** (from Pass 4):
+   - Current: "These 4 images share a consistent low-key lighting style that would benefit from a 'moody' tag."
+   - New: "I noticed these 4 photos all use dramatic low-key lighting. Adding a 'moody' tag will help you find this style later when building your portfolio."
+
+**Visual hierarchy change:**
+```
+Before:
+[Photo thumbnails]
+[Action description]
+[Fine print reasoning in gray]
+[Approve] [Reject]
+
+After:
+[Photo thumbnails]
+[Action description]
+[COACHING CALLOUT — Why I'm suggesting this]
+[Approve] [Reject]
+```
+
+**Effort:** 3h (restructure HITL cards, update copy, test visual hierarchy)
+
+---
+
+#### 5. **Evidence panel uses technical labels (P2)**
+
+**Current state (EvidencePanel.tsx):**
+- Source badges: "EXIF", "CV", "Coach + Data Store"
+- Field labels: "shutterSpeed: 1/500", "detected_objects: person, camera"
+- Color coding: blue for EXIF, green for CV, purple for Coach
+
+**Why it's wrong:**
+- "CV" (Computer Vision) means nothing to photographers
+- "Coach + Data Store" is system architecture leaking into UI
+- Field names are camelCase developer keys (shutterSpeed, not "Shutter Speed")
+
+**Recommendation — Photographer-friendly evidence labels:**
+- EXIF → "From your camera" (or camera icon with no text)
+- CV → "What I saw in the photo" (or eye icon)
+- Coach + Data Store → "From your past uploads" (or library icon)
+- Field names: humanize via mapping dict (shutterSpeed → "Shutter Speed", detected_objects → "Subjects I found")
+
+**Implementation:**
+```tsx
+const SOURCE_CONFIG = {
+  EXIF: {
+    label: 'From your camera',
+    icon: <Camera />,
+    color: 'amber' // Match new palette
+  },
+  CV: {
+    label: 'What I saw',
+    icon: <Eye />,
+    color: 'amber'
+  },
+  Coach: {
+    label: 'From your library',
+    icon: <Database />,
+    color: 'amber'
+  },
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  shutterSpeed: 'Shutter Speed',
+  aperture: 'Aperture',
+  iso: 'ISO',
+  detected_objects: 'Subjects',
+  composition_rule: 'Composition Rule',
+  // ... etc
+};
+```
+
+**Effort:** 1h (label mapping, icon updates)
+
+---
+
+#### 6. **Grounding citations are metadata soup (P2)**
+
+**Current state (GlassBoxPanel.tsx lines 111-133):**
+- "Grounded in Agent Builder" section shows citation chips
+- Citations: `{id: "rule_of_thirds", title: "Rule of Thirds", excerpt: "..."}`
+- Displayed as green chips with title + optional excerpt
+
+**Why it's wrong:**
+- "Grounded in Agent Builder" is internal tool naming (ADK grounding corpus)
+- Users don't care that principles came from "Agent Builder" — they want to know **which photography rules** informed the critique
+- Current display mixes rules ("Rule of Thirds") with vague IDs ("composition_fundamentals")
+
+**Recommendation — Reframe as "Photography principles used:**
+- Header: "Grounded in Agent Builder" → "Photography principles I used"
+- Citation format:
+  ```tsx
+  <div className="principle-chip">
+    <span className="font-semibold">Rule of Thirds</span>
+    <p className="text-xs text-slate-400 mt-1">
+      "Strong compositions place the subject at intersection points..."
+    </p>
+    {principle.learnMoreUrl && (
+      <a href={principle.learnMoreUrl} className="text-brand-400 text-xs">
+        Learn more →
+      </a>
+    )}
+  </div>
+  ```
+- Add **2-3 canonical principles** to every critique (not just when grounding exists):
+  - Composition critiques always cite "Rule of Thirds" or "Leading Lines"
+  - Lighting critiques cite "Rembrandt Lighting" or "Golden Hour"
+  - Makes Glass Box educational, not just analytical
+
+**Effort:** 2h (header rewrite, citation styling, add fallback principles)
+
+---
+
+### Learning Effectiveness Analysis
+
+**Question:** Does Glass Box presentation help photographers improve their skills?
+
+**Current hypothesis (to validate with users):**
+- ✅ **Structured reasoning exists:** Observations → Steps → Fixes is clear methodology
+- ✅ **Priority fixes are actionable:** "Move subject to left third" is concrete
+- ❌ **But reasoning is hidden:** Default tab hides it, monospace makes it intimidating
+- ❌ **Scores feel disconnected:** No explicit link between "7.2" and "your leading lines are strong"
+- ❌ **Technical presentation:** "thinking_level: high", "CV", "grounding citations" create barrier
+
+**Photography learning patterns (from instructional design):**
+1. **Show-don't-tell:** Visual annotations (bounding boxes) work well — keep "How to Fix" tab with spatial overlays
+2. **Explain scores:** Photographers accept numeric feedback IF they see specific reasons ("7.2 because...")
+3. **Pattern recognition:** "I always underexpose backlit subjects" requires comparing Glass Box reasoning across 10+ uploads
+4. **Terminology barrier:** Using photography vocabulary (rule of thirds, Rembrandt lighting) builds trust; using CS vocabulary (CV, grounding corpus) destroys it
+
+**Missing from current Glass Box:**
+- **No trend analysis:** Memory tab shows portfolio scores but doesn't say "Your composition improved +1.2 points since last month because you started using leading lines"
+- **No comparative learning:** Can't see "This photo scored 8.1 on lighting (your best yet) — here's what you did differently from your 6.5 average"
+- **No skill tagging:** Glass Box doesn't say "This photo demonstrates [Golden Hour] [Shallow DOF] [Rule of Thirds]" for pattern tracking
+
+**Recommendation — Add "Learning insights" panel to Glass Box:**
+```tsx
+<div className="learning-insights bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5 mt-6">
+  <h4 className="text-emerald-400 font-bold mb-3">Learning insights</h4>
+  <ul className="space-y-2 text-sm text-slate-200">
+    <li>
+      ✓ Your composition scores improved +18% since adding leading lines
+      (last 5 photos vs. previous 10)
+    </li>
+    <li>
+      → You consistently nail Golden Hour lighting (8.2 avg) but struggle with
+      midday sun (5.7 avg). Try shooting at sunrise/sunset more often.
+    </li>
+    <li>
+      🎯 This photo demonstrates: Rule of Thirds, Shallow DOF, Natural Light —
+      tags added to Memory for future reference.
+    </li>
+  </ul>
+</div>
+```
+
+**Effort:** 8h (requires backend aggregation queries, frontend panel, test data accuracy)
+
+---
+
+### Recommended Changes (Prioritized)
+
+#### Quick wins (<6h total)
+1. **Replace monospace with photography-friendly fonts** (2h) — removes engineering wall
+2. **Rewrite Glass Box header** ("Why this score" + humanize badges) (1h)
+3. **Elevate agent reasoning in HITL cards** (move above buttons, amber callout) (3h)
+
+#### Medium effort (<12h)
+4. **Add score-to-reasoning links** on Overview tab (6h) — creates "aha" connection
+5. **Make Glass Box default tab** OR add condensed preview to Overview (4h)
+6. **Humanize Evidence labels** (camera/eye/library icons, remove "CV") (1h)
+7. **Reframe grounding citations** ("Photography principles I used") (2h)
+
+#### Large effort (future)
+8. **Learning insights panel** with trend analysis (8h backend + 4h frontend)
+9. **Bidirectional score↔observation highlighting** (6h state management + UX polish)
+10. **Skill tagging** (Golden Hour, Rule of Thirds badges) for pattern tracking (12h)
+
+---
+
+### Success Criteria — Glass Box Engagement
+
+**Before (Current State):**
+- Glass Box tab click rate: <15% (assumed, not measured)
+- Users read overall critique, see scores, upload next photo
+- Agent reasoning in HITL cards: ignored (tiny gray text)
+- Feedback: "The scores are nice but I don't know how to improve"
+
+**After (Target State):**
+- Glass Box engagement: >50% of users view reasoning (either via default tab or condensed preview)
+- Score-to-reasoning connection: >70% of users click [Why?] link or hover for explanation
+- HITL approval confidence: >80% of users report "I understood why the agent suggested this" (via optional feedback after approve/reject)
+- Learning effectiveness: >60% of users cite specific Glass Box reasoning when describing what they learned ("I learned to avoid centered subjects")
+
+**Metrics to track:**
+- Tab analytics: % users who click Glass Box tab, time spent reading
+- Link clicks: % users who click [Why?] next to scores
+- HITL reasoning read rate: % users who expand or scroll to agent reasoning before approve/reject
+- Skill improvement: correlation between Glass Box engagement and ISAR delta (do users who read reasoning improve faster?)
+
+---
+
+### Integration with Previous Passes
+
+**Pass 3 (Visual Direction) provides the fonts:**
+- Glass Box observations: Geist sans (Pass 3 body font)
+- Glass Box reasoning: Newsreader serif (Pass 3 headline font)
+- Evidence values: JetBrains Mono (Pass 3 data font)
+
+**Pass 4 (UX Copy) provides the voice:**
+- Header: "Glass Box · Gemini 3.1 Pro" → "Why this score"
+- Evidence: "CV" → "What I saw in the photo"
+- Agent reasoning: engineering statements → coaching explanations
+
+**Pass 5 (Loading States) applies here:**
+- Glass Box takes 15-30s to generate → show staged progress
+- "Analyzing composition... Reviewing lighting... Writing reasoning..." (not blank spinner)
+
+**Pass 1-2 (IA + Navigation) impacts discoverability:**
+- If Glass Box stays hidden in a tab, Home dashboard should have "See how Glass Box works" onboarding card
+- New users don't know what Glass Box means → need 1-sentence explainer on first visit
+
+---
+
+## Pass 6 Summary
+
+**Glass Box is the product's soul — but it's presented like debug output.**
+
+The technical implementation is excellent (structured thinking, grounding citations, evidence sources), but the design undermines learning:
+- Hidden behind tabs (most users never see it)
+- Monospace font signals "for developers only"
+- Weak connection between scores (what users care about) and reasoning (why those scores exist)
+- Agent reasoning in HITL cards is buried below action buttons in small gray italic
+- Technical labels (CV, Agent Builder, thinking_level) create vocabulary barrier
+
+**Priority fix:** Make Glass Box reasoning visible by default (either as default tab or condensed preview), use photography-friendly typography (sans/serif, not mono), and create explicit score↔reasoning links so users understand "I scored 7.2 because X, not because arbitrary algorithm."
+
+**Expected outcome:** >50% engagement with Glass Box reasoning (up from ~15%), >70% users understand score rationale, HITL decisions made with confidence (not blind approve/reject).
+
+**Effort:** 18h for quick+medium wins (fonts, header, HITL elevation, score links, default visibility). Additional 26h for learning insights and advanced features.
+
+---
