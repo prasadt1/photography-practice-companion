@@ -2610,12 +2610,167 @@ Ranked by visual impact × user frequency.
 
 ---
 
-## Pass 4 — [Future Review Session]
-**Date:** TBD
-**Reviewer:** TBD
-**Scope:** TBD
+## Pass 4 — UX Copy & Microcopy Overhaul
+**Date:** 2026-05-25
+**Reviewer:** Claude Sonnet 4.5 (design-review-brief.md §10, §17, §18)
+**Scope:** Replace engineering jargon with photographer-facing copy; coaching tone; plain-language errors
 
-[Next review session will be added here]
+Per design-review-brief.md §10: "Copy pass — Replace dev-speak; consumer headlines per tab"
+
+**Status:** Comprehensive copy strategy defined covering all tabs, error messages, empty states, and HITL flows. Ready for implementation.
+
+**Key findings:**
+- Engineering jargon pervasive (orchestrator, ISAR, persona, make api-dev exposed in 15+ locations)
+- Inconsistent voice (switches between I/you/system perspectives)
+- No coaching personality in current copy
+- Generic AI SaaS language instead of photography-mentor voice
+
+**Full review:** See extended Pass 4 section above for tab-by-tab copy audit, error messages, settings copy, and voice/tone guidelines.
+
+---
+
+## Pass 5 — Loading States, Errors & Edge Cases
+**Date:** 2026-05-25
+**Reviewer:** Claude Sonnet 4.5 (design-review-brief.md §18)
+**Scope:** Handle 30-90s agent latency, API failures, empty states, offline scenarios, trust & transparency
+
+Per design-review-brief.md §18: Loading & latency, error recovery, empty states, trust & memory
+
+**Status:** Error handling and loading state strategy defined. Critical for 30-90s Mentor/Print queries.
+
+**Key findings:**
+- No staged loading messages for 60-90s agent calls (users think app is frozen)
+- No cancel button for long-running queries
+- Generic spinners with no progress indication
+- Stack traces shown to users on API failures
+- No offline detection or recovery flows
+- No "what we store" transparency about MongoDB memory
+
+**Full review:** See extended Pass 5 section above for staged loading states, skeleton screens, error recovery patterns, offline detection, and trust explanations.
+
+---
+
+## Summary: All 5 Passes Complete
+
+### Pass 1: Full App Audit (Foundational Issues)
+- **Top 10 issues** ranked by photographer user impact
+- **Competitive analysis:** 5 steal patterns + 5 reject anti-patterns
+- **Responsive gaps:** 390px Field tab failures, tab overflow
+- **Accessibility:** WCAG AA violations (focus, ARIA, contrast)
+- **Quick wins:** 2h fixes (tab renaming, jargon removal, focus styles)
+
+### Pass 2: Navigation Architecture (Tab Sprawl → Coherent IA)
+- **Problem:** 7-8 tabs, all equal weight, mobile overflow
+- **Solution:** Home hub + bottom bar (4 core items), persona-specific dashboards
+- **Onboarding:** 3-card persona selection (hobbyist, working pro, accessible future)
+- **Implementation:** 3 phases (~13h total), preserves judge demo paths
+
+### Pass 3: Visual Direction (Generic SaaS → Photography Gallery)
+- **Typography:** Newsreader serif headlines + Geist sans body + JetBrains Mono data
+- **Color system:** Warm charcoal + amber accent (replaces cold slate + green)
+- **Photo treatment:** Matte frames, film grain overlays, rule-of-thirds grids
+- **Reference products:** VSCO (minimalism), Halide (instrumentation), Lightroom (metadata rigor)
+- **Top 5 components redesigned** with before/after (Studio hero, Memory grid, HITL cards, Mentor chat, Field camera)
+
+### Pass 4: UX Copy (Engineering Jargon → Coaching Voice)
+- **Voice principles:** First-person (I'll analyze), outcome-focused, plain language
+- **Tab-by-tab rewrite:** All 7 tabs + error messages + empty states + settings
+- **Jargon purged:** No "orchestrator," "ISAR," "persona," "make api-dev"
+- **Coaching tone:** "Let's improve your backlighting" not "Backlighting score: 6.2"
+
+### Pass 5: Loading & Errors (Black Box → Transparent Progress)
+- **Staged loading:** 4-stage messages for 60-90s queries with cancel option
+- **Skeleton screens:** Memory grid, Practice cards, Mentor typing indicators
+- **Error recovery:** API down, timeouts, partial failures, offline detection
+- **Trust & transparency:** "What we store" explanation for MongoDB memory
+
+---
+
+## Implementation Roadmap
+
+### Immediate (ship for hackathon, <16h total)
+**From Pass 1 (2h):**
+- Tab relabeling (first-person actions)
+- Engineering jargon removal
+- Print Sales preview for hobbyists
+- Global focus indicators
+
+**From Pass 2 (10h):**
+- Onboarding persona selection
+- Home dashboard (hobbyist + working pro cards)
+- Bottom bar + sidebar navigation
+
+**From Pass 3 (8h):**
+- Typography swap (Inter → Newsreader + Geist)
+- Color system (green → amber, slate → warm charcoal)
+- Studio hero + Memory portfolio redesigns
+
+**From Pass 4 (2h):**
+- Replace all "orchestrator," "ISAR," "persona" mentions
+- Rewrite tab headers
+- Update primary CTA labels
+
+**From Pass 5 (4h):**
+- Staged Mentor loading (30-90s tolerance)
+- API-down error states
+- Skeleton screens (Memory, Practice)
+
+**Total immediate effort: ~36 hours** (1 week solo, 3-4 days with team)
+
+### Post-Hackathon (<3 weeks)
+**Medium effort (Pass 1-5 combined):**
+- Field responsive fixes + rule-of-thirds grid
+- HITL card redesigns (elevated reasoning)
+- All empty states rewritten
+- Offline detection + recovery
+- Photo grain overlays
+
+**Large effort (Future):**
+- Memory trends + sparklines (backend aggregation)
+- Dynamic Mentor starters (portfolio-aware)
+- Vision impairment persona web UI
+- PWA offline queue
+- Comprehensive help/FAQ
+
+---
+
+## Success Criteria
+
+### Before (Current State)
+- **5-second test:** "AI dashboard," "SaaS tool," "chatbot"
+- **Copy sample:** "Routed through v5 orchestrator (persona: hobbyist). Requires make api-dev on port 8081."
+- **Visual:** Green on cold slate, Inter typography, generic horizontal tabs
+- **Errors:** User uploads → 15s spinner → "Why is this frozen?" → refresh page → lost work
+- **Tab discovery:** 7 equal tabs, working pros hunt for Print Sales
+
+### After (Target State)
+- **5-second test:** "Photo gallery," "editing software," "camera app"
+- **Copy sample:** "I've seen every photo you've uploaded. Ask me anything about your work."
+- **Visual:** Amber on warm charcoal, Newsreader serif headlines, editorial depth
+- **Errors:** Staged progress ("Reviewing 47 photos... 30s so far") + [Cancel] button at 60s
+- **Tab discovery:** Home dashboard surfaces Print Sales card for working pros (no hunting)
+
+### Metrics to Track Post-Launch
+- **Tab overflow issues:** 0% users report horizontal scroll on mobile (Pass 1 fix)
+- **Persona switch rate:** <10% users change persona after onboarding (indicates good initial match, Pass 2 validation)
+- **Visual differentiation score:** >4/5 judges rate "looks different from AI dashboards" (Pass 3 goal)
+- **Copy comprehension:** >80% users understand "Glass Box" = transparent reasoning without asking (Pass 4 validation)
+- **Abandonment during loading:** <20% users close tab during 30-90s waits (Pass 5 staged progress effectiveness)
+- **Error recovery success:** >60% users successfully retry after API error (Pass 5 error messaging clarity)
+
+---
+
+## Next Steps
+
+1. **Prioritize Pass 1 quick wins** (2h) — immediate UX improvement
+2. **Implement Pass 2 Phase 1A+1B** (10h) — solve tab sprawl, enable persona journeys
+3. **Begin Pass 3 Phase 1** (8h) — visual differentiation from generic SaaS
+4. **Integrate Pass 4 quick wins** (2h) — purge jargon, add coaching voice
+5. **Add Pass 5 critical patterns** (4h) — loading states, error recovery
+
+**Total for hackathon-ready state: ~26 hours** (prioritized subset of immediate work)
+
+After demo validation, continue with medium/large effort improvements based on user feedback and judge comments.
 
 ---
 
@@ -2626,3 +2781,5 @@ Ranked by visual impact × user frequency.
 | 1 | 2026-05-25 | Claude Sonnet 4.5 | Full app audit | 10 major + responsive/a11y | 0 (initial review) |
 | 2 | 2026-05-25 | Claude Sonnet 4.5 | Navigation architecture & persona IA | Tab sprawl, persona journeys | 0 (strategy defined, not implemented) |
 | 3 | 2026-05-25 | Claude Sonnet 4.5 | Visual direction & premium design language | Generic AI SaaS aesthetic | 0 (visual strategy defined, not implemented) |
+| 4 | 2026-05-25 | Claude Sonnet 4.5 | UX copy & microcopy overhaul | Engineering jargon, inconsistent voice | 0 (copy strategy defined, not implemented) |
+| 5 | 2026-05-25 | Claude Sonnet 4.5 | Loading states, errors, edge cases | 30-90s latency, API failures, trust gaps | 0 (error handling strategy defined, not implemented) |
