@@ -15,6 +15,7 @@ import { TriageTab } from './components/TriageTab';
 import { ActivePracticeBanner } from './components/studio/ActivePracticeBanner';
 import PhotoUploader from './components/studio/PhotoUploader';
 import StudioAnalysisResults from './components/studio/StudioAnalysisResults';
+import { StudioHero } from './components/studio/StudioHero';
 import type { AppTab } from './config/navConfig';
 import { isAppTab, setTabHash, tabFromHash } from './config/navConfig';
 import { useAuth } from './auth/useAuth';
@@ -23,7 +24,6 @@ import { clearMentorSession } from './services/mentorClient';
 import { analyzePhoto } from './services/agentClient';
 import { fetchActiveAssignment } from './services/practiceClient';
 import { fetchUserProfile, personaToUserMode, updatePersona } from './services/userClient';
-import { Upload, BarChart3, Target } from 'lucide-react';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { isOnboardingComplete, setOnboardingComplete } from './lib/onboarding';
@@ -42,6 +42,7 @@ function App() {
   const [userMode, setUserMode] = useState<UserMode>('hobbyist');
   const [personaError, setPersonaError] = useState<string | null>(null);
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
+  const [showUploader, setShowUploader] = useState(false);
   const online = useOnlineStatus();
   const auth = useAuth();
 
@@ -186,43 +187,44 @@ function App() {
           {activeTab === 'studio' && (
             <div className="animate-fadeIn relative">
               <FilmGrain className="rounded-2xl" />
-              {!result && (
-                <div className="relative z-10 flex flex-col items-center space-y-10 py-4 md:py-8">
+              {!result && !showUploader && !analyzing && (
+                <div className="relative z-10 py-4 md:py-8">
+                  {activeAssignment && (
+                    <div className="mb-8">
+                      <ActivePracticeBanner assignment={activeAssignment} />
+                    </div>
+                  )}
+                  <StudioHero
+                    onUploadClick={() => setShowUploader(true)}
+                    onViewMemory={() => navigate('memory')}
+                  />
+                </div>
+              )}
+              {!result && (showUploader || analyzing) && (
+                <div className="relative z-10 flex flex-col items-center space-y-8 py-4 md:py-8">
                   {activeAssignment && (
                     <ActivePracticeBanner assignment={activeAssignment} />
                   )}
-                  <div className="text-center max-w-2xl space-y-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400/90">
-                      Glass Box critique
-                    </p>
-                    <h2 className="font-serif text-4xl md:text-5xl font-medium text-white leading-[1.15] tracking-tight">
-                      I&apos;ll remember every photo — and show you why it scored what it did
+                  <div className="text-center max-w-xl">
+                    <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-2">
+                      {analyzing ? 'Analyzing your photo' : 'Upload a photo'}
                     </h2>
-                    <p className="text-muted text-sm md:text-base leading-relaxed max-w-lg mx-auto">
-                      Upload once for five-axis scores, transparent reasoning, and practice tied to
-                      your library — not a one-off chat.
-                    </p>
-                    <ol className="grid sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto pt-2">
-                      <li className="rounded-xl border border-warm bg-surface-1/80 p-4 space-y-2">
-                        <Upload className="w-5 h-5 text-brand-400" aria-hidden />
-                        <p className="text-sm font-semibold text-white">1. Upload</p>
-                        <p className="text-xs text-muted">JPG or RAW from any shoot</p>
-                      </li>
-                      <li className="rounded-xl border border-warm bg-surface-1/80 p-4 space-y-2">
-                        <BarChart3 className="w-5 h-5 text-brand-400" aria-hidden />
-                        <p className="text-sm font-semibold text-white">2. Glass Box</p>
-                        <p className="text-xs text-muted">
-                          Example: lighting 6.2 → 7.8 after you fix backlit faces
-                        </p>
-                      </li>
-                      <li className="rounded-xl border border-warm bg-surface-1/80 p-4 space-y-2">
-                        <Target className="w-5 h-5 text-brand-400" aria-hidden />
-                        <p className="text-sm font-semibold text-white">3. Practice</p>
-                        <p className="text-xs text-muted">Assignments from your real weak spots</p>
-                      </li>
-                    </ol>
+                    {!analyzing && (
+                      <p className="text-muted text-sm">
+                        Drag and drop or click to browse. JPG, PNG, or WEBP.
+                      </p>
+                    )}
                   </div>
                   <PhotoUploader onImageSelected={handleImageSelected} isAnalyzing={analyzing} />
+                  {!analyzing && (
+                    <button
+                      type="button"
+                      onClick={() => setShowUploader(false)}
+                      className="text-sm text-muted hover:text-white underline underline-offset-2"
+                    >
+                      Back to overview
+                    </button>
+                  )}
                 </div>
               )}
               {result && imageUrl && (
@@ -232,7 +234,7 @@ function App() {
                   originalFilename={filename}
                   onReset={() => {
                     resetStudio();
-                    navigate('home');
+                    setShowUploader(false);
                   }}
                 />
               )}
