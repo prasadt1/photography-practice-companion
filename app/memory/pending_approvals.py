@@ -72,9 +72,10 @@ def _execute_approved(doc: dict[str, Any], override_payload: dict[str, Any] | No
         coll = get_db().portfolio_entries
         for eid in entry_ids:
             try:
+                # User-applied tags go to user_tags (separate from AI-generated aesthetic_tags)
                 coll.update_one(
                     {"_id": ObjectId(eid)},
-                    {"$addToSet": {"aesthetic_tags": {"$each": tags}}},
+                    {"$addToSet": {"user_tags": {"$each": tags}}},
                 )
             except Exception:
                 continue

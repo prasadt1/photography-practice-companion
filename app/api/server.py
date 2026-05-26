@@ -220,6 +220,7 @@ def portfolio_list(
     limit: int = 48,
     sort_by: str = "date",
     sort_order: str = "desc",
+    user_tag: str | None = None,
 ) -> dict:
     try:
         return list_portfolio_entries(
@@ -227,6 +228,7 @@ def portfolio_list(
             limit=limit,
             sort_by=sort_by,
             sort_order=sort_order,
+            user_tag=user_tag,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

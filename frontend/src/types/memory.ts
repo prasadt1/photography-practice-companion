@@ -9,6 +9,7 @@ export interface PortfolioListItem {
   scores: AnalysisScores;
   overallAverage: number;
   aestheticTags: string[];
+  userTags: string[];
   sceneDescription?: string;
   colourNotes?: string | null;
   glassBoxSummary: string[];

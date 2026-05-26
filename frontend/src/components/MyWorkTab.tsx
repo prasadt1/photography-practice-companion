@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ArrowUpDown, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, Tag, TrendingUp, X } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { FocusAreas } from './FocusAreas';
 import { TabEmptyState } from './TabEmptyState';
@@ -76,9 +76,11 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
 
-  // Sort state
+  // Sort and filter state
   const [sortBy, setSortBy] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [userTagFilter, setUserTagFilter] = useState<string | null>(null);
+  const [allUserTags, setAllUserTags] = useState<string[]>([]);
 
   // Upload/analysis state
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
@@ -102,20 +104,32 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const [portfolio, aesthetic, trendData] = await Promise.all([
-        fetchPortfolio({ sortBy, sortOrder }),
+      const [portfolio, aesthetic, trendData, allPhotos] = await Promise.all([
+        fetchPortfolio({ sortBy, sortOrder, userTag: userTagFilter ?? undefined }),
         fetchAestheticProfile(),
         fetchPortfolioTrends(12).catch(() => null),
+        // Fetch all photos once to collect user tags for filter dropdown (unfiltered)
+        userTagFilter ? fetchPortfolio({ sortBy: 'date', sortOrder: 'desc' }) : Promise.resolve(null),
       ]);
       setEntries(portfolio.entries);
       setProfile(aesthetic);
       setTrends(trendData);
+
+      // Collect unique user tags from all photos for filter dropdown
+      const photosForTags = allPhotos?.entries ?? portfolio.entries;
+      const tagSet = new Set<string>();
+      for (const entry of photosForTags) {
+        for (const tag of entry.userTags ?? []) {
+          tagSet.add(tag);
+        }
+      }
+      setAllUserTags(Array.from(tagSet).sort());
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [sortBy, sortOrder]);
+  }, [sortBy, sortOrder, userTagFilter]);
 
   useEffect(() => {
     void loadGallery();
@@ -270,7 +284,37 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
               : 'Your critiqued photos appear here'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* User tag filter dropdown */}
+          {allUserTags.length > 0 && (
+            <div className="relative">
+              <select
+                value={userTagFilter ?? ''}
+                onChange={(e) => setUserTagFilter(e.target.value || null)}
+                className="appearance-none pl-8 pr-8 py-2 rounded-lg border border-warm bg-surface-1 text-stone-300 text-sm hover:bg-surface-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="">All photos</option>
+                {allUserTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+              <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+            </div>
+          )}
+          {/* Active filter pill */}
+          {userTagFilter && (
+            <button
+              type="button"
+              onClick={() => setUserTagFilter(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-brand-400 text-xs font-medium hover:bg-brand-500/30"
+            >
+              {userTagFilter.replace(/_/g, ' ')}
+              <X className="w-3 h-3" />
+            </button>
+          )}
           {/* Sort dropdown */}
           <div className="relative">
             <select
@@ -563,11 +607,25 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                         )}
                       </div>
                     )}
-                    {entry.aestheticTags.length > 0 && (
+                    {/* User-applied tags (amber) */}
+                    {(entry.userTags?.length ?? 0) > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
+                        {entry.userTags.slice(0, expanded ? 8 : 3).map((tag) => (
+                          <span
+                            key={`user-${tag}`}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30 font-medium"
+                          >
+                            {tag.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* AI-generated tags (gray) */}
+                    {entry.aestheticTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {entry.aestheticTags.slice(0, expanded ? 12 : 4).map((tag) => (
                           <span
-                            key={tag}
+                            key={`ai-${tag}`}
                             className="text-[10px] px-1.5 py-0.5 rounded bg-canvas-elevated text-muted"
                           >
                             {tag}

@@ -79,6 +79,7 @@ def _serialize_entry(doc: dict[str, Any]) -> dict[str, Any]:
         "scores": scores,
         "overallAverage": round(_avg_score(scores), 1),
         "aestheticTags": doc.get("aesthetic_tags") or [],
+        "userTags": doc.get("user_tags") or [],
         "sceneDescription": doc.get("scene_description"),
         "colourNotes": doc.get("colour_notes"),
         "glassBoxSummary": (doc.get("glass_box") or {}).get("observations", [])[:2],
@@ -103,14 +104,16 @@ def list_portfolio_entries(
     user_id: str | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
+    user_tag: str | None = None,
 ) -> dict[str, Any]:
-    """List portfolio entries with optional sorting.
+    """List portfolio entries with optional sorting and filtering.
 
     Args:
         limit: Max entries to return (1-100)
         user_id: Filter by user
         sort_by: Field to sort by (date, score, composition, lighting, technique, creativity, subject_impact)
         sort_order: Sort direction (asc, desc)
+        user_tag: Filter by user-applied tag (exact match)
     """
     query: dict[str, Any] = {}
     demo_user = os.environ.get("DEMO_USER_ID")
@@ -118,6 +121,10 @@ def list_portfolio_entries(
         query["user_id"] = to_mongo_user_id(user_id)
     elif demo_user:
         query["user_id"] = ObjectId(demo_user)
+
+    # Filter by user-applied tag if specified
+    if user_tag:
+        query["user_tags"] = user_tag
 
     from memory import mcp_reads
 

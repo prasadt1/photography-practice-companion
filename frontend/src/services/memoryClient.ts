@@ -25,15 +25,20 @@ export interface FetchPortfolioOptions {
   limit?: number;
   sortBy?: SortField;
   sortOrder?: SortOrder;
+  /** Filter by user-applied tag */
+  userTag?: string;
 }
 
 export function fetchPortfolio(options: FetchPortfolioOptions = {}): Promise<PortfolioListResponse> {
-  const { limit = 48, sortBy = 'date', sortOrder = 'desc' } = options;
+  const { limit = 48, sortBy = 'date', sortOrder = 'desc', userTag } = options;
   const params = new URLSearchParams({
     limit: String(limit),
     sort_by: sortBy,
     sort_order: sortOrder,
   });
+  if (userTag) {
+    params.set('user_tag', userTag);
+  }
   return getJson(`/api/v1/portfolio?${params}`);
 }
 
