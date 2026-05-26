@@ -8,13 +8,12 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronUp, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { TabEmptyState } from './TabEmptyState';
 import { apiUnreachableMessage } from '../lib/apiHelp';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { MemoryGridSkeleton } from './SkeletonBlocks';
-import { ScoreTrendRow } from './ScoreTrendRow';
 import PhotoUploader from './studio/PhotoUploader';
 import StudioAnalysisResults from './studio/StudioAnalysisResults';
 import { ActivePracticeBanner } from './studio/ActivePracticeBanner';
@@ -313,7 +312,10 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                 <span className="text-stone-300">
                   Avg{' '}
                   <span className="text-amber-400 font-semibold">
-                    {profile.averageScores.overall?.toFixed(1) ?? '—'}
+                    {(() => {
+                      const scores = Object.values(profile.averageScores).filter((v): v is number => v != null);
+                      return scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—';
+                    })()}
                   </span>
                 </span>
                 {profile.stylisticConsistencyScore != null && (
@@ -382,7 +384,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                     .map((d) => (
                       <div key={d.key} className="rounded-lg bg-canvas-elevated/60 p-2 text-center">
                         <p className="text-[9px] text-muted uppercase">{d.label}</p>
-                        <p className="text-sm font-semibold text-stone-200">{d.current.toFixed(1)}</p>
+                        <p className="text-sm font-semibold text-stone-200">{d.latest?.toFixed(1) ?? '—'}</p>
                         {d.delta != null && (
                           <p className={`text-[10px] ${d.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(1)}

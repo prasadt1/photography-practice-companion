@@ -49,7 +49,7 @@ const EXAMPLE_PHOTO = {
 };
 
 export const HomeTab: React.FC<Props> = ({
-  mode,
+  mode: _mode,
   activeAssignment,
   onNavigate,
   onAnalysisComplete,
@@ -133,17 +133,12 @@ export const HomeTab: React.FC<Props> = ({
   const isReturningUser = bestPhoto !== null;
   const photoCount = profile?.photoCount ?? 0;
 
-  // Find best trend for display (guard against division by zero)
+  // Find best trend for display
   const bestTrend = trends?.dimensions?.find(
-    (d) => d.key === 'composition' || d.key === 'lighting' || d.key === 'overall'
+    (d) => d.delta != null && d.delta > 0 && (d.key === 'composition' || d.key === 'lighting' || d.key === 'overall')
   );
-  const trendPercent =
-    bestTrend?.trend && bestTrend.trend.start > 0
-      ? Math.round(((bestTrend.trend.end - bestTrend.trend.start) / bestTrend.trend.start) * 100)
-      : null;
-  const trendLabel = bestTrend?.key
-    ? bestTrend.key.charAt(0).toUpperCase() + bestTrend.key.slice(1)
-    : null;
+  const trendDelta = bestTrend?.delta ?? null;
+  const trendLabel = bestTrend?.label ?? null;
 
   // Loading skeleton
   if (loading) {
@@ -239,12 +234,12 @@ export const HomeTab: React.FC<Props> = ({
             <TrendingUp className="w-5 h-5 text-brand-400" aria-hidden />
           </div>
           <div className="flex-1 min-w-0">
-            {trendPercent !== null && trendLabel ? (
+            {trendDelta !== null && trendLabel ? (
               <>
                 <p className="text-sm font-semibold text-white">
-                  {trendLabel} {trendPercent >= 0 ? '+' : ''}{trendPercent}%
+                  {trendLabel} {trendDelta >= 0 ? '+' : ''}{trendDelta.toFixed(1)}
                 </p>
-                <p className="text-xs text-muted">this month</p>
+                <p className="text-xs text-muted">recent improvement</p>
               </>
             ) : photoCount > 0 ? (
               <>
@@ -291,7 +286,7 @@ export const HomeTab: React.FC<Props> = ({
             {activeAssignment ? (
               <>
                 <p className="text-sm font-semibold text-white truncate">
-                  {activeAssignment.title || 'Active Challenge'}
+                  {activeAssignment.targetSkill || 'Active Challenge'}
                 </p>
                 <p className="text-xs text-muted truncate">{activeAssignment.brief}</p>
               </>
@@ -416,8 +411,8 @@ export const HomeTab: React.FC<Props> = ({
               <p className="text-sm text-stone-300 leading-relaxed">
                 {profile.dominantTags.length > 0
                   ? `I notice you're drawn to ${profile.dominantTags.slice(0, 2).join(' and ').replace(/_/g, ' ')} work. ${
-                      trendPercent && trendPercent > 0
-                        ? `Your ${trendLabel?.toLowerCase()} has improved ${trendPercent}% recently.`
+                      trendDelta && trendDelta > 0
+                        ? `Your ${trendLabel?.toLowerCase()} has improved +${trendDelta.toFixed(1)} recently.`
                         : 'Keep uploading to track your growth over time.'
                     }`
                   : 'Keep uploading photos and I\'ll help you understand your aesthetic and track your progress.'}
