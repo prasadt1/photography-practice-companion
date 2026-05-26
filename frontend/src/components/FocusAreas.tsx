@@ -9,7 +9,8 @@ import { getFocusArea, getScoreContext } from '../lib/scoreContext';
 
 interface Props {
   scores: Record<string, number | null | undefined>;
-  onStartPractice?: () => void;
+  /** Called when user clicks "Start a [dimension] challenge". Passes the dimension key. */
+  onStartPractice?: (dimension: string) => void;
   compact?: boolean;
 }
 
@@ -33,7 +34,7 @@ export const FocusAreas: React.FC<Props> = ({ scores, onStartPractice, compact =
         {onStartPractice && (
           <button
             type="button"
-            onClick={onStartPractice}
+            onClick={() => onStartPractice(focusArea.dimension)}
             className="text-xs text-brand-400 hover:text-brand-300 font-medium shrink-0"
           >
             Practice
@@ -92,7 +93,7 @@ export const FocusAreas: React.FC<Props> = ({ scores, onStartPractice, compact =
         {onStartPractice && (
           <button
             type="button"
-            onClick={onStartPractice}
+            onClick={() => onStartPractice(focusArea.dimension)}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-brand-500/10 border border-brand-500/30 text-brand-400 text-sm font-semibold hover:bg-brand-500/20 transition-colors"
           >
             <TrendingUp className="w-4 h-4" />

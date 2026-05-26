@@ -273,9 +273,13 @@ def assignments_list(user_id: str | None = None) -> dict:
 
 
 @app.post("/api/v1/assignments/propose")
-def assignments_propose(user_id: str | None = None, mode: str = "hobbyist") -> dict:
+def assignments_propose(
+    user_id: str | None = None,
+    mode: str = "hobbyist",
+    focus_skill: str | None = None,
+) -> dict:
     try:
-        return propose_assignment(user_id=user_id, mode=mode)
+        return propose_assignment(user_id=user_id, mode=mode, focus_skill=focus_skill)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:

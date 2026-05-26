@@ -66,8 +66,16 @@ def generate_assignment(
     user_id: str,
     *,
     mode: str = "hobbyist",
+    focus_skill: str | None = None,
 ) -> dict[str, Any]:
-    """Create a proposed assignment in MongoDB."""
+    """Create a proposed assignment in MongoDB.
+
+    Args:
+        user_id: The user's MongoDB ObjectId as a string.
+        mode: User mode (hobbyist, enthusiast, etc.)
+        focus_skill: Optional skill to focus on (e.g. "creativity", "lighting").
+                     If provided, overrides auto-detection of weakest dimension.
+    """
     uid = ObjectId(user_id)
     averages, snapshots = _portfolio_context(uid)
 
@@ -75,12 +83,23 @@ def generate_assignment(
     system = prompt_path.read_text(encoding="utf-8")
 
     if averages:
-        weakest = min(averages.items(), key=lambda x: x[1])
-        context = (
-            f"Recent average scores (0–10): {averages}\n"
-            f"Weakest dimension: {weakest[0]} ({weakest[1]})\n"
-            f"Recent shoots: {snapshots}\n"
-        )
+        # Use provided focus_skill or fall back to weakest dimension
+        if focus_skill and focus_skill.lower() in _SKILL_KEYS:
+            target_skill = focus_skill.lower()
+            target_score = averages.get(target_skill, 5.0)
+            context = (
+                f"Recent average scores (0–10): {averages}\n"
+                f"USER REQUESTED focus on: {target_skill} (score: {target_score})\n"
+                f"Generate an assignment targeting {target_skill}.\n"
+                f"Recent shoots: {snapshots}\n"
+            )
+        else:
+            weakest = min(averages.items(), key=lambda x: x[1])
+            context = (
+                f"Recent average scores (0–10): {averages}\n"
+                f"Weakest dimension: {weakest[0]} ({weakest[1]})\n"
+                f"Recent shoots: {snapshots}\n"
+            )
     else:
         context = "No portfolio yet — assign a foundational exercise (composition or lighting awareness)."
 

@@ -40,6 +40,8 @@ function App() {
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
   // Sub-views within Practice tab
   const [practiceView, setPracticeView] = useState<'list' | 'field'>('list');
+  // Focus skill to auto-trigger in Practice (from Focus Areas CTA)
+  const [practiceFocusSkill, setPracticeFocusSkill] = useState<string | null>(null);
   // Pending analysis result from Home upload (to show in My Work)
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   // Global score explainer modal
@@ -156,7 +158,12 @@ function App() {
               activeAssignment={activeAssignment}
               onAssignmentComplete={refreshActiveAssignment}
               onGoHome={() => navigate('home')}
-              onGoToPractice={() => navigate('practice')}
+              onGoToPractice={(focusDimension) => {
+                if (focusDimension) {
+                  setPracticeFocusSkill(focusDimension);
+                }
+                navigate('practice');
+              }}
               pendingAnalysis={pendingAnalysis}
               onClearPendingAnalysis={() => setPendingAnalysis(null)}
             />
@@ -172,6 +179,8 @@ function App() {
             ) : (
               <PracticeTab
                 mode={userMode}
+                focusSkill={practiceFocusSkill}
+                onClearFocusSkill={() => setPracticeFocusSkill(null)}
                 onGoToStudio={() => navigate('work')}
                 onGoToField={() => setPracticeView('field')}
                 onAssignmentsChange={refreshActiveAssignment}

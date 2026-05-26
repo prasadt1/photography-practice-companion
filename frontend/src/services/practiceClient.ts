@@ -18,8 +18,12 @@ export function fetchAssignments(): Promise<AssignmentsResponse> {
   return apiFetch('/api/v1/assignments').then(parseJson<AssignmentsResponse>);
 }
 
-export function proposeAssignment(mode: UserMode): Promise<Assignment> {
-  return apiFetch(`/api/v1/assignments/propose?mode=${mode}`, {
+export function proposeAssignment(mode: UserMode, focusSkill?: string): Promise<Assignment> {
+  const params = new URLSearchParams({ mode });
+  if (focusSkill) {
+    params.set('focus_skill', focusSkill);
+  }
+  return apiFetch(`/api/v1/assignments/propose?${params}`, {
     method: 'POST',
   }).then(parseJson<Assignment>);
 }

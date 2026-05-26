@@ -51,7 +51,8 @@ interface MyWorkTabProps {
   activeAssignment?: Assignment | null;
   onAssignmentComplete?: () => void;
   onGoHome?: () => void;
-  onGoToPractice?: () => void;
+  /** Navigate to Practice tab. Optional dimension will auto-trigger a challenge for that skill. */
+  onGoToPractice?: (focusDimension?: string) => void;
   /** Analysis result from Home upload to show immediately */
   pendingAnalysis?: PendingAnalysis | null;
   onClearPendingAnalysis?: () => void;

@@ -25,6 +25,10 @@ import type { Assignment, ReflectionResult, UserMode } from '../types/practice';
 
 interface Props {
   mode: UserMode;
+  /** Optional skill to auto-trigger a challenge for (from Focus Areas CTA) */
+  focusSkill?: string | null;
+  /** Clear the focus skill after it's been processed */
+  onClearFocusSkill?: () => void;
   onGoToStudio: () => void;
   onGoToField: () => void;
   onAssignmentsChange?: () => void;
@@ -32,6 +36,8 @@ interface Props {
 
 export const PracticeTab: React.FC<Props> = ({
   mode,
+  focusSkill,
+  onClearFocusSkill,
   onGoToStudio,
   onGoToField,
   onAssignmentsChange,
@@ -66,18 +72,26 @@ export const PracticeTab: React.FC<Props> = ({
     void load();
   }, [load]);
 
-  const handlePropose = async () => {
+  const handlePropose = useCallback(async (targetSkill?: string) => {
     setActing('propose');
     setError(null);
     try {
-      await proposeAssignment(mode);
+      await proposeAssignment(mode, targetSkill);
       await load();
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
       setActing(null);
     }
-  };
+  }, [mode, load]);
+
+  // Auto-trigger propose when navigating with a focus skill (from Focus Areas CTA)
+  useEffect(() => {
+    if (focusSkill && !loading && proposed.length === 0 && active.length === 0 && acting === null) {
+      void handlePropose(focusSkill);
+      onClearFocusSkill?.();
+    }
+  }, [focusSkill, loading, proposed.length, active.length, acting, handlePropose, onClearFocusSkill]);
 
   const handleAccept = async (id: string) => {
     setActing(id);

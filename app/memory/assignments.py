@@ -164,7 +164,16 @@ def propose_assignment(
     user_id: str | None = None,
     *,
     mode: str = "hobbyist",
+    focus_skill: str | None = None,
 ) -> dict[str, Any]:
+    """Propose a new practice assignment.
+
+    Args:
+        user_id: The user's MongoDB ObjectId as a string.
+        mode: User mode (hobbyist, enthusiast, etc.)
+        focus_skill: Optional skill to focus on (e.g. "creativity", "lighting").
+                     If provided, overrides auto-detection of weakest dimension.
+    """
     uid = _resolve_user_id(user_id)
     if not uid:
         raise ValueError(
@@ -177,5 +186,5 @@ def propose_assignment(
 
     from sub_agents.planner_pipeline import generate_assignment
 
-    doc = generate_assignment(str(uid), mode=mode)
+    doc = generate_assignment(str(uid), mode=mode, focus_skill=focus_skill)
     return _serialize(doc)
