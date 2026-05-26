@@ -176,7 +176,7 @@ function App() {
           )}
 
           {activeTab === 'mentor' && (
-            <MentorTab mode={userMode} />
+            <MentorTab mode={userMode} onGoToWork={() => navigate('work')} />
           )}
 
           {activeTab === 'print' && (
