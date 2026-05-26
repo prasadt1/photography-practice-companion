@@ -215,9 +215,19 @@ async def analyze_photo_endpoint(
 
 
 @app.get("/api/v1/portfolio")
-def portfolio_list(user_id: str | None = None, limit: int = 48) -> dict:
+def portfolio_list(
+    user_id: str | None = None,
+    limit: int = 48,
+    sort_by: str = "date",
+    sort_order: str = "desc",
+) -> dict:
     try:
-        return list_portfolio_entries(user_id=user_id, limit=limit)
+        return list_portfolio_entries(
+            user_id=user_id,
+            limit=limit,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

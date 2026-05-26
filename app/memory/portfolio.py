@@ -85,11 +85,33 @@ def _serialize_entry(doc: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Valid sort fields and their MongoDB field mappings
+_SORT_FIELDS = {
+    "date": "created_at",
+    "score": "scores._avg",  # computed field, handled specially
+    "composition": "scores.composition",
+    "lighting": "scores.lighting",
+    "technique": "scores.technique",
+    "creativity": "scores.creativity",
+    "subject_impact": "scores.subject_impact",
+}
+
+
 def list_portfolio_entries(
     *,
     limit: int = 48,
     user_id: str | None = None,
+    sort_by: str = "date",
+    sort_order: str = "desc",
 ) -> dict[str, Any]:
+    """List portfolio entries with optional sorting.
+
+    Args:
+        limit: Max entries to return (1-100)
+        user_id: Filter by user
+        sort_by: Field to sort by (date, score, composition, lighting, technique, creativity, subject_impact)
+        sort_order: Sort direction (asc, desc)
+    """
     query: dict[str, Any] = {}
     demo_user = os.environ.get("DEMO_USER_ID")
     if user_id:
@@ -99,14 +121,44 @@ def list_portfolio_entries(
 
     from memory import mcp_reads
 
-    coll = get_db().portfolio_entries
-    docs = mcp_reads.find(
-        coll,
-        query,
-        projection={"embedding": 0},
-        limit=max(1, min(limit, 100)),
-        sort=[("created_at", -1)],
-    )
+    # Determine sort direction
+    direction = 1 if sort_order.lower() == "asc" else -1
+
+    # Handle overall score sort specially (requires aggregation or post-sort)
+    if sort_by == "score":
+        # For overall score, we need to compute average and sort
+        # Use aggregation pipeline for efficiency
+        coll = get_db().portfolio_entries
+        pipeline = [
+            {"$match": query} if query else {"$match": {}},
+            {"$addFields": {
+                "_avgScore": {
+                    "$avg": [
+                        "$scores.composition",
+                        "$scores.lighting",
+                        "$scores.technique",
+                        "$scores.creativity",
+                        "$scores.subject_impact",
+                    ]
+                }
+            }},
+            {"$sort": {"_avgScore": direction}},
+            {"$limit": max(1, min(limit, 100))},
+            {"$project": {"embedding": 0, "_avgScore": 0}},
+        ]
+        docs = list(coll.aggregate(pipeline))
+    else:
+        # Standard sort on a single field
+        sort_field = _SORT_FIELDS.get(sort_by, "created_at")
+        coll = get_db().portfolio_entries
+        docs = mcp_reads.find(
+            coll,
+            query,
+            projection={"embedding": 0},
+            limit=max(1, min(limit, 100)),
+            sort=[(sort_field, direction)],
+        )
+
     entries = [_serialize_entry(doc) for doc in docs]
     return {"entries": entries, "total": len(entries)}
 

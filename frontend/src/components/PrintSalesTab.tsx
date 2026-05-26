@@ -35,7 +35,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
 
   const loadPreviews = useCallback(async () => {
     try {
-      const data = await fetchPortfolio(100);
+      const data = await fetchPortfolio({ limit: 100 });
       const map = new Map<string, PortfolioListItem>();
       for (const e of data.entries) {
         map.set(e.id, e);

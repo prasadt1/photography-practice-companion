@@ -61,7 +61,7 @@ export const StudioHero: React.FC<StudioHeroProps> = ({
 
   const loadBestPhoto = useCallback(async () => {
     try {
-      const portfolio = await fetchPortfolio(48);
+      const portfolio = await fetchPortfolio({ limit: 48 });
       setPhotoCount(portfolio.total);
       if (portfolio.entries.length > 0) {
         // Find the photo with highest overall score

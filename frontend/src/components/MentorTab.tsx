@@ -254,7 +254,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
 
   const loadPreviews = useCallback(async () => {
     try {
-      const data = await fetchPortfolio(100);
+      const data = await fetchPortfolio({ limit: 100 });
       const map = new Map<string, EntryPreview>();
       for (const e of data.entries) {
         map.set(e.id, {

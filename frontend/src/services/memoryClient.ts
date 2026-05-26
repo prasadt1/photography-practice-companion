@@ -18,8 +18,23 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function fetchPortfolio(limit = 48): Promise<PortfolioListResponse> {
-  return getJson(`/api/v1/portfolio?limit=${limit}`);
+export type SortField = 'date' | 'score' | 'composition' | 'lighting' | 'technique' | 'creativity' | 'subject_impact';
+export type SortOrder = 'asc' | 'desc';
+
+export interface FetchPortfolioOptions {
+  limit?: number;
+  sortBy?: SortField;
+  sortOrder?: SortOrder;
+}
+
+export function fetchPortfolio(options: FetchPortfolioOptions = {}): Promise<PortfolioListResponse> {
+  const { limit = 48, sortBy = 'date', sortOrder = 'desc' } = options;
+  const params = new URLSearchParams({
+    limit: String(limit),
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  });
+  return getJson(`/api/v1/portfolio?${params}`);
 }
 
 export function fetchAestheticProfile(): Promise<AestheticProfileSummary> {

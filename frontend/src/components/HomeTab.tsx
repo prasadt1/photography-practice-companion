@@ -69,7 +69,7 @@ export const HomeTab: React.FC<Props> = ({
     try {
       // Fetch minimal data: 5 photos (1 best + 4 recent), profile, trends
       const [portfolio, aesthetic, trendData] = await Promise.all([
-        fetchPortfolio(5),
+        fetchPortfolio({ limit: 5 }),
         fetchAestheticProfile().catch(() => null),
         fetchPortfolioTrends(6).catch(() => null),
       ]);

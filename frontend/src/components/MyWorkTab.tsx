@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { FocusAreas } from './FocusAreas';
 import { TabEmptyState } from './TabEmptyState';
@@ -19,7 +19,7 @@ import { MemoryGridSkeleton } from './SkeletonBlocks';
 import PhotoUploader from './studio/PhotoUploader';
 import StudioAnalysisResults from './studio/StudioAnalysisResults';
 import { ActivePracticeBanner } from './studio/ActivePracticeBanner';
-import { fetchAestheticProfile, fetchPortfolio, fetchPortfolioTrends } from '../services/memoryClient';
+import { fetchAestheticProfile, fetchPortfolio, fetchPortfolioTrends, type SortField, type SortOrder } from '../services/memoryClient';
 import { analyzePhoto } from '../services/agentClient';
 import { mapAnalysisResult } from '../lib/mapAnalysisResult';
 import type { AnalysisResult } from '../types';
@@ -76,6 +76,10 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
   // Upload/analysis state
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -99,7 +103,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     setError(null);
     try {
       const [portfolio, aesthetic, trendData] = await Promise.all([
-        fetchPortfolio(),
+        fetchPortfolio({ sortBy, sortOrder }),
         fetchAestheticProfile(),
         fetchPortfolioTrends(12).catch(() => null),
       ]);
@@ -111,7 +115,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sortBy, sortOrder]);
 
   useEffect(() => {
     void loadGallery();
@@ -267,6 +271,28 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Sort dropdown */}
+          <div className="relative">
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
+                setSortBy(field);
+                setSortOrder(order);
+              }}
+              className="appearance-none pl-8 pr-8 py-2 rounded-lg border border-warm bg-surface-1 text-stone-300 text-sm hover:bg-surface-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="date-desc">Newest first</option>
+              <option value="date-asc">Oldest first</option>
+              <option value="score-desc">Highest score</option>
+              <option value="score-asc">Lowest score</option>
+              <option value="composition-desc">Best composition</option>
+              <option value="lighting-desc">Best lighting</option>
+              <option value="creativity-desc">Most creative</option>
+            </select>
+            <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+          </div>
           <button
             type="button"
             onClick={() => void loadGallery()}
