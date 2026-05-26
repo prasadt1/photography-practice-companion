@@ -9,6 +9,7 @@ import { PracticeTab } from './components/PracticeTab';
 import { PrintSalesTab } from './components/PrintSalesTab';
 import { SettingsTab } from './components/SettingsTab';
 import { FieldTab } from './components/FieldTab';
+import { ScoreExplainer, ScoreExplainerTrigger } from './components/ScoreExplainer';
 import type { AppTab } from './config/navConfig';
 import { isAppTab, setTabHash, tabFromHash } from './config/navConfig';
 import { useAuth } from './auth/useAuth';
@@ -40,6 +41,8 @@ function App() {
   const [practiceView, setPracticeView] = useState<'list' | 'field'>('list');
   // Pending analysis result from Home upload (to show in My Work)
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  // Global score explainer modal
+  const [showScoreExplainer, setShowScoreExplainer] = useState(false);
   const online = useOnlineStatus();
   const auth = useAuth();
 
@@ -199,11 +202,18 @@ function App() {
         </main>
 
         <footer className="hidden lg:block border-t border-warm py-6 text-center text-xs text-muted px-4 mb-0 bg-canvas">
-          <p>Iris — your photos stay in your private library.</p>
+          <div className="flex items-center justify-center gap-4">
+            <p>Iris — your photos stay in your private library.</p>
+            <span className="text-warm">•</span>
+            <ScoreExplainerTrigger onClick={() => setShowScoreExplainer(true)} />
+          </div>
         </footer>
       </div>
 
       <BottomNav activeTab={activeTab} mode={userMode} onNavigate={navigate} />
+
+      {/* Global Score Explainer Modal */}
+      <ScoreExplainer isOpen={showScoreExplainer} onClose={() => setShowScoreExplainer(false)} />
     </div>
   );
 }

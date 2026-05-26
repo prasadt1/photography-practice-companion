@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { TabEmptyState } from './TabEmptyState';
 import { apiUnreachableMessage } from '../lib/apiHelp';
@@ -85,8 +85,10 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       setImageUrl(pendingAnalysis.imageUrl);
       setFilename(pendingAnalysis.filename);
       setViewMode('result');
+      // Clear pending analysis after processing so subsequent visits show gallery
+      onClearPendingAnalysis?.();
     }
-  }, [pendingAnalysis]);
+  }, [pendingAnalysis, onClearPendingAnalysis]);
 
   const loadGallery = useCallback(async () => {
     setLoading(true);
@@ -184,14 +186,24 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   // Results view
   if (viewMode === 'result' && result && imageUrl) {
     return (
-      <div className="animate-fadeIn relative">
-        <FilmGrain className="rounded-2xl" />
-        <StudioAnalysisResults
-          analysis={mapAnalysisResult(result)}
-          imageSrc={imageUrl}
-          originalFilename={filename}
-          onReset={handleReset}
-        />
+      <div className="animate-fadeIn relative space-y-4">
+        <button
+          type="button"
+          onClick={handleReset}
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to gallery
+        </button>
+        <div className="relative">
+          <FilmGrain className="rounded-2xl" />
+          <StudioAnalysisResults
+            analysis={mapAnalysisResult(result)}
+            imageSrc={imageUrl}
+            originalFilename={filename}
+            onReset={handleReset}
+          />
+        </div>
       </div>
     );
   }
