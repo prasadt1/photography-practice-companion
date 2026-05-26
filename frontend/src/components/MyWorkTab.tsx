@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronUp, ImageIcon, Plus, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { TabEmptyState } from './TabEmptyState';
 import { apiUnreachableMessage } from '../lib/apiHelp';
@@ -301,103 +301,100 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
         </div>
       )}
 
-      {/* Aesthetic profile summary */}
+      {/* Compact stats summary (collapsible) */}
       {profile && profile.photoCount > 0 && (
-        <section className="rounded-2xl bg-surface-1 border border-warm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-brand-400" />
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
-              Aesthetic snapshot
-            </h3>
-            <span className="text-xs text-muted">
-              ({profile.photoCount} recent photo{profile.photoCount === 1 ? '' : 's'})
-            </span>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <p className="text-[10px] text-muted uppercase mb-2">Dominant tags</p>
-              <div className="flex flex-wrap gap-1.5">
-                {profile.dominantTags.length > 0 ? (
-                  profile.dominantTags.map((tag) => (
+        <details className="group rounded-xl bg-surface-1 border border-warm">
+          <summary className="flex items-center justify-between gap-4 p-4 cursor-pointer select-none hover:bg-surface-2/50 transition-colors list-none">
+            <div className="flex items-center gap-3 min-w-0">
+              <Sparkles className="w-4 h-4 text-brand-400 shrink-0" />
+              <div className="flex items-center gap-2 flex-wrap text-sm">
+                <span className="text-white font-medium">{profile.photoCount} photos</span>
+                <span className="text-warm">·</span>
+                <span className="text-stone-300">
+                  Avg{' '}
+                  <span className="text-amber-400 font-semibold">
+                    {profile.averageScores.overall?.toFixed(1) ?? '—'}
+                  </span>
+                </span>
+                {profile.stylisticConsistencyScore != null && (
+                  <>
+                    <span className="text-warm">·</span>
+                    <span className="text-stone-300">
+                      <span className="text-brand-400 font-semibold">
+                        {Math.round(profile.stylisticConsistencyScore * 100)}%
+                      </span>{' '}
+                      consistent
+                    </span>
+                  </>
+                )}
+                {trends && !trends.insufficientData && trends.dimensions.find(d => d.key === 'overall')?.delta != null && (
+                  <>
+                    <span className="text-warm">·</span>
+                    <span className="text-emerald-400 text-xs flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      +{trends.dimensions.find(d => d.key === 'overall')?.delta?.toFixed(1)} progress
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <ChevronDown className="w-4 h-4 text-muted group-open:rotate-180 transition-transform shrink-0" />
+          </summary>
+
+          <div className="px-4 pb-4 pt-2 border-t border-warm/60 space-y-4">
+            {/* Tags */}
+            {profile.dominantTags.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted uppercase mb-2">Your style</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.dominantTags.slice(0, 6).map((tag) => (
                     <span
                       key={tag}
                       className="text-xs px-2 py-0.5 rounded-full bg-canvas-elevated text-stone-300 border border-warm"
                     >
                       {tag.replace(/_/g, ' ')}
                     </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted">—</span>
-                )}
-              </div>
-            </div>
-            <div className="sm:col-span-2 lg:col-span-1">
-              <p className="text-[10px] text-muted uppercase mb-3 tracking-wide">Average scores</p>
-              <div className="rounded-xl border border-warm overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-warm bg-canvas-elevated/80">
-                      <th className="text-left font-semibold text-muted uppercase tracking-wider px-3 py-2">
-                        Dimension
-                      </th>
-                      <th className="text-right font-semibold text-muted uppercase tracking-wider px-3 py-2 w-16">
-                        Avg
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {SCORE_LABELS.map(({ key, label }) => {
-                      const val = profile.averageScores[key];
-                      return (
-                        <tr key={key} className="border-b border-warm/60 last:border-0">
-                          <td className="px-3 py-2.5 text-stone-300">{label}</td>
-                          <td className="px-3 py-2.5 text-right">
-                            <span className="inline-flex min-w-[2.5rem] justify-center tabular-nums font-semibold text-on-brand bg-amber-500/90 rounded px-1.5 py-0.5">
-                              {val != null ? val.toFixed(1) : '—'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] text-muted uppercase mb-2">Consistency</p>
-              <p className="text-3xl font-bold text-brand-400">
-                {profile.stylisticConsistencyScore != null
-                  ? `${Math.round(profile.stylisticConsistencyScore * 100)}%`
-                  : '—'}
-              </p>
-              <p className="text-xs text-muted mt-1">
-                How steady your dimension scores are across recent work.
-              </p>
-            </div>
-          </div>
-
-          {trends && !trends.insufficientData && trends.dimensions.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-warm">
-              <p className="text-[10px] text-muted uppercase mb-3 tracking-wide">
-                Recent progress (oldest → newest upload)
-              </p>
-              <ul className="space-y-1">
-                {trends.dimensions
-                  .filter((d) =>
-                    (TREND_DISPLAY_KEYS as readonly string[]).includes(d.key),
-                  )
-                  .map((d) => (
-                    <ScoreTrendRow key={d.key} dimension={d} />
                   ))}
-              </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Score breakdown */}
+            <div className="grid grid-cols-5 gap-2 text-center">
+              {SCORE_LABELS.map(({ key, label }) => {
+                const val = profile.averageScores[key];
+                return (
+                  <div key={key} className="space-y-1">
+                    <p className="text-[9px] text-muted uppercase truncate">{label}</p>
+                    <p className="text-sm font-bold text-amber-400">{val?.toFixed(1) ?? '—'}</p>
+                  </div>
+                );
+              })}
             </div>
-          )}
-          {trends?.insufficientData && trends.photoCount > 0 && (
-            <p className="mt-4 text-xs text-muted border-t border-warm pt-4">
-              Upload a few more photos to see score trends over time.
-            </p>
-          )}
-        </section>
+
+            {/* Trends */}
+            {trends && !trends.insufficientData && trends.dimensions.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted uppercase mb-2">Recent progress</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {trends.dimensions
+                    .filter((d) => (TREND_DISPLAY_KEYS as readonly string[]).includes(d.key))
+                    .map((d) => (
+                      <div key={d.key} className="rounded-lg bg-canvas-elevated/60 p-2 text-center">
+                        <p className="text-[9px] text-muted uppercase">{d.label}</p>
+                        <p className="text-sm font-semibold text-stone-200">{d.current.toFixed(1)}</p>
+                        {d.delta != null && (
+                          <p className={`text-[10px] ${d.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(1)}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </details>
       )}
 
       {/* Photo gallery or empty state */}
