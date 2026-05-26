@@ -18,12 +18,12 @@ import {
   ArrowRight,
   Camera,
   ImageIcon,
-  Plus,
   Sparkles,
   Target,
   TrendingUp,
   Upload,
 } from 'lucide-react';
+import { AnalyzingOverlay } from './AnalyzingOverlay';
 import { fetchAestheticProfile, fetchPortfolio, fetchPortfolioTrends } from '../services/memoryClient';
 import { analyzePhoto } from '../services/agentClient';
 import type { AppTab } from '../config/navConfig';
@@ -61,6 +61,7 @@ export const HomeTab: React.FC<Props> = ({
   const [loading, setLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analyzingImageUrl, setAnalyzingImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -103,8 +104,10 @@ export const HomeTab: React.FC<Props> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
     const previewUrl = URL.createObjectURL(file);
+    setUploading(true);
+    setAnalyzingImageUrl(previewUrl);
+
     try {
       const result = await analyzePhoto({
         imageFile: file,
@@ -114,10 +117,12 @@ export const HomeTab: React.FC<Props> = ({
       onAnalysisComplete?.(result, previewUrl, file.name);
     } catch (err) {
       URL.revokeObjectURL(previewUrl);
+      setAnalyzingImageUrl(null);
       console.error('Upload failed:', err);
       alert('Upload failed. Please try again.');
     } finally {
       setUploading(false);
+      setAnalyzingImageUrl(null);
       // Reset input so same file can be selected again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -163,7 +168,13 @@ export const HomeTab: React.FC<Props> = ({
     : EXAMPLE_PHOTO;
 
   return (
-    <div className="animate-fadeIn max-w-5xl mx-auto space-y-8">
+    <>
+      {/* Glass Box thinking overlay during analysis */}
+      {uploading && analyzingImageUrl && (
+        <AnalyzingOverlay imageUrl={analyzingImageUrl} />
+      )}
+
+      <div className="animate-fadeIn max-w-5xl mx-auto space-y-8">
       {/* Hero Photo with Glass Box overlay */}
       <div className="relative rounded-2xl overflow-hidden border border-warm bg-photo-black shadow-2xl shadow-black/50">
         <div className="relative aspect-[16/10] md:aspect-[2/1] lg:aspect-[21/9]">
@@ -441,5 +452,6 @@ export const HomeTab: React.FC<Props> = ({
         </section>
       )}
     </div>
+    </>
   );
 };

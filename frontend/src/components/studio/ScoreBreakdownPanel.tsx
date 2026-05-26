@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ScoreExplainer, ScoreExplainerTrigger } from '../ScoreExplainer';
 
 export interface ScoreBreakdownRow {
   subject: string;
@@ -24,17 +25,21 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
   onSelectDimension,
   onWhyClick,
 }) => {
+  const [showExplainer, setShowExplainer] = useState(false);
   const activeDimension = hoveredDimension ?? selectedDimension;
 
   return (
     <div className="rounded-2xl border border-warm bg-surface-1 p-4 space-y-4">
-      <div>
-        <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
-          Score breakdown
-        </h3>
-        <p className="text-xs text-muted mt-1">
-          Hover or tap a dimension — the highlight appears on the photo above.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
+            Score breakdown
+          </h3>
+          <p className="text-xs text-muted mt-1">
+            Hover or tap a dimension — the highlight appears on the photo above.
+          </p>
+        </div>
+        <ScoreExplainerTrigger onClick={() => setShowExplainer(true)} />
       </div>
 
       <div className="space-y-2">
@@ -118,6 +123,8 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
           </p>
         )}
       </div>
+
+      <ScoreExplainer isOpen={showExplainer} onClose={() => setShowExplainer(false)} />
     </div>
   );
 };

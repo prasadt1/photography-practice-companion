@@ -131,14 +131,16 @@ const StudioAnalysisResults: React.FC<Props> = ({
               )}
             </div>
 
-            {focusDimension && (
-              <p
-                className="text-center text-xs text-brand-400 font-medium animate-fadeIn"
-                role="status"
-              >
-                Highlighting {focusDimension} on photo
-              </p>
-            )}
+            {/* Always rendered to prevent layout shift, opacity transition for smooth UX */}
+            <p
+              className={`text-center text-xs font-medium transition-opacity duration-200 h-4 ${
+                focusDimension ? 'text-brand-400 opacity-100' : 'opacity-0'
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {focusDimension ? `Highlighting ${focusDimension} on photo` : '\u00A0'}
+            </p>
           </div>
 
           {activeTab === 'overview' && (

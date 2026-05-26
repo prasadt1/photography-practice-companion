@@ -70,7 +70,7 @@ const DimensionOverlay: React.FC<Props> = ({ dimension, analysis }) => {
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none animate-fadeIn" aria-hidden>
+    <div className="absolute inset-0 pointer-events-none transition-opacity duration-200" aria-hidden>
       {highlight.showThirdsGrid && <ThirdsGrid />}
 
       {highlight.lightingDirection && (
