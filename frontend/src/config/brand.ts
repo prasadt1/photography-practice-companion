@@ -2,5 +2,6 @@
 export const BRAND = {
   name: 'Iris',
   tagline: 'AI photography mentor with persistent portfolio memory',
+  taglineShort: 'The mentor who remembers',
   mentorLabel: 'Ask Mentor',
 } as const;
