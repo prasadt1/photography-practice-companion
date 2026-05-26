@@ -13,7 +13,7 @@
  * - Below fold: Recent work strip + Mentor insight
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Camera,
@@ -22,8 +22,10 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Upload,
 } from 'lucide-react';
 import { fetchAestheticProfile, fetchPortfolio, fetchPortfolioTrends } from '../services/memoryClient';
+import { analyzePhoto } from '../services/agentClient';
 import type { AppTab } from '../config/navConfig';
 import type { Assignment, UserMode } from '../types/practice';
 import type { AestheticProfileSummary, PortfolioListItem, PortfolioTrendsResponse } from '../types/memory';
@@ -33,6 +35,7 @@ interface Props {
   activeAssignment: Assignment | null;
   onNavigate: (tab: AppTab) => void;
   onOpenSettings: () => void;
+  onUploadComplete?: () => void;
 }
 
 // Example content for new users
@@ -47,6 +50,7 @@ export const HomeTab: React.FC<Props> = ({
   mode,
   activeAssignment,
   onNavigate,
+  onUploadComplete,
 }) => {
   const [bestPhoto, setBestPhoto] = useState<PortfolioListItem | null>(null);
   const [recentPhotos, setRecentPhotos] = useState<PortfolioListItem[]>([]);
@@ -54,6 +58,8 @@ export const HomeTab: React.FC<Props> = ({
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,16 +96,44 @@ export const HomeTab: React.FC<Props> = ({
     void load();
   }, [load]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      await analyzePhoto({
+        imageFile: file,
+        assignmentId: activeAssignment?.id,
+      });
+      onUploadComplete?.();
+      // Refresh data to show new photo
+      void load();
+      // Navigate to My Work to see the result
+      onNavigate('work');
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      // Reset input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const isReturningUser = bestPhoto !== null;
   const photoCount = profile?.photoCount ?? 0;
 
-  // Find best trend for display
+  // Find best trend for display (guard against division by zero)
   const bestTrend = trends?.dimensions?.find(
     (d) => d.key === 'composition' || d.key === 'lighting' || d.key === 'overall'
   );
-  const trendPercent = bestTrend?.trend
-    ? Math.round(((bestTrend.trend.end - bestTrend.trend.start) / bestTrend.trend.start) * 100)
-    : null;
+  const trendPercent =
+    bestTrend?.trend && bestTrend.trend.start > 0
+      ? Math.round(((bestTrend.trend.end - bestTrend.trend.start) / bestTrend.trend.start) * 100)
+      : null;
   const trendLabel = bestTrend?.key
     ? bestTrend.key.charAt(0).toUpperCase() + bestTrend.key.slice(1)
     : null;
@@ -271,13 +305,32 @@ export const HomeTab: React.FC<Props> = ({
 
       {/* Primary CTAs */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleFileSelect}
+          className="hidden"
+          aria-label="Upload photo"
+        />
         <button
           type="button"
-          onClick={() => onNavigate('work')}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Plus className="w-4 h-4" aria-hidden />
-          Upload New Photo
+          {uploading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4" aria-hidden />
+              Upload Photo
+            </>
+          )}
         </button>
         {activeAssignment && (
           <button

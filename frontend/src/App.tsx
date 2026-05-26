@@ -127,6 +127,7 @@ function App() {
               activeAssignment={activeAssignment}
               onNavigate={navigate}
               onOpenSettings={() => navigate('settings')}
+              onUploadComplete={refreshActiveAssignment}
             />
           )}
 
@@ -134,6 +135,7 @@ function App() {
             <MyWorkTab
               activeAssignment={activeAssignment}
               onAssignmentComplete={refreshActiveAssignment}
+              onGoHome={() => navigate('home')}
             />
           )}
 

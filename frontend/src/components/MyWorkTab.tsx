@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ImageIcon, Plus, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { TabEmptyState } from './TabEmptyState';
 import { apiUnreachableMessage } from '../lib/apiHelp';
@@ -42,6 +42,7 @@ const SCORE_LABELS: { key: keyof AestheticProfileSummary['averageScores']; label
 interface MyWorkTabProps {
   activeAssignment?: Assignment | null;
   onAssignmentComplete?: () => void;
+  onGoHome?: () => void;
 }
 
 type ViewMode = 'gallery' | 'upload' | 'analyzing' | 'result';
@@ -49,6 +50,7 @@ type ViewMode = 'gallery' | 'upload' | 'analyzing' | 'result';
 export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   activeAssignment,
   onAssignmentComplete,
+  onGoHome,
 }) => {
   // Gallery state
   const [entries, setEntries] = useState<PortfolioListItem[]>([]);
@@ -202,6 +204,18 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   // Gallery view (default)
   return (
     <div className="animate-fadeIn space-y-8">
+      {/* Back to Home link */}
+      {onGoHome && (
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="inline-flex items-center gap-1 text-sm text-muted hover:text-white transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Home
+        </button>
+      )}
+
       {/* Header with upload CTA */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
