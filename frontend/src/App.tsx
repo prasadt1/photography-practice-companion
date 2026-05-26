@@ -1,48 +1,35 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FilmGrain } from './components/FilmGrain';
 import { AppSidebar } from './components/AppSidebar';
-import { AssignmentStrip } from './components/AssignmentStrip';
 import { BottomNav } from './components/BottomNav';
-import { FieldTab } from './components/FieldTab';
 import { HomeTab } from './components/HomeTab';
-import { MemoryTab } from './components/MemoryTab';
+import { MyWorkTab } from './components/MyWorkTab';
 import { MentorTab } from './components/MentorTab';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { PracticeTab } from './components/PracticeTab';
 import { PrintSalesTab } from './components/PrintSalesTab';
 import { SettingsTab } from './components/SettingsTab';
-import { TriageTab } from './components/TriageTab';
-import { ActivePracticeBanner } from './components/studio/ActivePracticeBanner';
-import PhotoUploader from './components/studio/PhotoUploader';
-import StudioAnalysisResults from './components/studio/StudioAnalysisResults';
-import { StudioHero } from './components/studio/StudioHero';
+import { FieldTab } from './components/FieldTab';
 import type { AppTab } from './config/navConfig';
 import { isAppTab, setTabHash, tabFromHash } from './config/navConfig';
 import { useAuth } from './auth/useAuth';
 import { setApiUserScope } from './lib/apiFetch';
 import { clearMentorSession } from './services/mentorClient';
-import { analyzePhoto } from './services/agentClient';
 import { fetchActiveAssignment } from './services/practiceClient';
 import { fetchUserProfile, personaToUserMode, updatePersona } from './services/userClient';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { isOnboardingComplete, setOnboardingComplete } from './lib/onboarding';
-import { mapAnalysisResult } from './lib/mapAnalysisResult';
-import type { AnalysisResult } from './types';
 import type { Assignment, UserMode } from './types/practice';
 
 function App() {
   const [ready, setReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(!isOnboardingComplete());
   const [activeTab, setActiveTab] = useState<AppTab>('home');
-  const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [filename, setFilename] = useState('photo.jpg');
   const [userMode, setUserMode] = useState<UserMode>('hobbyist');
   const [personaError, setPersonaError] = useState<string | null>(null);
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
-  const [showUploader, setShowUploader] = useState(false);
+  // Sub-views within Practice tab
+  const [practiceView, setPracticeView] = useState<'list' | 'field'>('list');
   const online = useOnlineStatus();
   const auth = useAuth();
 
@@ -79,39 +66,11 @@ function App() {
   useEffect(() => {
     if (!ready) return;
     void refreshActiveAssignment();
-  }, [activeTab, ready, refreshActiveAssignment]);
-
-
-  const handleImageSelected = async (file: File, previewUrl: string) => {
-    setAnalyzing(true);
-    setResult(null);
-    setImageUrl(previewUrl);
-    setFilename(file.name);
-
-    try {
-      setResult(
-        await analyzePhoto({
-          imageFile: file,
-          assignmentId: activeAssignment?.id,
-        }),
-      );
-      void refreshActiveAssignment();
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      alert('Analysis failed. See console for details.');
-      URL.revokeObjectURL(previewUrl);
-      setImageUrl(null);
-    } finally {
-      setAnalyzing(false);
+    // Reset sub-views when leaving tabs
+    if (activeTab !== 'practice') {
+      setPracticeView('list');
     }
-  };
-
-  const resetStudio = () => {
-    if (imageUrl) URL.revokeObjectURL(imageUrl);
-    setResult(null);
-    setImageUrl(null);
-    setFilename('photo.jpg');
-  };
+  }, [activeTab, ready, refreshActiveAssignment]);
 
   const handleOnboardingComplete = (mode: UserMode) => {
     setOnboardingComplete();
@@ -143,11 +102,6 @@ function App() {
     );
   }
 
-  const showAssignmentStrip =
-    activeAssignment &&
-    activeTab !== 'field' &&
-    activeTab !== 'practice';
-
   return (
     <div className="min-h-screen bg-canvas text-stone-200 font-sans selection:bg-brand-500/30 flex">
       <a href="#main-content" className="sr-only">
@@ -156,14 +110,6 @@ function App() {
       <AppSidebar activeTab={activeTab} mode={userMode} onNavigate={navigate} />
 
       <div className="flex-1 flex flex-col min-h-screen min-w-0 pb-20 lg:pb-0">
-        {showAssignmentStrip && activeAssignment && (
-          <AssignmentStrip
-            assignment={activeAssignment}
-            onShootNow={() => navigate('field')}
-            onPractice={() => navigate('practice')}
-          />
-        )}
-
         <main
           id="main-content"
           className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 md:py-10"
@@ -184,82 +130,34 @@ function App() {
             />
           )}
 
-          {activeTab === 'studio' && (
-            <div className="animate-fadeIn relative">
-              <FilmGrain className="rounded-2xl" />
-              {!result && !showUploader && !analyzing && (
-                <div className="relative z-10 py-4 md:py-8">
-                  {activeAssignment && (
-                    <div className="mb-8">
-                      <ActivePracticeBanner assignment={activeAssignment} />
-                    </div>
-                  )}
-                  <StudioHero
-                    onUploadClick={() => setShowUploader(true)}
-                    onViewMemory={() => navigate('memory')}
-                  />
-                </div>
-              )}
-              {!result && (showUploader || analyzing) && (
-                <div className="relative z-10 flex flex-col items-center space-y-8 py-4 md:py-8">
-                  {activeAssignment && (
-                    <ActivePracticeBanner assignment={activeAssignment} />
-                  )}
-                  <div className="text-center max-w-xl">
-                    <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-2">
-                      {analyzing ? 'Analyzing your photo' : 'Upload a photo'}
-                    </h2>
-                    {!analyzing && (
-                      <p className="text-muted text-sm">
-                        Drag and drop or click to browse. JPG, PNG, or WEBP.
-                      </p>
-                    )}
-                  </div>
-                  <PhotoUploader onImageSelected={handleImageSelected} isAnalyzing={analyzing} />
-                  {!analyzing && (
-                    <button
-                      type="button"
-                      onClick={() => setShowUploader(false)}
-                      className="text-sm text-muted hover:text-white underline underline-offset-2"
-                    >
-                      Back to overview
-                    </button>
-                  )}
-                </div>
-              )}
-              {result && imageUrl && (
-                <StudioAnalysisResults
-                  analysis={mapAnalysisResult(result)}
-                  imageSrc={imageUrl}
-                  originalFilename={filename}
-                  onReset={() => {
-                    resetStudio();
-                    setShowUploader(false);
-                  }}
-                />
-              )}
-            </div>
+          {activeTab === 'work' && (
+            <MyWorkTab
+              activeAssignment={activeAssignment}
+              onAssignmentComplete={refreshActiveAssignment}
+            />
           )}
 
           {activeTab === 'practice' && (
-            <PracticeTab
-              mode={userMode}
-              onGoToStudio={() => navigate('studio')}
-              onGoToField={() => navigate('field')}
-              onAssignmentsChange={refreshActiveAssignment}
-            />
+            practiceView === 'field' ? (
+              <FieldTab
+                assignment={activeAssignment}
+                onCaptureAnalyzed={refreshActiveAssignment}
+                onGoToPractice={() => setPracticeView('list')}
+              />
+            ) : (
+              <PracticeTab
+                mode={userMode}
+                onGoToStudio={() => navigate('work')}
+                onGoToField={() => setPracticeView('field')}
+                onAssignmentsChange={refreshActiveAssignment}
+              />
+            )
           )}
-          {activeTab === 'memory' && (
-            <MemoryTab onGoToStudio={() => navigate('studio')} />
+
+          {activeTab === 'mentor' && (
+            <MentorTab mode={userMode} />
           )}
-          {activeTab === 'mentor' && <MentorTab mode={userMode} />}
-          {activeTab === 'triage' && (
-            <TriageTab
-              mode={userMode}
-              onGoToMemory={() => navigate('memory')}
-              onGoToStudio={() => navigate('studio')}
-            />
-          )}
+
           {activeTab === 'print' && (
             <PrintSalesTab
               mode={userMode}
@@ -267,13 +165,7 @@ function App() {
               onOpenSettings={() => navigate('settings')}
             />
           )}
-          {activeTab === 'field' && (
-            <FieldTab
-              assignment={activeAssignment}
-              onCaptureAnalyzed={refreshActiveAssignment}
-              onGoToPractice={() => navigate('practice')}
-            />
-          )}
+
           {activeTab === 'settings' && (
             <SettingsTab
               mode={userMode}

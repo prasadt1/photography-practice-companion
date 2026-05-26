@@ -141,7 +141,7 @@ export const HomeTab: React.FC<Props> = ({
           title="Critique a photo"
         description="Upload for scores and Glass Box reasoning — saved to My Work."
         cta="My Studio"
-        onClick={() => onNavigate('studio')}
+        onClick={() => onNavigate('work')}
       />
 
       <HomeCard
@@ -153,7 +153,7 @@ export const HomeTab: React.FC<Props> = ({
             : 'See scores and tags across everything you have uploaded.'
         }
         cta="My Work"
-        onClick={() => onNavigate('memory')}
+        onClick={() => onNavigate('work')}
       />
 
       <HomeCard
@@ -166,7 +166,7 @@ export const HomeTab: React.FC<Props> = ({
             : 'Scan your library for consistent tags across shoots.'
         }
         cta={pendingLabels > 0 ? 'Review suggestions' : 'Scan library'}
-        onClick={() => onNavigate('triage')}
+        onClick={() => onNavigate('mentor')}
       />
 
       <HomeCard
@@ -180,7 +180,7 @@ export const HomeTab: React.FC<Props> = ({
       <div className="flex flex-wrap gap-3 text-sm pt-2">
         <button
           type="button"
-          onClick={() => onNavigate('field')}
+          onClick={() => onNavigate('practice')}
           className="text-brand-400 hover:text-brand-300 font-medium"
         >
           Shoot Now →
