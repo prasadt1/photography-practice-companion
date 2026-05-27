@@ -37,7 +37,7 @@
 		B87D714F47092A711463B0F2 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		C2A937B5C33CE80C774148F8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		D274719439AC633F56EC34D5 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		E0B30308D08E575D6B0B7371 /* Iris.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Iris.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0B30308D08E575D6B0B7371 /* Iris.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Iris.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E499564E34C629BC822F5050 /* MentorPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentorPlaceholderView.swift; sourceTree = "<group>"; };
 		E518635186F9D628771F231B /* IrisApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisApp.swift; sourceTree = "<group>"; };
 		E84837EA0541DD318C54BE65 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -234,7 +234,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					DA6B0FE32874865F8A6DAF74 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -359,6 +358,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P93883WKK6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_APIBaseURL = "$(API_BASE_URL)";
 				INFOPLIST_KEY_CFBundleDisplayName = Iris;
@@ -383,6 +383,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P93883WKK6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_APIBaseURL = "$(API_BASE_URL)";
 				INFOPLIST_KEY_CFBundleDisplayName = Iris;
