@@ -44,8 +44,7 @@ Iris and Aftershoot coexist: Aftershoot for the cull-and-deliver pipeline, Iris 
 | Surface | URL |
 |---------|-----|
 | **Web App** | [practice-companion-hackathon.web.app](https://practice-companion-hackathon.web.app) |
-| **API** | [practice-companion-api-l6kusl5xcq-uc.a.run.app](https://practice-companion-api-l6kusl5xcq-uc.a.run.app) |
-| **Health** | `GET /health` → `status`, `phase`, feature flags (`orchestratorChat`, `triageHitl`, `printSalesHitl`) |
+| **API (health check)** | […/health](https://practice-companion-api-l6kusl5xcq-uc.a.run.app/health) — JSON with `status`, `phase`, feature flags. REST base: `https://practice-companion-api-l6kusl5xcq-uc.a.run.app/api/v1/` (no HTML at `/`). |
 
 **Test flow:** Home or **My Work (Studio)** → upload a photo → Glass Box critique → **Practice** → accept an assignment → shoot via **Field** (browser camera) or Studio → complete assignment → **My Work** trends / focus areas. **Mentor** chat uses the ADK orchestrator; critique upload uses the Coach pipeline over REST.
 
