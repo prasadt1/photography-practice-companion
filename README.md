@@ -344,24 +344,21 @@ See [`docs/deploy.md`](docs/deploy.md) for detailed deployment instructions.
 - [ ] **Offline mode** — Queue uploads, coaching paused UX
 - [ ] **Apple Watch** — Assignment notifications
 
-See [`docs/ios-implementation-plan.md`](docs/ios-implementation-plan.md) for detailed iOS roadmap.
+See [`ios/README.md`](ios/README.md) for the native iOS app (Phase 0+).
 
 ---
 
 ## Documentation
 
+Public docs: [`docs/README.md`](docs/README.md) · canonical spec: [`docs/spec.md`](docs/spec.md)
+
 | Document | Purpose |
 |----------|---------|
-| [`docs/spec.md`](docs/spec.md) | Master specification (canonical) |
-| [`docs/architecture.md`](docs/architecture.md) | System architecture details |
-| [`docs/doc-map.md`](docs/doc-map.md) | Documentation index |
+| [`docs/architecture.md`](docs/architecture.md) | System architecture |
 | [`docs/deploy.md`](docs/deploy.md) | Deployment guide |
 | [`docs/mongodb-setup.md`](docs/mongodb-setup.md) | Atlas + MCP setup |
-| [`docs/testing-strategy.md`](docs/testing-strategy.md) | Test pyramid, QA |
-| [`docs/decisions.md`](docs/decisions.md) | Architecture Decision Records |
-| [`docs/ios-implementation-plan.md`](docs/ios-implementation-plan.md) | iOS roadmap |
-| [`PRODUCT.md`](PRODUCT.md) | Brand, personas, principles |
-| [`CONTEXT.md`](CONTEXT.md) | Agent quick context |
+| [`docs/decisions.md`](docs/decisions.md) | Architecture decision records |
+| [`ios/README.md`](ios/README.md) | iOS (SwiftUI) setup |
 
 ---
 

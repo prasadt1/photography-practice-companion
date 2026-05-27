@@ -11,7 +11,7 @@ Native **viewfinder companion** for Field / Practice — shares the Cloud Run AP
 | **2** | Backend `field_capture` + `capture_sessions` |
 | **3** | Live Field Coach |
 
-Plan: [`../docs/ios-implementation-plan.md`](../docs/ios-implementation-plan.md)
+Full iOS roadmap: local `docs/ios-implementation-plan.md` (private; see root `.gitignore`).
 
 ---
 

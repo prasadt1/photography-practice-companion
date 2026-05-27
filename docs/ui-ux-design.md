@@ -1,6 +1,6 @@
 # Practice Companion - UI/UX Design
 
-> **Canonical:** [`spec.md`](spec.md) §3, Phase 3 UI · **Index:** [`doc-map.md`](doc-map.md)
+> **Canonical:** [`spec.md`](spec.md) §3, Phase 3 UI · **Index:** [`README.md`](README.md)
 
 **Version:** 1.0
 **Date:** May 24, 2026

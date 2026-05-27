@@ -162,7 +162,7 @@ MONGODB_MCP_ALLOW_PYMONGO_FALLBACK=false
 
 Capture a Cloud Trace screenshot with spans `mongodb.mcp.find` / `mongodb.mcp.aggregate` for Devpost.
 
-See [`docs/mcp-primary-judge-path.md`](mcp-primary-judge-path.md).
+For MCP judge trace steps, see local `docs/mcp-primary-judge-path.md` (not in the public repo).
 
 ## Change-stream listener (aesthetic_profile)
 

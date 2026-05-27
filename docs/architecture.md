@@ -1,6 +1,6 @@
 # Practice Companion - System Architecture
 
-> **Canonical:** [`spec.md`](spec.md) §2, §7, §10–11 · **Index:** [`doc-map.md`](doc-map.md) · **ADRs:** [`decisions.md`](decisions.md)
+> **Canonical:** [`spec.md`](spec.md) §2, §7, §10–11 · **Index:** [`README.md`](README.md) · **ADRs:** [`decisions.md`](decisions.md)
 
 **Version:** 1.1
 **Date:** May 24, 2026

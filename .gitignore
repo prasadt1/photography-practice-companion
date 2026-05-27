@@ -37,7 +37,34 @@ firebase-debug.*.log
 # Cursor / local IDE (personal)
 .cursor/
 
-# Agent / design-review artifacts (keep locally; not part of shipped product)
+# ─── Private / local-only docs (keep on disk; not published to GitHub) ───
+# Agent context, phase tracking, drafts, hackathon prep, design audits, iOS plans.
+
+CONTEXT.md
+PRODUCT.md
+
+docs/doc-map.md
+docs/implementation-plan.md
+docs/implementation-and-hackathon-mapping.md
+docs/mcp-primary-judge-path.md
+docs/mongodb-story-document.md
+docs/devpost-draft.md
+docs/demo-script.md
+docs/design-review-implementation-audit.md
+docs/brand-logo-brief.md
+docs/ios-implementation-plan.md
+docs/ios-phase0-started.md
+
+docs/phase0-complete.md
+docs/phase1-complete.md
+docs/phase1-gate.md
+docs/phase2-complete.md
+docs/phase2-started.md
+docs/phase3-started.md
+docs/phase3-triage-started.md
+docs/phase4-started.md
+docs/phase4-print-sales-hitl.md
+
 docs/design-reviews.md
 docs/design-review-brief.md
 docs/design-implementation-status.md

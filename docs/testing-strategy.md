@@ -1,6 +1,6 @@
 # Practice Companion - Testing Strategy
 
-> **Canonical:** [`spec.md`](spec.md) phase gates · **Index:** [`doc-map.md`](doc-map.md)
+> **Canonical:** [`spec.md`](spec.md) phase gates · **Index:** [`README.md`](README.md)
 
 **Version:** 1.0
 **Date:** May 24, 2026
