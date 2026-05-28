@@ -8,6 +8,8 @@ struct PracticeView: View {
     @State private var loading = true
     @State private var errorMessage: String?
     @State private var acting = false
+    @State private var reflectionPresentation: ReflectionPresentation?
+    @State private var completingReflection = false
 
     private let practice = PracticeService()
 
@@ -15,86 +17,208 @@ struct PracticeView: View {
         NavigationStack {
             Group {
                 if loading {
-                    ProgressView("Loading assignments…")
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .tint(Color.irisBrandLight)
+                        Text("Loading assignments…")
+                            .font(IrisFont.sans(14))
+                            .foregroundStyle(Color.irisTextMuted)
+                    }
                 } else if let errorMessage {
-                    ContentUnavailableView("Could not load", systemImage: "exclamationmark.triangle", description: Text(errorMessage))
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundStyle(Color.irisRose)
+                        Text(errorMessage)
+                            .font(IrisFont.sans(14))
+                            .foregroundStyle(Color.irisTextMuted)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
                 } else if let assignments {
-                    list(assignments)
+                    scrollContent(assignments)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.irisCanvas)
-            .navigationTitle("Practice")
-            .task { await load() }
+            .irisScreen()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.irisCanvas, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .task(id: auth.userId) { await load() }
             .refreshable { await load() }
+            .sheet(item: $reflectionPresentation) { item in
+                ReflectionSheet(reflection: item.reflection) {
+                    reflectionPresentation = nil
+                }
+            }
+            .overlay {
+                if completingReflection {
+                    ZStack {
+                        Color.irisCanvas.opacity(0.85).ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(Color.irisBrandLight)
+                            Text("Reflecting on your practice…")
+                                .font(IrisFont.sans(14, weight: .medium))
+                                .foregroundStyle(Color.irisTextPrimary)
+                            Text("This can take up to a minute.")
+                                .font(IrisFont.sans(12))
+                                .foregroundStyle(Color.irisTextMuted)
+                        }
+                    }
+                }
+            }
         }
     }
 
-    @ViewBuilder
-    private func list(_ data: AssignmentsResponse) -> some View {
-        List {
-            if let active = data.active.first {
-                Section("Active") {
-                    assignmentRow(active)
-                    Button {
-                        Task { await complete(active.id) }
-                    } label: {
-                        Label("Mark complete", systemImage: "checkmark.circle")
-                    }
-                    .disabled(acting)
-                }
-            }
-
-            if !data.proposed.isEmpty {
-                Section("Proposed") {
-                    ForEach(data.proposed) { item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(item.brief)
-                                .font(.subheadline)
-                            Button("Accept") {
-                                Task { await accept(item.id) }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.irisBrand)
-                            .disabled(acting)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-
-            if data.proposed.isEmpty && data.active.isEmpty {
-                Section {
-                    Text("No active assignment. Propose one from the web app for now — iOS propose UI in Phase 1.")
-                        .font(.caption)
+    private func scrollContent(_ data: AssignmentsResponse) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("My Practice")
+                        .font(IrisFont.serif(28))
+                        .foregroundStyle(Color.irisTextPrimary)
+                    Text("Challenges from your portfolio — accept one, then tap Shoot.")
+                        .font(IrisFont.sans(14))
                         .foregroundStyle(Color.irisTextMuted)
                 }
+                .padding(.top, 8)
+
+                if appState.showShootBanner, let active = appState.activeAssignment ?? data.active.first {
+                    PracticeShootBanner(assignment: active) {
+                        appState.openShoot(assignmentId: active.id)
+                    } onDismiss: {
+                        appState.dismissShootBanner()
+                    }
+                }
+
+                if let active = data.active.first {
+                    assignmentCard(active, style: .active) {
+                        VStack(spacing: 10) {
+                            IrisPrimaryButton(title: "Shoot for this", icon: "camera.fill", disabled: acting) {
+                                appState.openShoot(assignmentId: active.id)
+                            }
+                            IrisSecondaryButton(
+                                title: completingReflection ? "Reflecting…" : "Mark complete",
+                                icon: "checkmark.circle",
+                                disabled: acting || completingReflection
+                            ) {
+                                Task { await complete(active.id) }
+                            }
+                        }
+                    }
+                }
+
+                if !data.proposed.isEmpty {
+                    IrisSectionLabel(text: "Proposed")
+                    ForEach(data.proposed) { item in
+                        assignmentCard(item, style: .proposed) {
+                            VStack(spacing: 10) {
+                                IrisPrimaryButton(title: "Accept challenge", icon: "sparkles", disabled: acting) {
+                                    Task { await accept(item.id) }
+                                }
+                                Button {
+                                    Task { await decline(item.id) }
+                                } label: {
+                                    Text("Decline")
+                                        .font(IrisFont.sans(13, weight: .medium))
+                                        .foregroundStyle(Color.irisTextMuted)
+                                }
+                                .disabled(acting)
+                            }
+                        }
+                    }
+                }
+
+                if !data.completed.isEmpty {
+                    IrisSectionLabel(text: "Completed")
+                    ForEach(data.completed) { item in
+                        assignmentCard(item, style: .completed, actions: { EmptyView() })
+                    }
+                }
+
+                if data.proposed.isEmpty && data.active.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Start a new challenge")
+                            .font(IrisFont.sans(16, weight: .semibold))
+                            .foregroundStyle(Color.irisTextPrimary)
+                        Text("Iris proposes assignments from your weak areas. Accept one, then use Shoot.")
+                            .font(IrisFont.sans(13))
+                            .foregroundStyle(Color.irisTextMuted)
+                        IrisPrimaryButton(
+                            title: acting ? "Proposing…" : "Propose new challenge",
+                            icon: "wand.and.stars",
+                            disabled: acting
+                        ) {
+                            Task { await proposeNew() }
+                        }
+                    }
+                    .irisCard()
+                }
             }
+            .padding(.horizontal)
+            .padding(.bottom, 88)
         }
-        .scrollContentBackground(.hidden)
     }
 
-    private func assignmentRow(_ a: Assignment) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private enum CardStyle { case active, proposed, completed }
+
+    private func assignmentCard<Actions: View>(
+        _ a: Assignment,
+        style: CardStyle,
+        @ViewBuilder actions: () -> Actions
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                if style == .active {
+                    IrisSectionLabel(text: "Active")
+                } else if style == .proposed {
+                    IrisSectionLabel(text: "New")
+                }
+                Spacer()
+                Text(a.targetSkill.replacingOccurrences(of: "_", with: " "))
+                    .font(IrisFont.sans(10, weight: .semibold))
+                    .foregroundStyle(Color.irisTextMuted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.irisSurface3)
+                    .clipShape(Capsule())
+            }
             Text(a.brief)
-                .font(.body)
-            Text(a.targetSkill.replacingOccurrences(of: "_", with: " "))
-                .font(.caption)
-                .foregroundStyle(Color.irisTextMuted)
+                .font(IrisFont.sans(14))
+                .foregroundStyle(Color.irisTextPrimary.opacity(0.92))
+                .lineSpacing(3)
+            actions()
         }
+        .irisCard(borderBrand: style == .active)
+        .opacity(style == .completed ? 0.75 : 1)
     }
 
     private func load() async {
-        loading = true
+        loading = assignments == nil
         errorMessage = nil
+        defer { loading = false }
+
         APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
         do {
             assignments = try await practice.fetchAssignments()
-            try await appState.refreshActiveAssignment()
+            try await appState.refreshAssignmentsSnapshot()
+        } catch is CancellationError {
+            return
+        } catch {
+            assignments = nil
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func proposeNew() async {
+        acting = true
+        defer { acting = false }
+        do {
+            _ = try await practice.proposeAssignment(mode: auth.persona)
+            await load()
         } catch {
             errorMessage = error.localizedDescription
         }
-        loading = false
     }
 
     private func accept(_ id: String) async {
@@ -102,6 +226,19 @@ struct PracticeView: View {
         defer { acting = false }
         do {
             _ = try await practice.acceptAssignment(id: id)
+            try? await appState.refreshActiveAssignment()
+            appState.showShootBanner = true
+            await load()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func decline(_ id: String) async {
+        acting = true
+        defer { acting = false }
+        do {
+            _ = try await practice.declineAssignment(id: id)
             await load()
         } catch {
             errorMessage = error.localizedDescription
@@ -110,12 +247,26 @@ struct PracticeView: View {
 
     private func complete(_ id: String) async {
         acting = true
-        defer { acting = false }
+        completingReflection = true
+        defer {
+            acting = false
+            completingReflection = false
+        }
+        APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
         do {
-            try await practice.completeAssignment(id: id)
+            let result = try await practice.completeAssignment(id: id)
+            try await appState.refreshAssignmentsSnapshot()
+            appState.dismissShootBanner()
+            appState.notifyPortfolioChanged()
+            reflectionPresentation = ReflectionPresentation(reflection: result.reflection)
             await load()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+private struct ReflectionPresentation: Identifiable {
+    let id = UUID()
+    let reflection: ReflectionResult
 }

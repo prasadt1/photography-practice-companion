@@ -14,5 +14,6 @@ Published docs for contributors and judges. **Phase logs, drafts, agent handoffs
 | [`testing-strategy.md`](testing-strategy.md) | Test pyramid, QA |
 | [`ui-ux-design.md`](ui-ux-design.md) | IA, flows, visual system |
 | [`diagrams/`](diagrams/) | Architecture and journey diagrams (Mermaid) |
+| [`devpost-visual-prompts.md`](devpost-visual-prompts.md) | Copy-paste image/diagram prompts for Devpost |
 
 **iOS:** [`../ios/README.md`](../ios/README.md) — native app scaffold and setup.

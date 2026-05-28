@@ -64,6 +64,23 @@ struct HealthResponse: Codable {
     let phase: String?
 }
 
+struct ReflectionResult: Codable {
+    let summary: String
+    let appliedBrief: Bool
+    let skillDelta: SkillDelta
+    let baselinePhotoCount: Int?
+    let practicePhotoCount: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case summary
+        case appliedBrief
+        case skillDelta
+        case baselinePhotoCount
+        case practicePhotoCount
+    }
+}
+
 struct CompleteAssignmentResponse: Codable {
     let assignment: Assignment
+    let reflection: ReflectionResult
 }

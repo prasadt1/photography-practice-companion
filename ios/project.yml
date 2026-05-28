@@ -6,6 +6,14 @@ options:
   groupSortPosition: top
   createIntermediateGroups: true
 
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.5.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.1.0
+
 configs:
   Debug: debug
   Release: release
@@ -23,9 +31,28 @@ targets:
     platform: iOS
     sources:
       - path: Iris
+      # Drop GoogleService-Info.plist next to this file, then: xcodegen generate
+      - path: GoogleService-Info.plist
+        optional: true
+        buildPhase: resources
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
+    dependencies:
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseCore
+      - package: GoogleSignIn
+        product: GoogleSignIn
+    info:
+      path: Iris/Info.plist
+      properties:
+        UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.975418990849-oroknev6nmunjn5sc58rlkuj0tltphg8
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prasadtilloo.practicecompanion
@@ -35,10 +62,12 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Iris uses the microphone for voice commands during field coaching (coming soon)."
         INFOPLIST_KEY_APIBaseURL: $(API_BASE_URL)
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 0.1.0
+        MARKETING_VERSION: 0.2.0
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-    dependencies: []
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
 
 schemes:
   Iris:

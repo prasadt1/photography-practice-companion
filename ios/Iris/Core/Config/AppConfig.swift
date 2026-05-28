@@ -12,4 +12,22 @@ enum AppConfig {
     }
 
     static let demoUserIdKey = "iris.demoUserId"
+    static let mentorSessionIdKey = "iris.mentorSessionId"
+    static let mentorMessagesKey = "iris.mentorMessages"
+    private static let onboardingCompleteKeyPrefix = "iris.onboardingComplete"
+
+    static let webAppURL = URL(string: "https://practice-companion-hackathon.web.app")!
+
+    static func isOnboardingComplete(userId: String) -> Bool {
+        UserDefaults.standard.bool(forKey: onboardingKey(userId: userId))
+    }
+
+    static func markOnboardingComplete(userId: String) {
+        UserDefaults.standard.set(true, forKey: onboardingKey(userId: userId))
+    }
+
+    private static func onboardingKey(userId: String) -> String {
+        let scope = userId.isEmpty ? "demo" : userId
+        return "\(onboardingCompleteKeyPrefix).\(scope)"
+    }
 }
