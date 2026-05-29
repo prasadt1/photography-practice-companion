@@ -98,7 +98,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
     <div className="w-full max-w-7xl mx-auto animate-fadeIn mt-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: photo + (on Overview) score breakdown directly underneath */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-4 relative">
           <div className="space-y-3">
             <div className="relative rounded-2xl bg-photo-black border border-warm shadow-2xl flex justify-center p-4">
               <div className="relative inline-block max-w-full w-full">
@@ -123,7 +123,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowOverlays((s) => !s)}
-                  className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-canvas-elevated/90 text-white border border-warm backdrop-blur-md"
+                  className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-photo-black/85 text-white border border-warm"
                 >
                   <ScanEye className="w-3.5 h-3.5" />
                   {showOverlays ? 'Hide pins' : 'Show pins'}
@@ -210,6 +210,26 @@ const StudioAnalysisResults: React.FC<Props> = ({
               ))}
             </div>
           )}
+
+          {/* Desktop: Asymmetric Glass Box overlay - positioned bottom-right of photo */}
+          {activeTab === 'glass-box' && (
+            <div className="hidden lg:block absolute bottom-4 right-4 max-w-sm z-20 pointer-events-auto">
+              <GlassBoxPanel
+                rationale={analysis.rationale}
+                groundingPrinciples={analysis.groundingPrinciples}
+                groundingCitations={analysis.groundingCitations}
+                evidence={analysis.evidence}
+                focusDimension={focusDimension}
+                onFocusDimension={(dim) => {
+                  if (dim) focusScoreDimension(dim);
+                  else {
+                    setSelectedDimension(null);
+                    setHoveredDimension(null);
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right: tabs */}
@@ -293,20 +313,23 @@ const StudioAnalysisResults: React.FC<Props> = ({
 
           {activeTab === 'glass-box' && (
             <div className="space-y-6 animate-fadeIn">
-              <GlassBoxPanel
-                rationale={analysis.rationale}
-                groundingPrinciples={analysis.groundingPrinciples}
-                groundingCitations={analysis.groundingCitations}
-                evidence={analysis.evidence}
-                focusDimension={focusDimension}
-                onFocusDimension={(dim) => {
-                  if (dim) focusScoreDimension(dim);
-                  else {
-                    setSelectedDimension(null);
-                    setHoveredDimension(null);
-                  }
-                }}
-              />
+              {/* Mobile/Tablet: Normal flow in right column */}
+              <div className="lg:hidden">
+                <GlassBoxPanel
+                  rationale={analysis.rationale}
+                  groundingPrinciples={analysis.groundingPrinciples}
+                  groundingCitations={analysis.groundingCitations}
+                  evidence={analysis.evidence}
+                  focusDimension={focusDimension}
+                  onFocusDimension={(dim) => {
+                    if (dim) focusScoreDimension(dim);
+                    else {
+                      setSelectedDimension(null);
+                      setHoveredDimension(null);
+                    }
+                  }}
+                />
+              </div>
               <PortfolioTrendInsights />
             </div>
           )}
