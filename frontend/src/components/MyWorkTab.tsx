@@ -538,7 +538,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           }}
         />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {entries.map((entry) => {
             const expanded = expandedId === entry.id;
             let when = '';

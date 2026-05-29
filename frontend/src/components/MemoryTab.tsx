@@ -63,7 +63,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ onGoToStudio }) => {
       <div className="animate-fadeIn space-y-6 max-w-5xl mx-auto">
         <div className="h-8 w-48 bg-surface-2 rounded animate-pulse" aria-hidden />
         <MemoryGridSkeleton />
-        <p className="text-sm text-muted text-center">Loading your portfolio…</p>
+        <p className="text-sm text-muted text-center">One moment…</p>
       </div>
     );
   }
@@ -148,10 +148,10 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ onGoToStudio }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {SCORE_LABELS.map(({ key, label }) => {
+                    {SCORE_LABELS.map(({ key, label }, index) => {
                       const val = profile.averageScores[key];
                       return (
-                        <tr key={key} className="border-b border-warm/60 last:border-0">
+                        <tr key={key} className="score-badge border-b border-warm/60 last:border-0" style={{ animationDelay: `${index * 50}ms` }}>
                           <td className="px-3 py-2.5 text-stone-300">{label}</td>
                           <td className="px-3 py-2.5 text-right">
                             <span className="inline-flex min-w-[2.5rem] justify-center tabular-nums font-semibold text-on-brand bg-amber-500/90 rounded px-1.5 py-0.5">
@@ -219,7 +219,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ onGoToStudio }) => {
           }
         />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {entries.map((entry) => {
             const expanded = expandedId === entry.id;
             let when = '';
@@ -231,7 +231,8 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ onGoToStudio }) => {
             return (
               <article
                 key={entry.id}
-                className="rounded-2xl bg-surface-1 border border-warm overflow-hidden flex flex-col"
+                className="rounded-2xl bg-surface-1 border border-warm overflow-hidden flex flex-col transition-all duration-[250ms] hover:-translate-y-1 hover:shadow-[0_12px_32px_oklch(0_0_0/0.3)]"
+                style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
               >
                 <button
                   type="button"

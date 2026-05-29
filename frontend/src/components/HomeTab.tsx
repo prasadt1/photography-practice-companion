@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Upload,
 } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { AnalyzingOverlay } from './AnalyzingOverlay';
 import { fetchAestheticProfile, fetchPortfolio, fetchPortfolioTrends } from '../services/memoryClient';
 import { analyzePhoto } from '../services/agentClient';
@@ -58,6 +59,7 @@ export const HomeTab: React.FC<Props> = ({
   const [recentPhotos, setRecentPhotos] = useState<PortfolioListItem[]>([]);
   const [profile, setProfile] = useState<AestheticProfileSummary | null>(null);
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
+  const [portfolioTotal, setPortfolioTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -87,6 +89,7 @@ export const HomeTab: React.FC<Props> = ({
             .slice(0, 4)
         );
       }
+      setPortfolioTotal(portfolio.total);
       setProfile(aesthetic);
       setTrends(trendData);
     } catch {
@@ -169,8 +172,19 @@ export const HomeTab: React.FC<Props> = ({
         <AnalyzingOverlay imageUrl={analyzingImageUrl} />
       )}
 
-      <div className="animate-fadeIn max-w-5xl mx-auto space-y-8">
-      {/* Hero Photo with Glass Box overlay */}
+      <div className="animate-fadeIn space-y-8">
+      {/* Memory counter - reinforces "memory makes meaning" */}
+      <div className="text-center max-w-5xl mx-auto">
+        <p className="text-muted text-sm">
+          {portfolioTotal > 0
+            ? portfolioTotal === 1
+              ? 'Photo #1 with Iris'
+              : `Photo #${portfolioTotal} with Iris`
+            : "Your first photo awaits"}
+        </p>
+      </div>
+
+      {/* Hero Photo with Glass Box overlay - EDGE TO EDGE */}
       <div className="relative rounded-2xl overflow-hidden border border-warm bg-photo-black shadow-2xl shadow-black/50">
         <div className="relative aspect-[16/10] md:aspect-[2/1] lg:aspect-[21/9]">
           {/* Loading placeholder */}
@@ -195,7 +209,7 @@ export const HomeTab: React.FC<Props> = ({
 
           {/* Glass Box panel */}
           <div className="absolute bottom-4 left-4 right-4 md:right-auto md:max-w-md">
-            <div className="rounded-xl bg-canvas/90 backdrop-blur-md border border-warm/50 p-4 shadow-xl">
+            <div className="rounded-xl bg-photo-black/85 border border-warm/50 p-4 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 rounded-lg bg-brand-500/15 border border-brand-500/30">
                   <Sparkles className="w-4 h-4 text-brand-400" aria-hidden />
@@ -227,7 +241,7 @@ export const HomeTab: React.FC<Props> = ({
       </div>
 
       {/* Context pills: Progress + Assignment */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
         {/* Progress pill */}
         <div className="rounded-xl border border-warm bg-surface-1 p-4 flex items-center gap-4">
           <div className="p-2.5 rounded-lg bg-brand-500/15 border border-brand-500/30 shrink-0">
@@ -251,6 +265,23 @@ export const HomeTab: React.FC<Props> = ({
                 <p className="text-sm font-semibold text-white">Track your growth</p>
                 <p className="text-xs text-muted">Upload photos to see trends</p>
               </>
+            )}
+            {/* Sparkline: show when we have trend data */}
+            {trends && trends.points.length >= 2 && !trends.insufficientData && (
+              <div className="mt-2 -mb-1">
+                <ResponsiveContainer width="100%" height={32}>
+                  <LineChart data={trends.points}>
+                    <Line
+                      type="monotone"
+                      dataKey="overall"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
           <button
@@ -312,7 +343,7 @@ export const HomeTab: React.FC<Props> = ({
       </div>
 
       {/* Primary CTAs */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-5xl mx-auto">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -326,12 +357,12 @@ export const HomeTab: React.FC<Props> = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {uploading ? (
             <>
               <div className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
-              Analyzing...
+              Let me take a close look...
             </>
           ) : (
             <>
@@ -354,7 +385,7 @@ export const HomeTab: React.FC<Props> = ({
 
       {/* Recent Work strip */}
       {recentPhotos.length > 0 && (
-        <section className="pt-4">
+        <section className="pt-4 max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
               Recent Work
@@ -367,7 +398,7 @@ export const HomeTab: React.FC<Props> = ({
               See all →
             </button>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
             {recentPhotos.map((photo) => (
               <button
                 key={photo.id}
@@ -375,12 +406,14 @@ export const HomeTab: React.FC<Props> = ({
                 onClick={() => onNavigate('work')}
                 className="shrink-0 w-32 md:w-40 group"
               >
-                <div className="aspect-[4/3] rounded-lg overflow-hidden bg-photo-black border border-warm relative">
+                <div className="aspect-[4/3] rounded-lg overflow-hidden bg-photo-black border border-warm relative transition-all duration-[250ms] group-hover:-translate-y-1 group-hover:shadow-[0_12px_32px_oklch(0_0_0/0.3)]"
+                  style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+                >
                   {photo.imageUrl ? (
                     <img
                       src={photo.imageUrl}
                       alt={photo.sceneDescription?.slice(0, 60) || 'Photo'}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -399,7 +432,7 @@ export const HomeTab: React.FC<Props> = ({
 
       {/* Mentor insight */}
       {profile && photoCount >= 3 && (
-        <section className="rounded-xl border border-warm bg-surface-1 p-5">
+        <section className="rounded-xl border border-warm bg-surface-1 p-5 max-w-5xl mx-auto">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-brand-500/15 border border-brand-500/30 shrink-0 mt-0.5">
               <Sparkles className="w-4 h-4 text-brand-400" aria-hidden />
@@ -432,7 +465,7 @@ export const HomeTab: React.FC<Props> = ({
 
       {/* Empty state for new users */}
       {!isReturningUser && (
-        <section className="text-center py-8">
+        <section className="text-center py-8 max-w-5xl mx-auto">
           <p className="text-muted text-sm mb-4">
             This is what Iris sees in a photo. Upload yours to get started.
           </p>
