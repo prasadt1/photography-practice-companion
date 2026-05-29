@@ -231,7 +231,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
 
       {loading && (
         <p className="text-muted text-sm flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+          <Loader2 className="w-4 h-4 animate-spin" /> One moment…
         </p>
       )}
 

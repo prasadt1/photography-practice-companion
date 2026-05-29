@@ -43,7 +43,7 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
       </div>
 
       <div className="space-y-2">
-        {rows.map((item) => {
+        {rows.map((item, index) => {
           const isActive =
             hoveredDimension === item.subject || selectedDimension === item.subject;
           const barColor =
@@ -61,9 +61,10 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
               onMouseLeave={() => onHoverDimension(null)}
               onFocus={() => onHoverDimension(item.subject)}
               onBlur={() => onHoverDimension(null)}
-              className={`w-full flex items-center gap-3 text-left p-2 rounded-lg transition-all ${
+              className={`score-badge w-full flex items-center gap-3 text-left p-2 rounded-lg transition-all ${
                 isActive ? 'bg-brand-500/10 ring-1 ring-brand-500/40' : 'hover:bg-surface-3/50'
               }`}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <span
                 className={`w-20 sm:w-24 text-xs truncate shrink-0 ${
@@ -74,7 +75,7 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
               </span>
               <div className="flex-1 h-2.5 bg-surface-3 rounded-full overflow-hidden min-w-0">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                  className={`h-full rounded-full transition-all duration-150 ${barColor}`}
                   style={{ width: `${item.score * 10}%` }}
                 />
               </div>

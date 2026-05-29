@@ -43,7 +43,7 @@ function ScoreBadge({ label, score }: { label: string; score: number }) {
         : 'text-stone-400 bg-stone-500/15 border-stone-500/30';
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${colorClass}`}>
+    <div className={`score-badge flex items-center gap-2 px-3 py-1.5 rounded-lg border ${colorClass}`}>
       <span className="text-xs font-medium text-stone-300">{label}</span>
       <span className="text-sm font-bold tabular-nums">{score.toFixed(1)}</span>
     </div>
@@ -129,7 +129,7 @@ export const StudioHero: React.FC<StudioHeroProps> = ({
 
           {/* Glass Box preview panel — floating on the photo */}
           <div className="absolute bottom-4 left-4 right-4 md:right-auto md:max-w-md">
-            <div className="rounded-xl bg-canvas/90 backdrop-blur-md border border-warm/50 p-4 shadow-xl">
+            <div className="rounded-xl bg-photo-black/85 border border-warm/50 p-4 shadow-xl">
               {/* Header */}
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 rounded-lg bg-brand-500/15 border border-brand-500/30">
@@ -195,7 +195,7 @@ export const StudioHero: React.FC<StudioHeroProps> = ({
           <button
             type="button"
             onClick={onUploadClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 text-canvas font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 text-canvas font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20"
           >
             {isReturningUser ? 'Upload another' : 'Upload yours'}
             <ArrowRight className="w-4 h-4" aria-hidden />

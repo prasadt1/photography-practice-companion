@@ -15,6 +15,7 @@ import { HitlReasoningCallout } from './HitlReasoningCallout';
 import { ScanProgressBanner } from './ScanProgressBanner';
 import { TabEmptyState } from './TabEmptyState';
 import { MentorMarkdown } from './MentorMarkdown';
+import { IrisMark } from './IrisMark';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { mentorLoadingStage } from '../lib/mentorLoadingStages';
 import { triageScanStage } from '../lib/scanLoadingStages';
@@ -409,6 +410,11 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                   key={m.id}
                   className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
+                  {m.role === 'assistant' && (
+                    <div className="shrink-0 mt-1 mr-2">
+                      <IrisMark size={28} />
+                    </div>
+                  )}
                   <div
                     className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm ${
                       m.role === 'user'
@@ -425,39 +431,46 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                 </div>
               ))}
               {loading && (
-                <div
-                  className="flex flex-col gap-2 text-stone-300 text-sm rounded-xl border border-warm/60 bg-canvas-elevated/50 p-4"
-                  role="status"
-                  aria-live="polite"
-                  aria-busy="true"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0 text-brand-400" />
-                      <span className="font-medium">{stageMessage}</span>
+                <div className="flex justify-start">
+                  <div className="shrink-0 mt-1 mr-2">
+                    <IrisMark size={28} className="animate-pulse" />
+                  </div>
+                  <div
+                    className="max-w-[90%] flex flex-col gap-2 text-stone-300 text-sm rounded-xl border border-warm/60 bg-canvas-elevated/50 p-4"
+                    role="status"
+                    aria-live="polite"
+                    aria-busy="true"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium text-brand-300 animate-pulse">
+                          Iris is thinking...
+                        </span>
+                      </div>
+                      {waitSec >= 8 && (
+                        <button
+                          type="button"
+                          onClick={cancelRequest}
+                          className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted hover:text-white border border-warm hover:border-warm"
+                        >
+                          <X className="w-3 h-3" />
+                          Cancel
+                        </button>
+                      )}
                     </div>
-                    {waitSec >= 8 && (
-                      <button
-                        type="button"
-                        onClick={cancelRequest}
-                        className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted hover:text-white border border-warm hover:border-warm"
-                      >
-                        <X className="w-3 h-3" />
-                        Cancel
-                      </button>
-                    )}
+                    <p className="text-xs text-stone-400">{stageMessage}</p>
+                    <div className="h-1 rounded-full bg-surface-3 overflow-hidden">
+                      <div
+                        className="h-full bg-brand-500/80 transition-all duration-1000 ease-out-expo"
+                        style={{ width: `${Math.min(95, 12 + waitSec * 1.2)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted">
+                      {mode === 'working_pro'
+                        ? `Often 60–90 seconds · ${waitSec}s — keep this tab open`
+                        : `Usually 30–60 seconds · ${waitSec}s — keep this tab open`}
+                    </p>
                   </div>
-                  <div className="h-1 rounded-full bg-surface-3 overflow-hidden">
-                    <div
-                      className="h-full bg-brand-500/80 transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(95, 12 + waitSec * 1.2)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted">
-                    {mode === 'working_pro'
-                      ? `Often 60–90 seconds · ${waitSec}s — keep this tab open`
-                      : `Usually 30–60 seconds · ${waitSec}s — keep this tab open`}
-                  </p>
                 </div>
               )}
               <div ref={bottomRef} />
@@ -602,7 +615,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
 
           {labelLoading && (
             <p className="text-muted text-sm flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+              <Loader2 className="w-4 h-4 animate-spin" /> One moment…
             </p>
           )}
 

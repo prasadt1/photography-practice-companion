@@ -52,7 +52,7 @@ const BoxPin: React.FC<{
   return (
     <>
       <div
-        className={`absolute border-2 rounded-sm pointer-events-none transition-all duration-300 ${s.border} ${s.bg} ${
+        className={`absolute border-2 rounded-sm pointer-events-none transition-all duration-150 ${s.border} ${s.bg} ${
           active ? `opacity-100 ${s.glow}` : 'opacity-0'
         }`}
         style={{

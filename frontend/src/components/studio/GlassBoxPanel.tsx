@@ -78,7 +78,7 @@ const GlassBoxPanel: React.FC<Props> = ({
           </button>
 
           {expanded && (
-            <div className="p-5 md:p-6 border-t border-warm bg-photo-black text-sm leading-relaxed space-y-6">
+            <div className="p-5 md:p-6 border-t border-warm bg-photo-black text-sm leading-relaxed space-y-6 animate-springIn">
               <div>
                 <h4 className="flex items-center gap-2 text-brand-400 font-bold mb-3 uppercase text-xs tracking-wider">
                   <Eye className="w-4 h-4" aria-hidden /> Key observations

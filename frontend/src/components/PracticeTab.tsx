@@ -139,7 +139,7 @@ export const PracticeTab: React.FC<Props> = ({
     return (
       <div className="animate-fadeIn space-y-6 max-w-3xl mx-auto">
         <PracticeCardsSkeleton />
-        <p className="text-sm text-muted text-center">Loading practice assignments…</p>
+        <p className="text-sm text-muted text-center">One moment…</p>
       </div>
     );
   }

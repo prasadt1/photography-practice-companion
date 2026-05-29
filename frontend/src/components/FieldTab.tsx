@@ -178,7 +178,7 @@ export const FieldTab: React.FC<Props> = ({
         {analyzing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-canvas-elevated/80">
             <Loader2 className="w-10 h-10 animate-spin text-brand-400 mb-2" />
-            <p className="text-sm text-stone-300">Analyzing your shot…</p>
+            <p className="text-sm text-stone-300">Let me take a close look…</p>
           </div>
         )}
       </div>

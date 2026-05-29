@@ -49,11 +49,11 @@ export const ScoreExplainer: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-overlayFadeIn"
       onClick={onClose}
     >
       <div
-        className="relative max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-2xl bg-canvas border border-warm shadow-2xl"
+        className="relative max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-2xl bg-canvas border border-warm shadow-2xl animate-springIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

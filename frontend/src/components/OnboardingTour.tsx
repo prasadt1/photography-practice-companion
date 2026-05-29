@@ -119,14 +119,14 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
   const isLast = currentStep === TOUR_STEPS.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="relative max-w-md w-full">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 animate-overlayFadeIn">
+      <div className="relative max-w-md w-full animate-springIn">
         {/* Progress dots */}
         <div className="flex justify-center gap-1.5 mb-4">
           {TOUR_STEPS.map((s, i) => (
             <div
               key={s.id}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-full transition-all duration-150 ${
                 i === currentStep
                   ? 'w-6 bg-brand-400'
                   : i < currentStep
@@ -141,7 +141,7 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
         <div className="rounded-2xl border border-warm bg-canvas overflow-hidden shadow-2xl">
           {/* Header with icon */}
           <div className={`${step.accent} p-6 flex justify-center`}>
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
               <StepIcon className="w-8 h-8 text-white" />
             </div>
           </div>
