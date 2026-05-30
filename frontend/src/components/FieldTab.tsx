@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Camera, ChevronDown, ChevronUp, Loader2, Target, Upload } from 'lucide-react';
+import { Camera, ChevronDown, ChevronUp, Loader2, Target, Upload, X } from 'lucide-react';
 import { friendlyErrorMessage } from '../lib/friendlyError';
+import { analyzeLoadingStage, analyzeWaitHint } from '../lib/analyzeWaitCopy';
 import { analyzePhoto } from '../services/agentClient';
 import type { Assignment } from '../types/practice';
 
@@ -32,8 +33,10 @@ export const FieldTab: React.FC<Props> = ({
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeWaitSec, setAnalyzeWaitSec] = useState(0);
   const [lastCaptureOk, setLastCaptureOk] = useState(false);
   const [briefExpanded, setBriefExpanded] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -68,18 +71,47 @@ export const FieldTab: React.FC<Props> = ({
     return () => stopCamera();
   }, [startCamera, stopCamera]);
 
+  useEffect(() => {
+    if (!analyzing) {
+      setAnalyzeWaitSec(0);
+      return;
+    }
+    const tick = window.setInterval(() => setAnalyzeWaitSec((s) => s + 1), 1000);
+    return () => window.clearInterval(tick);
+  }, [analyzing]);
+
+  const cancelAnalysis = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setAnalyzing(false);
+    setError('Analysis cancelled.');
+  }, []);
+
   const runAnalysis = async (file: File) => {
     if (!assignment) return;
     setAnalyzing(true);
     setLastCaptureOk(false);
     setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      await analyzePhoto({ imageFile: file, assignmentId: assignment.id });
+      await analyzePhoto({
+        imageFile: file,
+        assignmentId: assignment.id,
+        signal: controller.signal,
+      });
       setLastCaptureOk(true);
       onCaptureAnalyzed?.();
     } catch (e) {
-      setError(friendlyErrorMessage(e));
+      if (e instanceof Error && e.name === 'AbortError') {
+        setError('Analysis cancelled.');
+      } else {
+        setError(friendlyErrorMessage(e));
+      }
     } finally {
+      abortRef.current = null;
       setAnalyzing(false);
     }
   };
@@ -122,7 +154,7 @@ export const FieldTab: React.FC<Props> = ({
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn pb-6">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-1">Shoot Now</h2>
+        <h2 className="font-serif text-2xl text-white mb-1">Shoot Now</h2>
         <p className="text-muted text-sm">
           Use your camera for the assignment you accepted — I&apos;ll critique the frame right away.
         </p>
@@ -176,9 +208,22 @@ export const FieldTab: React.FC<Props> = ({
           <div className="absolute bottom-1/3 left-0 right-0 h-px bg-white/40" />
         </div>
         {analyzing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-canvas-elevated/80">
-            <Loader2 className="w-10 h-10 animate-spin text-brand-400 mb-2" />
-            <p className="text-sm text-stone-300">Let me take a close look…</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-canvas-elevated/80 px-6 text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-brand-400 mb-3" />
+            <p className="text-sm text-stone-200 font-medium mb-1">
+              {analyzeLoadingStage(analyzeWaitSec)}
+            </p>
+            <p className="text-xs text-muted mb-4">{analyzeWaitHint(analyzeWaitSec)}</p>
+            {analyzeWaitSec >= 8 && (
+              <button
+                type="button"
+                onClick={cancelAnalysis}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs text-muted hover:text-white border border-warm hover:border-warm"
+              >
+                <X className="w-3 h-3" />
+                Cancel
+              </button>
+            )}
           </div>
         )}
       </div>

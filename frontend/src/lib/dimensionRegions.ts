@@ -105,9 +105,9 @@ function techniqueRegion(analysis: StudioAnalysis): DimensionHighlight {
     dimension: 'Technique',
     label: 'Focus & execution',
     region,
-    accentClass: 'text-sky-400',
-    borderClass: 'border-sky-400',
-    glowClass: 'shadow-[0_0_0_9999px_rgba(15,23,42,0.62)]',
+    accentClass: 'text-brand-300',
+    borderClass: 'border-brand-300',
+    glowClass: 'shadow-[0_0_0_9999px_rgba(26,24,22,0.62)]',
   };
 }
 
@@ -116,9 +116,9 @@ function creativityRegion(): DimensionHighlight {
     dimension: 'Creativity',
     label: 'Creative vision (full frame)',
     region: { x: 5, y: 5, width: 90, height: 90 },
-    accentClass: 'text-fuchsia-400',
-    borderClass: 'border-fuchsia-400',
-    glowClass: 'shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]',
+    accentClass: 'text-brand-500',
+    borderClass: 'border-brand-500',
+    glowClass: 'shadow-[0_0_0_9999px_rgba(26,24,22,0.45)]',
   };
 }
 
@@ -127,9 +127,9 @@ function subjectHighlight(analysis: StudioAnalysis): DimensionHighlight {
     dimension: 'Subject',
     label: 'Subject impact',
     region: subjectRegion(analysis),
-    accentClass: 'text-violet-400',
-    borderClass: 'border-violet-400',
-    glowClass: 'shadow-[0_0_0_9999px_rgba(15,23,42,0.62)]',
+    accentClass: 'text-brand-400',
+    borderClass: 'border-brand-400',
+    glowClass: 'shadow-[0_0_0_9999px_rgba(26,24,22,0.62)]',
   };
 }
 

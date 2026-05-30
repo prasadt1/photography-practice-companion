@@ -23,6 +23,8 @@ struct IrisApp: App {
                 }
                 .task {
                     auth.bootstrap()
+                }
+                .task {
                     await appState.checkAPIHealth(auth: auth)
                 }
         }

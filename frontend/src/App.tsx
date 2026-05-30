@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Settings, Store } from 'lucide-react';
 import { AppSidebar } from './components/AppSidebar';
 import { BottomNav } from './components/BottomNav';
+import { BrandLogo } from './components/BrandLogo';
 import { HomeTab } from './components/HomeTab';
 import { MyWorkTab } from './components/MyWorkTab';
 import { MentorTab } from './components/MentorTab';
@@ -20,12 +22,12 @@ import { fetchActiveAssignment } from './services/practiceClient';
 import { fetchUserProfile, personaToUserMode, updatePersona } from './services/userClient';
 import { OfflineBanner } from './components/OfflineBanner';
 import { FilmGrain } from './components/FilmGrain';
-import { PhotoParallax } from './components/PhotoParallax';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import {
   isOnboardingComplete,
   serverOnboardingComplete,
   setOnboardingComplete,
+  clearOnboardingComplete,
 } from './lib/onboarding';
 import type { AnalysisResult } from './types';
 import type { Assignment, UserMode } from './types/practice';
@@ -54,6 +56,7 @@ function App() {
   const [showScoreExplainer, setShowScoreExplainer] = useState(false);
   // Onboarding tour
   const [showTour, setShowTour] = useState(false);
+  const [onboardingBusy, setOnboardingBusy] = useState(false);
   const online = useOnlineStatus();
   const auth = useAuth();
 
@@ -88,7 +91,7 @@ function App() {
   }, [auth.loading, auth.userId]);
 
   useEffect(() => {
-    if (!ready || auth.loading || isOnboardingComplete()) return;
+    if (!ready || auth.loading || isOnboardingComplete() || onboardingBusy) return;
     void fetchUserProfile(auth.userId ?? undefined)
       .then((profile) => {
         if (serverOnboardingComplete(profile.preferences)) {
@@ -98,7 +101,7 @@ function App() {
         }
       })
       .catch(() => {});
-  }, [ready, auth.loading, auth.userId]);
+  }, [ready, auth.loading, auth.userId, onboardingBusy]);
 
   useEffect(() => {
     if (!ready) return;
@@ -109,18 +112,25 @@ function App() {
     }
   }, [activeTab, ready, refreshActiveAssignment]);
 
-  const handleOnboardingComplete = (mode: UserMode) => {
+  const handleOnboardingComplete = useCallback((mode: UserMode) => {
     setOnboardingComplete();
     setShowOnboarding(false);
     setUserMode(mode);
-    navigate('home');
-  };
+    setActiveTab('home');
+    setTabHash('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
-  const persistPersona = async (mode: UserMode) => {
+  const persistPersona = useCallback(async (mode: UserMode) => {
+    setOnboardingBusy(true);
     setPersonaError(null);
-    await updatePersona(mode);
-    clearMentorSession();
-  };
+    try {
+      await updatePersona(mode, auth.userId);
+      clearMentorSession();
+    } finally {
+      setOnboardingBusy(false);
+    }
+  }, [auth.userId]);
 
   if (!ready) {
     return (
@@ -141,9 +151,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-canvas text-stone-200 font-sans selection:bg-brand-500/30 flex relative">
-      {/* Parallax photography background */}
-      <PhotoParallax className="z-0" />
-      {/* Subtle film grain texture */}
       <FilmGrain className="fixed inset-0 z-[1]" />
       <a href="#main-content" className="sr-only">
         Skip to main content
@@ -151,9 +158,51 @@ function App() {
       <AppSidebar activeTab={activeTab} mode={userMode} onNavigate={navigate} />
 
       <div className="flex-1 flex flex-col min-h-screen min-w-0 pb-20 lg:pb-0">
+        <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-3 py-2.5 border-b border-warm bg-canvas/95 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => navigate('home')}
+            className="min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400 focus-visible:outline-offset-2 rounded-md"
+            aria-label="Go to Home"
+          >
+            <BrandLogo size="sm" showWordmark={false} />
+          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {userMode === 'working_pro' && (
+              <button
+                type="button"
+                onClick={() => navigate('print')}
+                aria-label="Print Sales"
+                aria-current={activeTab === 'print' ? 'page' : undefined}
+                className={`p-2.5 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400 focus-visible:outline-offset-2 ${
+                  activeTab === 'print'
+                    ? 'text-brand-400 bg-brand-500/10'
+                    : 'text-muted hover:text-white hover:bg-surface-2'
+                }`}
+              >
+                <Store className="w-5 h-5" aria-hidden />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('settings')}
+              aria-label="Settings"
+              aria-current={activeTab === 'settings' ? 'page' : undefined}
+              className={`p-2.5 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400 focus-visible:outline-offset-2 ${
+                activeTab === 'settings'
+                  ? 'text-brand-400 bg-brand-500/10'
+                  : 'text-muted hover:text-white hover:bg-surface-2'
+              }`}
+            >
+              <Settings className="w-5 h-5" aria-hidden />
+            </button>
+          </div>
+        </header>
+
         <main
           id="main-content"
-          className="flex-1 max-w-7xl w-full mx-auto px-3 py-4 md:py-6"
+          key={activeTab}
+          className="flex-1 max-w-7xl w-full mx-auto px-3 py-4 md:py-6 animate-tabEnter"
         >
           {!online && <OfflineBanner />}
           {personaError && activeTab === 'settings' && (
@@ -230,8 +279,8 @@ function App() {
               onPersistPersona={persistPersona}
               onPersistError={setPersonaError}
               onRestartOnboarding={() => {
+                clearOnboardingComplete();
                 setShowOnboarding(true);
-                navigate('home');
               }}
               onRestartTour={() => {
                 resetTour();

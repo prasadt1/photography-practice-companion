@@ -3,6 +3,9 @@ import { Aperture, Loader2, ScanEye, Store } from 'lucide-react';
 import { BRAND } from '../config/brand';
 import { BrandLogo } from './BrandLogo';
 import { FilmGrain } from './FilmGrain';
+import { InlineAlertBanner } from './InlineAlertBanner';
+import { apiUnreachableMessage } from '../lib/apiHelp';
+import { friendlyErrorMessage } from '../lib/friendlyError';
 import type { UserMode } from '../types/practice';
 
 interface Props {
@@ -13,15 +16,25 @@ interface Props {
 export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const choose = async (mode: UserMode) => {
+    if (saving) return;
     setSaving(true);
     setError(null);
+    setWarning(null);
     try {
       await onPersist(mode);
       onComplete(mode);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your choice');
+      const msg = friendlyErrorMessage(e);
+      if (import.meta.env.DEV) {
+        // Local dev: enter the app even when api-dev is not running (avoids stuck/flickery UX).
+        setWarning(msg || apiUnreachableMessage());
+        onComplete(mode);
+        return;
+      }
+      setError(msg);
       setSaving(false);
     }
   };
@@ -29,7 +42,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
   return (
     <div className="relative min-h-screen bg-canvas text-stone-200 flex items-center justify-center p-6 overflow-hidden">
       <FilmGrain />
-      <div className="max-w-3xl w-full space-y-8 animate-fadeIn relative z-10">
+      <div className="max-w-3xl w-full space-y-8 relative z-10">
         <div className="flex flex-col items-center text-center space-y-4">
           <BrandLogo variant="lockup" size="lg" className="justify-center mx-auto" />
           <p className="font-serif text-xl md:text-2xl text-stone-100 max-w-lg leading-relaxed">
@@ -40,9 +53,15 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
         </div>
 
         {error && (
-          <p className="text-center text-sm text-red-400" role="alert">
-            {error}
-          </p>
+          <InlineAlertBanner message={error} onDismiss={() => setError(null)} />
+        )}
+
+        {warning && (
+          <InlineAlertBanner
+            message={`${warning} You can still explore the UI; run make api-dev for full features.`}
+            variant="warning"
+            onDismiss={() => setWarning(null)}
+          />
         )}
 
         <div className="grid md:grid-cols-2 gap-4">

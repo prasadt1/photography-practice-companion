@@ -6,7 +6,7 @@ struct HomeView: View {
 
     @State private var entries: [PortfolioListItem] = []
     @State private var trends: PortfolioTrendsResponse?
-    @State private var loading = true
+    @State private var isFetching = false
     @State private var errorMessage: String?
     @State private var selectedEntry: PortfolioListItem?
 
@@ -14,31 +14,29 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if loading {
+            ZStack {
+                scrollContent
+                if isFetching, entries.isEmpty {
                     loadingView
-                } else if let errorMessage, entries.isEmpty {
-                    errorView(errorMessage)
-                } else {
-                    scrollContent
+                        .background(Color.irisCanvas.opacity(0.92))
                 }
             }
             .irisScreen()
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.irisCanvas, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .task(id: auth.userId) { await load(force: false) }
-            .task(id: appState.portfolioRevision) {
-                await load(force: true)
-            }
-            .onAppear {
-                Task { await load(force: true) }
+            .task(id: homeLoadToken) {
+                await load()
             }
             .refreshable { await load(force: true) }
             .sheet(item: $selectedEntry) { entry in
                 HomePhotoDetailSheet(entry: entry)
             }
         }
+    }
+
+    private var homeLoadToken: String {
+        "\(auth.userId)-\(appState.portfolioRevision)"
     }
 
     private var loadingView: some View {
@@ -69,10 +67,17 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                if let errorMessage, entries.isEmpty {
+                    Text(errorMessage)
+                        .font(IrisFont.sans(13))
+                        .foregroundStyle(Color.irisRose.opacity(0.9))
+                }
                 if entries.isEmpty {
                     emptyFirstShotCard
                 } else {
-                    progressCard
+                    if trends != nil {
+                        progressCard
+                    }
                     if let active = appState.activeAssignment {
                         activePracticeCard(active)
                     }
@@ -286,33 +291,34 @@ struct HomeView: View {
         .irisCard()
     }
 
-    private func load(force: Bool) async {
-        if !force {
-            loading = entries.isEmpty
-        }
+    private func load(force: Bool = false) async {
+        isFetching = true
         errorMessage = nil
-        defer { loading = false }
+        defer { isFetching = false }
 
         applyPendingToEntries()
 
         APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
         do {
-            async let portfolio = memory.fetchPortfolio(limit: 5)
-            async let trendData = memory.fetchTrends(limit: 12)
-            try? await appState.refreshAssignmentsSnapshot()
-            let (p, t) = try await (portfolio, trendData)
+            let p = try await memory.fetchPortfolio(limit: 5)
             entries = PortfolioMerge.recentEntries(
                 fetched: p.entries,
                 pending: appState.pendingRecentPortfolioItem
             )
             appState.clearPendingRecentIfMatched(fetchedEntries: p.entries)
-            trends = t
-        } catch is CancellationError {
-            if force {
-                applyPendingToEntries()
+
+            Task {
+                if let t = try? await memory.fetchTrends(limit: 12) {
+                    await MainActor.run { trends = t }
+                }
+                try? await appState.refreshAssignmentsSnapshot()
             }
+        } catch is CancellationError {
+            applyPendingToEntries()
         } catch {
-            errorMessage = error.localizedDescription
+            if entries.isEmpty {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

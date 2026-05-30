@@ -6,11 +6,12 @@
  * Implements "Photos are the interface" — gallery first, upload as action.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowLeft, ArrowUpDown, ChevronDown, ChevronLeft, ImageIcon, Plus, RefreshCw, Sparkles, Tag, TrendingUp, X } from 'lucide-react';
 import { FilmGrain } from './FilmGrain';
 import { FocusAreas } from './FocusAreas';
+import { InlineAlertBanner } from './InlineAlertBanner';
 import { TabEmptyState } from './TabEmptyState';
 import { getScoreContext } from '../lib/scoreContext';
 import { apiUnreachableMessage } from '../lib/apiHelp';
@@ -87,6 +88,9 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState('photo.jpg');
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analyzeWaitSec, setAnalyzeWaitSec] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Handle pending analysis from Home upload
   useEffect(() => {
@@ -135,26 +139,54 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     void loadGallery();
   }, [loadGallery]);
 
+  useEffect(() => {
+    if (viewMode !== 'analyzing') {
+      setAnalyzeWaitSec(0);
+      return;
+    }
+    const tick = window.setInterval(() => setAnalyzeWaitSec((s) => s + 1), 1000);
+    return () => window.clearInterval(tick);
+  }, [viewMode]);
+
+  const cancelAnalysis = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    setImageUrl(null);
+    setViewMode('gallery');
+  }, [imageUrl]);
+
   const handleImageSelected = async (file: File, previewUrl: string) => {
     setViewMode('analyzing');
     setResult(null);
     setImageUrl(previewUrl);
     setFilename(file.name);
+    setAnalysisError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const analysisResult = await analyzePhoto({
         imageFile: file,
         assignmentId: activeAssignment?.id,
+        signal: controller.signal,
       });
       setResult(analysisResult);
       setViewMode('result');
       onAssignmentComplete?.();
     } catch (err) {
       console.error('Analysis failed:', err);
-      alert('Analysis failed. See console for details.');
       URL.revokeObjectURL(previewUrl);
       setImageUrl(null);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setAnalysisError('Analysis cancelled.');
+      } else {
+        setAnalysisError(friendlyErrorMessage(err));
+      }
       setViewMode('gallery');
+    } finally {
+      abortRef.current = null;
     }
   };
 
@@ -190,6 +222,8 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           <PhotoUploader
             onImageSelected={handleImageSelected}
             isAnalyzing={viewMode === 'analyzing'}
+            waitSec={analyzeWaitSec}
+            onCancel={cancelAnalysis}
           />
           {viewMode === 'upload' && (
             <button
@@ -262,6 +296,13 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   // Gallery view (default)
   return (
     <div className="animate-fadeIn space-y-8">
+      {analysisError && (
+        <InlineAlertBanner
+          message={analysisError}
+          onDismiss={() => setAnalysisError(null)}
+        />
+      )}
+
       {/* Back to Home link */}
       {onGoHome && (
         <button
@@ -277,7 +318,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       {/* Header with upload CTA */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">My Work</h2>
+          <h2 className="font-serif text-2xl md:text-3xl text-white mb-1">My Work</h2>
           <p className="text-muted text-sm">
             {entries.length > 0
               ? `${entries.length} photo${entries.length === 1 ? '' : 's'} in your library`
@@ -407,7 +448,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                 {trends && !trends.insufficientData && trends.dimensions.find(d => d.key === 'overall')?.delta != null && (
                   <>
                     <span className="text-warm">·</span>
-                    <span className="text-emerald-400 text-xs flex items-center gap-1">
+                    <span className="text-brand-400 text-xs flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" />
                       +{trends.dimensions.find(d => d.key === 'overall')?.delta?.toFixed(1)} progress
                     </span>
@@ -448,11 +489,11 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                 <span className="text-stone-400">5-6 Developing</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-sky-400" />
+                <span className="w-2 h-2 rounded-full bg-brand-400" />
                 <span className="text-stone-400">7-8 Strong</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="w-2 h-2 rounded-full bg-brand-300" />
                 <span className="text-stone-400">9-10 Exceptional</span>
               </span>
             </div>
@@ -462,25 +503,14 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
               {SCORE_LABELS.map(({ key, label }) => {
                 const val = profile.averageScores[key];
                 const ctx = val != null ? getScoreContext(val) : null;
-                // Distinct colors for each level
-                const colorClass = val == null ? 'text-muted'
-                  : val >= 9 ? 'text-emerald-400'
-                  : val >= 7 ? 'text-sky-400'
-                  : val >= 5 ? 'text-amber-400'
-                  : 'text-rose-400';
-                const bgClass = val == null ? ''
-                  : val >= 9 ? 'bg-emerald-500/10'
-                  : val >= 7 ? 'bg-sky-500/10'
-                  : val >= 5 ? 'bg-amber-500/10'
-                  : 'bg-rose-500/10';
                 return (
-                  <div key={key} className={`score-badge space-y-1 rounded-lg p-2 ${bgClass}`}>
+                  <div key={key} className={`score-badge space-y-1 rounded-lg p-2 ${ctx?.bgColor ?? ''}`}>
                     <p className="text-[9px] text-muted uppercase truncate">{label}</p>
-                    <p className={`text-lg font-bold ${colorClass}`}>
+                    <p className={`text-lg font-bold ${ctx?.color ?? 'text-muted'}`}>
                       {val?.toFixed(1) ?? '—'}
                     </p>
                     {ctx && (
-                      <p className={`text-[10px] font-medium ${colorClass}`}>{ctx.label}</p>
+                      <p className={`text-[10px] font-medium ${ctx.color}`}>{ctx.label}</p>
                     )}
                   </div>
                 );
@@ -499,7 +529,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                         <p className="text-[9px] text-muted uppercase">{d.label}</p>
                         <p className="text-sm font-semibold text-stone-200">{d.latest?.toFixed(1) ?? '—'}</p>
                         {d.delta != null && (
-                          <p className={`text-[10px] ${d.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <p className={`text-[10px] ${d.delta >= 0 ? 'text-brand-400' : 'text-rose-400'}`}>
                             {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(1)}
                           </p>
                         )}

@@ -20,11 +20,17 @@ export async function fetchUserProfile(userId?: string | null): Promise<UserProf
   return res.json() as Promise<UserProfile>;
 }
 
-export async function updatePersona(persona: UserMode): Promise<UserProfile> {
+export async function updatePersona(
+  persona: UserMode,
+  userId?: string | null,
+): Promise<UserProfile> {
+  const payload: { persona: UserMode; userId?: string } = { persona };
+  if (userId) payload.userId = userId;
+
   const res = await apiFetch('/api/v1/users/me', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ persona }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     throw new Error(await res.text());

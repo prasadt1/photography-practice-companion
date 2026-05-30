@@ -15,9 +15,10 @@ final class CueSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         guard !trimmed.isEmpty else { return }
 
         if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .word)
+            synthesizer.stopSpeaking(at: .immediate)
         }
-        let utterance = AVSpeechUtterance(string: trimmed)
+        let spoken = Self.compactForSpeech(trimmed)
+        let utterance = AVSpeechUtterance(string: spoken)
         utterance.rate = AppConfig.liveCoachSpeechRate
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         synthesizer.speak(utterance)
@@ -27,5 +28,20 @@ final class CueSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
+    }
+
+    /// Keep voice cues short — full text stays on screen.
+    private static func compactForSpeech(_ text: String) -> String {
+        if let match = text.range(of: #"[.!?]"#, options: .regularExpression) {
+            let end = text.index(after: match.lowerBound)
+            let sentence = String(text[..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if sentence.count >= 12 {
+                return sentence
+            }
+        }
+        if text.count > 72 {
+            return String(text.prefix(72)).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+        }
+        return text
     }
 }

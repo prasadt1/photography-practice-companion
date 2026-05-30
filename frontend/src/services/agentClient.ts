@@ -10,6 +10,7 @@ export interface AnalyzePhotoRequest {
   userId?: string;
   shootId?: string;
   assignmentId?: string;
+  signal?: AbortSignal;
 }
 
 export type AnalyzePhotoResponse = AnalysisResult;
@@ -18,7 +19,13 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 async function analyzePhotoMock(request: AnalyzePhotoRequest): Promise<AnalyzePhotoResponse> {
   console.log('analyzePhoto (mock):', request.imageFile.name);
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, 2000);
+    request.signal?.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(new DOMException('Aborted', 'AbortError'));
+    }, { once: true });
+  });
 
   return {
     portfolioEntryId: `mock_${Date.now()}`,
@@ -126,6 +133,7 @@ export async function analyzePhoto(request: AnalyzePhotoRequest): Promise<Analyz
   const response = await apiFetch('/api/v1/analyze-photo', {
     method: 'POST',
     body: form,
+    signal: request.signal,
   });
 
   if (!response.ok) {

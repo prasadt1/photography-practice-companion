@@ -377,7 +377,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
       {view === 'chat' && (
         <div className="flex flex-col min-h-[60vh]">
           <div className="mb-6">
-            <h1 className="font-serif text-2xl md:text-3xl font-extrabold text-white">
+            <h1 className="font-serif text-2xl md:text-3xl text-white">
               Ask me about your progress
             </h1>
             <p className="text-muted mt-2 text-sm leading-relaxed">
@@ -406,72 +406,69 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                 </div>
               )}
               {messages.map((m) => (
-                <div
+                <article
                   key={m.id}
-                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={
+                    m.role === 'user'
+                      ? 'ml-auto max-w-xl border-l-2 border-brand-500/50 pl-4 py-1'
+                      : 'max-w-3xl rounded-xl border border-warm bg-surface-1/90 p-5'
+                  }
                 >
-                  {m.role === 'assistant' && (
-                    <div className="shrink-0 mt-1 mr-2">
-                      <IrisMark size={28} />
-                    </div>
+                  {m.role === 'user' ? (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-muted mb-1.5">You asked</p>
+                      <p className="text-sm text-stone-200 whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-warm/60">
+                        <IrisMark size={22} />
+                        <p className="text-[10px] uppercase tracking-widest text-brand-400">From Iris</p>
+                      </div>
+                      <div className="font-serif text-stone-100 text-sm leading-relaxed">
+                        <MentorMarkdown content={m.content} />
+                      </div>
+                    </>
                   )}
-                  <div
-                    className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm ${
-                      m.role === 'user'
-                        ? 'bg-brand-500 text-on-brand whitespace-pre-wrap'
-                        : 'bg-surface-3/90 text-stone-100 border border-warm/50'
-                    }`}
-                  >
-                    {m.role === 'assistant' ? (
-                      <MentorMarkdown content={m.content} />
-                    ) : (
-                      m.content
-                    )}
-                  </div>
-                </div>
+                </article>
               ))}
               {loading && (
-                <div className="flex justify-start">
-                  <div className="shrink-0 mt-1 mr-2">
-                    <IrisMark size={28} className="animate-pulse" />
+                <article
+                  className="max-w-3xl rounded-xl border border-warm bg-surface-1/90 p-5"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <IrisMark size={22} className="animate-pulse" />
+                    <span className="text-[10px] uppercase tracking-widest text-brand-400">From Iris</span>
                   </div>
-                  <div
-                    className="max-w-[90%] flex flex-col gap-2 text-stone-300 text-sm rounded-xl border border-warm/60 bg-canvas-elevated/50 p-4"
-                    role="status"
-                    aria-live="polite"
-                    aria-busy="true"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-brand-300 animate-pulse">
-                          Iris is thinking...
-                        </span>
-                      </div>
-                      {waitSec >= 8 && (
-                        <button
-                          type="button"
-                          onClick={cancelRequest}
-                          className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted hover:text-white border border-warm hover:border-warm"
-                        >
-                          <X className="w-3 h-3" />
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-xs text-stone-400">{stageMessage}</p>
-                    <div className="h-1 rounded-full bg-surface-3 overflow-hidden">
-                      <div
-                        className="h-full bg-brand-500/80 transition-all duration-1000 ease-out-expo"
-                        style={{ width: `${Math.min(95, 12 + waitSec * 1.2)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted">
-                      {mode === 'working_pro'
-                        ? `Often 60–90 seconds · ${waitSec}s — keep this tab open`
-                        : `Usually 30–60 seconds · ${waitSec}s — keep this tab open`}
-                    </p>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-serif text-brand-300 animate-pulse">Reading your library…</span>
+                    {waitSec >= 8 && (
+                      <button
+                        type="button"
+                        onClick={cancelRequest}
+                        className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted hover:text-white border border-warm"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancel
+                      </button>
+                    )}
                   </div>
-                </div>
+                  <p className="text-xs text-muted font-sans">{stageMessage}</p>
+                  <div className="mt-3 h-1 rounded-full bg-surface-3 overflow-hidden">
+                    <div
+                      className="h-full bg-brand-500/80 transition-all duration-1000 ease-out-expo"
+                      style={{ width: `${Math.min(95, 12 + waitSec * 1.2)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted mt-2 font-sans">
+                    {mode === 'working_pro'
+                      ? `Often 60–90 seconds · ${waitSec}s — keep this tab open`
+                      : `Usually 30–60 seconds · ${waitSec}s — keep this tab open`}
+                  </p>
+                </article>
               )}
               <div ref={bottomRef} />
             </div>
@@ -521,7 +518,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type a message…"
+                placeholder="Ask about your progress…"
                 disabled={loading}
                 className="flex-1 rounded-lg bg-canvas-elevated border border-warm px-4 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
               />

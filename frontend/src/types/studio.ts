@@ -35,6 +35,8 @@ export interface StudioCritique {
   composition: string;
   lighting: string;
   technique: string;
+  creativity: string;
+  subjectImpact: string;
   overall: string;
 }
 

@@ -8,6 +8,7 @@ final class LiveFieldCoachModel: ObservableObject {
     @Published var statusMessage: String?
     @Published var isEnabled: Bool
     @Published var lastError: String?
+    @Published private(set) var isCompositionLocked = false
 
     private let service = FieldCoachService()
     private let speaker = CueSpeaker()
@@ -21,11 +22,12 @@ final class LiveFieldCoachModel: ObservableObject {
     private var lastSubmitAt: Date?
     private var submitGeneration = 0
     private var samplingTask: Task<Void, Never>?
+    private var lockReleaseTask: Task<Void, Never>?
     private weak var boundCamera: CameraSessionModel?
 
-    /// Must exceed server MIN_FRAME_INTERVAL_SEC (3s) plus network latency.
-    private let minSubmitInterval: TimeInterval = 4.5
-    private let samplingInterval: TimeInterval = 8
+    private let minSubmitInterval: TimeInterval = 3.2
+    private let samplingInterval: TimeInterval = 5
+    private let lockAutoReleaseSeconds: TimeInterval = 45
 
     init() {
         isEnabled = AppConfig.liveCoachEnabled
@@ -50,11 +52,7 @@ final class LiveFieldCoachModel: ObservableObject {
                 Task { await start(camera: camera, auth: auth, appState: appState) }
             }
         } else {
-            speaker.stop()
-            hint = nil
-            isFetching = false
-            inFlight = false
-            pause()
+            haltSamplingAndSpeech()
             statusMessage = "Coach off — pinch and shoot still work."
         }
     }
@@ -103,7 +101,8 @@ final class LiveFieldCoachModel: ObservableObject {
             isSessionActive = true
             lastSubmitAt = nil
             lastError = nil
-            statusMessage = "Live coach on — first cue in ~10s."
+            isCompositionLocked = false
+            statusMessage = "Live coach on — first cue in ~5s."
             beginSampling(on: camera)
         } catch {
             let msg = error.localizedDescription
@@ -115,11 +114,7 @@ final class LiveFieldCoachModel: ObservableObject {
 
     func stop(camera: CameraSessionModel) async {
         submitGeneration += 1
-        inFlight = false
-        isFetching = false
-        samplingTask?.cancel()
-        samplingTask = nil
-        speaker.stop()
+        haltSamplingAndSpeech()
         if let sessionId {
             try? await service.endSession(sessionId: sessionId)
         }
@@ -131,19 +126,36 @@ final class LiveFieldCoachModel: ObservableObject {
 
     func pause() {
         submitGeneration += 1
-        inFlight = false
-        isFetching = false
-        samplingTask?.cancel()
-        samplingTask = nil
+        haltSamplingAndSpeech()
     }
 
     func resume(camera: CameraSessionModel) {
         guard isEnabled, isSessionActive, sessionId != nil else { return }
+        isCompositionLocked = false
+        beginSampling(on: camera)
+    }
+
+    /// User changed zoom or focus — re-open coaching if we had locked composition.
+    func onFrameChanged(camera: CameraSessionModel) {
+        guard isCompositionLocked else { return }
+        unlockComposition(camera: camera)
+    }
+
+    func unlockComposition(camera: CameraSessionModel) {
+        guard isCompositionLocked else { return }
+        isCompositionLocked = false
+        lockReleaseTask?.cancel()
+        lockReleaseTask = nil
+        hint = nil
+        statusMessage = "Keep framing — coach will check again."
         beginSampling(on: camera)
     }
 
     func askIrisNow() async {
         guard isEnabled, isSessionActive, let camera = boundCamera else { return }
+        if isCompositionLocked {
+            unlockComposition(camera: camera)
+        }
         guard !inFlight else {
             statusMessage = "Coach still thinking…"
             return
@@ -162,22 +174,33 @@ final class LiveFieldCoachModel: ObservableObject {
         }
     }
 
+    private func haltSamplingAndSpeech() {
+        inFlight = false
+        isFetching = false
+        isCompositionLocked = false
+        hint = nil
+        speaker.stop()
+        samplingTask?.cancel()
+        samplingTask = nil
+        lockReleaseTask?.cancel()
+        lockReleaseTask = nil
+    }
+
     private func beginSampling(on camera: CameraSessionModel) {
-        guard camera.isRunning else { return }
+        guard camera.isRunning, !isCompositionLocked else { return }
         boundCamera = camera
         samplingTask?.cancel()
         samplingTask = Task { [weak self] in
-            // Initial delay so the viewfinder settles after open.
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             while !Task.isCancelled {
                 guard let self else { return }
-                if !self.isEnabled || !self.isSessionActive || self.inFlight {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if !self.isEnabled || !self.isSessionActive || self.inFlight || self.isCompositionLocked {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
                     continue
                 }
                 if let lastSubmitAt = self.lastSubmitAt,
                    Date().timeIntervalSince(lastSubmitAt) < self.minSubmitInterval {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    try? await Task.sleep(nanoseconds: 500_000_000)
                     continue
                 }
                 guard let camera = self.boundCamera else { return }
@@ -195,7 +218,7 @@ final class LiveFieldCoachModel: ObservableObject {
     }
 
     private func handleSampledFrame(_ data: Data) async {
-        guard isEnabled, isSessionActive, !inFlight else { return }
+        guard isEnabled, isSessionActive, !inFlight, !isCompositionLocked else { return }
         if let lastSubmitAt, Date().timeIntervalSince(lastSubmitAt) < minSubmitInterval {
             return
         }
@@ -254,8 +277,13 @@ final class LiveFieldCoachModel: ObservableObject {
         let text = cue.onScreenHint.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
+        if cue.readyToCapture || shouldTreatAsReady(cue, text: text) {
+            enterCompositionLock(cue: cue, text: text)
+            return
+        }
+
         if let lastCueText, lastCueText == text,
-           let lastCueAt, Date().timeIntervalSince(lastCueAt) < 30 {
+           let lastCueAt, Date().timeIntervalSince(lastCueAt) < 15 {
             return
         }
 
@@ -264,5 +292,34 @@ final class LiveFieldCoachModel: ObservableObject {
         hint = text
         statusMessage = nil
         speaker.speak(cue.spokenCue)
+    }
+
+    private func shouldTreatAsReady(_ cue: FieldCaptureCueResponse, text: String) -> Bool {
+        guard cue.confidence >= 0.8 else { return false }
+        let combined = (text + " " + cue.spokenCue).lowercased()
+        let readyWords = ["shoot", "ready", "locked", "good frame", "capture now", "take the shot"]
+        return readyWords.contains { combined.contains($0) }
+    }
+
+    private func enterCompositionLock(cue: FieldCaptureCueResponse, text: String) {
+        isCompositionLocked = true
+        samplingTask?.cancel()
+        samplingTask = nil
+        lastCueText = text
+        lastCueAt = Date()
+        hint = text
+        statusMessage = "Composition set — tap Shutter"
+        let spoken = cue.spokenCue.trimmingCharacters(in: .whitespacesAndNewlines)
+        speaker.speak(spoken.isEmpty ? "Good frame. Shoot when ready." : spoken)
+
+        lockReleaseTask?.cancel()
+        lockReleaseTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64((self?.lockAutoReleaseSeconds ?? 45) * 1_000_000_000))
+            guard let self, !Task.isCancelled, self.isCompositionLocked,
+                  let camera = self.boundCamera else { return }
+            await MainActor.run {
+                self.unlockComposition(camera: camera)
+            }
+        }
     }
 }

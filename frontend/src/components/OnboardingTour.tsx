@@ -1,18 +1,14 @@
 /**
- * OnboardingTour — Lightweight feature walkthrough for new users.
- * Shows key features with animated spotlight and brief explanations.
+ * OnboardingTour — Lightweight feature walkthrough (3 steps, warm darkroom palette).
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ArrowRight,
-  Camera,
   Home,
   Images,
-  Layers,
   MessageCircle,
   Sparkles,
-  Target,
   X,
 } from 'lucide-react';
 
@@ -21,58 +17,36 @@ interface TourStep {
   icon: React.ElementType;
   title: string;
   description: string;
-  accent: string;
 }
 
 const TOUR_STEPS: TourStep[] = [
   {
     id: 'home',
     icon: Home,
-    title: 'Home',
+    title: 'Your darkroom home',
     description:
-      'Your dashboard. See your best recent work, track progress, and jump into your next assignment.',
-    accent: 'bg-brand-500',
+      'Your best work up front — scores, Glass Box reasoning, and progress at a glance.',
   },
   {
     id: 'work',
     icon: Images,
     title: 'My Work',
     description:
-      'Upload photos for AI critique. Each photo gets detailed feedback on composition, lighting, technique, and more.',
-    accent: 'bg-amber-500',
+      'Upload for critique. Every photo gets scores, tags, and expandable Glass Box reasoning.',
   },
   {
-    id: 'practice',
-    icon: Target,
-    title: 'Practice',
-    description:
-      'Focused assignments to build specific skills. Pick a challenge, shoot, and get feedback tailored to that goal.',
-    accent: 'bg-emerald-500',
-  },
-  {
-    id: 'mentor-chat',
+    id: 'mentor',
     icon: MessageCircle,
-    title: 'Mentor Chat',
+    title: 'Ask your mentor',
     description:
-      'Ask questions about your progress. I search your past critiques and portfolio to give personalized advice.',
-    accent: 'bg-sky-500',
-  },
-  {
-    id: 'mentor-organize',
-    icon: Layers,
-    title: 'Organize',
-    description:
-      'Keep your library tidy. I find similar photos and suggest tags so you can search by theme later.',
-    accent: 'bg-fuchsia-500',
+      'I search your library and past critiques — honest replies, not generic chat.',
   },
 ];
 
 const STORAGE_KEY = 'iris-tour-completed';
 
 interface Props {
-  /** Force show even if previously completed */
   forceShow?: boolean;
-  /** Callback when tour completes or is dismissed */
   onComplete?: () => void;
 }
 
@@ -86,11 +60,9 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
       setCurrentStep(0);
       return;
     }
-    // Check if tour was already completed
     const completed = localStorage.getItem(STORAGE_KEY);
     if (!completed) {
-      // Small delay so the app renders first
-      const timer = setTimeout(() => setIsOpen(true), 800);
+      const timer = setTimeout(() => setIsOpen(true), 2000);
       return () => clearTimeout(timer);
     }
   }, [forceShow]);
@@ -99,7 +71,6 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
     if (currentStep < TOUR_STEPS.length - 1) {
       setCurrentStep((s) => s + 1);
     } else {
-      // Complete
       localStorage.setItem(STORAGE_KEY, 'true');
       setIsOpen(false);
       onComplete?.();
@@ -119,40 +90,31 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
   const isLast = currentStep === TOUR_STEPS.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 animate-overlayFadeIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-canvas/90 backdrop-blur-sm animate-overlayFadeIn">
       <div className="relative max-w-md w-full animate-springIn">
-        {/* Progress dots */}
         <div className="flex justify-center gap-1.5 mb-4">
           {TOUR_STEPS.map((s, i) => (
             <div
               key={s.id}
               className={`h-1.5 rounded-full transition-all duration-150 ${
-                i === currentStep
-                  ? 'w-6 bg-brand-400'
-                  : i < currentStep
-                    ? 'w-1.5 bg-brand-400/60'
-                    : 'w-1.5 bg-white/20'
+                i === currentStep ? 'w-8 bg-brand-400' : 'w-1.5 bg-warm-border'
               }`}
             />
           ))}
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl border border-warm bg-canvas overflow-hidden shadow-2xl">
-          {/* Header with icon */}
-          <div className={`${step.accent} p-6 flex justify-center`}>
-            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
-              <StepIcon className="w-8 h-8 text-white" />
+          <div className="bg-brand-500/20 border-b border-brand-500/30 p-6 flex justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-brand-500/25 border border-brand-500/40 flex items-center justify-center">
+              <StepIcon className="w-8 h-8 text-brand-400" />
             </div>
           </div>
 
-          {/* Content */}
           <div className="p-6 text-center space-y-3">
-            <h2 className="text-xl font-bold text-white">{step.title}</h2>
+            <h2 className="font-serif text-xl text-white">{step.title}</h2>
             <p className="text-sm text-stone-300 leading-relaxed">{step.description}</p>
           </div>
 
-          {/* Actions */}
           <div className="p-4 border-t border-warm flex items-center justify-between">
             <button
               type="button"
@@ -181,7 +143,6 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
           </div>
         </div>
 
-        {/* Close button */}
         <button
           type="button"
           onClick={handleSkip}
@@ -195,25 +156,21 @@ export const OnboardingTour: React.FC<Props> = ({ forceShow, onComplete }) => {
   );
 };
 
-/** Button to restart the tour from Settings or Help */
 export const TourRestartButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
     className="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors"
   >
-    <Camera className="w-4 h-4" />
     Take a tour
   </button>
 );
 
-/** Check if tour was completed */
 export function isTourCompleted(): boolean {
   if (typeof window === 'undefined') return true;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
-/** Reset tour (for testing or restart) */
 export function resetTour(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);

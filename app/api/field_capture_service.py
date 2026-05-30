@@ -48,12 +48,14 @@ def _parse_cue_payload(raw: str) -> dict[str, Any]:
     hint = str(data.get("on_screen_hint") or data.get("onScreenHint") or spoken).strip()
     confidence = float(data.get("confidence", 0.7))
     confidence = max(0.0, min(1.0, confidence))
+    ready = bool(data.get("ready_to_capture") or data.get("readyToCapture", False))
     if not spoken and not hint:
         raise ValueError("Empty field capture cue")
     return {
         "spokenCue": spoken or hint,
         "onScreenHint": hint or spoken,
         "confidence": confidence,
+        "readyToCapture": ready,
     }
 
 

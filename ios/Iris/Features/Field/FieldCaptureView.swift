@@ -98,7 +98,9 @@ struct FieldCaptureView: View {
                 if CameraSessionModel.isSimulator || camera.permissionDenied {
                     simulatorPlaceholder
                 } else if camera.isConfigured {
-                    CameraPreviewView(session: camera.session, camera: camera)
+                    CameraPreviewView(session: camera.session, camera: camera) {
+                        liveCoach.onFrameChanged(camera: camera)
+                    }
                         .frame(width: geo.size.width, height: geo.size.height)
                         .clipped()
                 } else {
@@ -125,7 +127,7 @@ struct FieldCaptureView: View {
             }
             .overlay(alignment: .bottom) {
                 liveCoachOverlay
-                    .allowsHitTesting(false)
+                    .allowsHitTesting(liveCoach.isCompositionLocked)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
             }
@@ -135,7 +137,37 @@ struct FieldCaptureView: View {
     @ViewBuilder
     private var liveCoachOverlay: some View {
         VStack(spacing: 8) {
-            if liveCoach.isFetching, liveCoach.isEnabled {
+            if liveCoach.isCompositionLocked, liveCoach.isEnabled, !analyzing {
+                VStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.green)
+                        Text("Ready to capture")
+                            .font(IrisFont.sans(13, weight: .semibold))
+                            .foregroundStyle(Color.irisTextPrimary)
+                    }
+                    if let hint = liveCoach.hint {
+                        Text(hint)
+                            .font(IrisFont.sans(13))
+                            .foregroundStyle(Color.irisTextPrimary.opacity(0.92))
+                            .multilineTextAlignment(.center)
+                    }
+                    Button("Keep adjusting") {
+                        liveCoach.unlockComposition(camera: camera)
+                    }
+                    .font(IrisFont.sans(12, weight: .semibold))
+                    .foregroundStyle(Color.irisBrandLight)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(Color.black.opacity(0.78))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.green.opacity(0.65), lineWidth: 1.5)
+                )
+            } else if liveCoach.isFetching, liveCoach.isEnabled {
                 HStack(spacing: 6) {
                     ProgressView()
                         .scaleEffect(0.75)
@@ -148,9 +180,7 @@ struct FieldCaptureView: View {
                 .padding(.vertical, 6)
                 .background(Color.black.opacity(0.55))
                 .clipShape(Capsule())
-            }
-
-            if let hint = liveCoach.hint, liveCoach.isEnabled, !analyzing {
+            } else if let hint = liveCoach.hint, liveCoach.isEnabled, !analyzing {
                 Text(hint)
                     .font(IrisFont.sans(14, weight: .medium))
                     .foregroundStyle(Color.irisTextPrimary)
@@ -172,6 +202,7 @@ struct FieldCaptureView: View {
         HStack(spacing: 8) {
             Button {
                 camera.stepZoom(by: -0.5)
+                liveCoach.onFrameChanged(camera: camera)
             } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 13, weight: .bold))
@@ -183,6 +214,7 @@ struct FieldCaptureView: View {
 
             Button {
                 camera.stepZoom(by: 0.5)
+                liveCoach.onFrameChanged(camera: camera)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 13, weight: .bold))
@@ -375,6 +407,7 @@ struct FieldCaptureView: View {
             errorMessage = "Use Gallery on the simulator."
             return
         }
+        liveCoach.pause()
         do {
             let raw = try await camera.captureJPEG()
             lastCaptureImage = UIImage(data: raw)
@@ -382,6 +415,9 @@ struct FieldCaptureView: View {
         } catch {
             if !analysisCancelled {
                 errorMessage = friendlyNetworkMessage(error)
+            }
+            if liveCoach.isEnabled, liveCoach.isSessionActive {
+                liveCoach.resume(camera: camera)
             }
         }
     }
@@ -392,6 +428,7 @@ struct FieldCaptureView: View {
             errorMessage = "Could not load image."
             return
         }
+        liveCoach.pause()
         lastCaptureImage = UIImage(data: data)
         await uploadForAnalysis(imageData: data)
     }
@@ -415,8 +452,10 @@ struct FieldCaptureView: View {
         APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
 
         do {
-            try? await appState.refreshActiveAssignment()
-            let jpeg = ImageUploadPrep.jpegForUpload(from: imageData)
+            if appState.activeAssignment == nil {
+                try? await appState.refreshActiveAssignment()
+            }
+            let jpeg = ImageUploadPrep.jpegForUpload(from: imageData, maxEdge: 960, quality: 0.75)
             let assignmentId = appState.effectiveAssignmentIdForShoot()
             let result = try await analyzeService.analyzePhoto(
                 imageData: jpeg,

@@ -9,43 +9,57 @@ export interface ScoreBreakdownRow {
 
 interface Props {
   rows: ScoreBreakdownRow[];
-  hoveredDimension: string | null;
+  /** Hover ?? selected — drives photo highlight */
+  previewDimension: string | null;
   selectedDimension: string | null;
-  onHoverDimension: (subject: string | null) => void;
+  onPreviewDimension: (subject: string | null) => void;
   onSelectDimension: (subject: string) => void;
   onWhyClick: (subject: string) => void;
+  /** Beside photo in analysis layout */
+  variant?: 'stacked' | 'sidebar';
 }
 
-/** Score bars + critique — kept adjacent to the photo preview in Studio Overview. */
+/** Score bars + fixed critique slot — sits adjacent to the photo preview. */
 export const ScoreBreakdownPanel: React.FC<Props> = ({
   rows,
-  hoveredDimension,
+  previewDimension,
   selectedDimension,
-  onHoverDimension,
+  onPreviewDimension,
   onSelectDimension,
   onWhyClick,
+  variant = 'sidebar',
 }) => {
   const [showExplainer, setShowExplainer] = useState(false);
-  const activeDimension = hoveredDimension ?? selectedDimension;
+  const activeRow = previewDimension
+    ? rows.find((c) => c.subject === previewDimension)
+    : null;
+
+  const shellClass =
+    variant === 'sidebar'
+      ? 'rounded-2xl border border-warm bg-surface-1/80 h-full flex flex-col'
+      : 'p-4 space-y-3 border-t border-warm/60';
 
   return (
-    <div className="rounded-2xl border border-warm bg-surface-1 p-4 space-y-4">
-      <div className="flex items-start justify-between">
+    <div className={shellClass}>
+      <div className={`${variant === 'sidebar' ? 'p-4 pb-3' : ''} flex items-start justify-between gap-3`}>
         <div>
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
             Score breakdown
           </h3>
           <p className="text-xs text-muted mt-1">
-            Hover or tap a dimension — the highlight appears on the photo above.
+            Hover to preview on the photo · click to lock a dimension
           </p>
         </div>
         <ScoreExplainerTrigger onClick={() => setShowExplainer(true)} />
       </div>
 
-      <div className="space-y-2">
-        {rows.map((item, index) => {
-          const isActive =
-            hoveredDimension === item.subject || selectedDimension === item.subject;
+      <div
+        className={`${variant === 'sidebar' ? 'px-4' : ''} space-y-1.5 flex-1`}
+        onMouseLeave={() => onPreviewDimension(null)}
+      >
+        {rows.map((item) => {
+          const isPreview = previewDimension === item.subject;
+          const isSelected = selectedDimension === item.subject;
           const barColor =
             item.score >= 8
               ? 'bg-amber-500'
@@ -57,29 +71,31 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
               key={item.subject}
               type="button"
               onClick={() => onSelectDimension(item.subject)}
-              onMouseEnter={() => onHoverDimension(item.subject)}
-              onMouseLeave={() => onHoverDimension(null)}
-              onFocus={() => onHoverDimension(item.subject)}
-              onBlur={() => onHoverDimension(null)}
-              className={`score-badge w-full flex items-center gap-3 text-left p-2 rounded-lg transition-all ${
-                isActive ? 'bg-brand-500/10 ring-1 ring-brand-500/40' : 'hover:bg-surface-3/50'
+              onMouseEnter={() => onPreviewDimension(item.subject)}
+              onFocus={() => onPreviewDimension(item.subject)}
+              onBlur={() => onPreviewDimension(null)}
+              className={`w-full flex items-center gap-2 sm:gap-3 text-left p-2 rounded-lg transition-colors duration-100 ${
+                isSelected
+                  ? 'bg-brand-500/15 ring-1 ring-brand-500/50'
+                  : isPreview
+                    ? 'bg-surface-3/60'
+                    : 'hover:bg-surface-3/40'
               }`}
-              style={{ animationDelay: `${index * 50}ms` }}
             >
               <span
-                className={`w-20 sm:w-24 text-xs truncate shrink-0 ${
-                  isActive ? 'text-brand-400 font-semibold' : 'text-muted'
+                className={`w-[4.5rem] sm:w-20 text-xs truncate shrink-0 ${
+                  isSelected || isPreview ? 'text-brand-400 font-semibold' : 'text-muted'
                 }`}
               >
                 {item.subject}
               </span>
               <div className="flex-1 h-2.5 bg-surface-3 rounded-full overflow-hidden min-w-0">
                 <div
-                  className={`h-full rounded-full transition-all duration-150 ${barColor}`}
+                  className={`h-full rounded-full ${barColor}`}
                   style={{ width: `${item.score * 10}%` }}
                 />
               </div>
-              <span className="w-8 text-sm font-bold text-stone-100 shrink-0 tabular-nums">
+              <span className="w-7 sm:w-8 text-sm font-bold text-stone-100 shrink-0 tabular-nums">
                 {item.score.toFixed(1)}
               </span>
               <span
@@ -106,24 +122,31 @@ export const ScoreBreakdownPanel: React.FC<Props> = ({
       </div>
 
       <div
-        className="rounded-xl border border-warm/80 bg-canvas-elevated/40 p-3 min-h-[4.5rem]"
+        className={`${
+          variant === 'sidebar' ? 'm-4 mt-3' : ''
+        } rounded-xl border border-warm/80 bg-canvas-elevated/50 p-3 min-h-[7.5rem] max-h-[7.5rem] overflow-y-auto`}
         aria-live="polite"
       >
-        {activeDimension ? (
+        {activeRow ? (
           <>
             <p className="text-[10px] font-bold uppercase text-brand-400 tracking-wide mb-1">
-              {activeDimension}
+              {activeRow.subject} · {activeRow.score.toFixed(1)}/10
+              {selectedDimension === activeRow.subject && (
+                <span className="text-muted font-normal normal-case tracking-normal ml-1">
+                  · locked
+                </span>
+              )}
             </p>
-            <p className="text-sm text-stone-200 leading-relaxed">
-              {rows.find((c) => c.subject === activeDimension)?.critique}
-            </p>
+            <p className="text-sm text-stone-200 leading-relaxed">{activeRow.critique}</p>
           </>
         ) : (
           <p className="text-sm text-muted leading-relaxed">
-            Select a dimension to read the critique for that score.
+            Hover or tap a dimension to see how Iris scored it and what to improve.
           </p>
         )}
       </div>
+
+      {variant === 'sidebar' && <div className="h-4 shrink-0" aria-hidden />}
 
       <ScoreExplainer isOpen={showExplainer} onClose={() => setShowExplainer(false)} />
     </div>

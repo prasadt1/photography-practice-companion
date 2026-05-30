@@ -60,7 +60,7 @@ export const ScoreExplainer: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="sticky top-0 bg-canvas border-b border-warm p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HelpCircle className="w-5 h-5 text-brand-400" />
-            <h2 className="text-lg font-bold text-white">How Iris Scores Photos</h2>
+            <h2 className="font-serif text-lg text-white">How Iris Scores Photos</h2>
           </div>
           <button
             type="button"
@@ -90,21 +90,21 @@ export const ScoreExplainer: React.FC<Props> = ({ isOpen, onClose }) => {
               Score Scale
             </h3>
             <div className="flex gap-2 text-xs">
-              <div className="flex-1 rounded-lg bg-rose-500/20 border border-rose-500/30 p-2 text-center">
+              <div className="flex-1 rounded-lg bg-rose-500/15 border border-rose-500/30 p-2 text-center">
                 <span className="font-bold text-rose-400">1-4</span>
                 <p className="text-rose-300/80 mt-1">Needs work</p>
               </div>
-              <div className="flex-1 rounded-lg bg-amber-500/20 border border-amber-500/30 p-2 text-center">
+              <div className="flex-1 rounded-lg bg-amber-500/15 border border-amber-500/30 p-2 text-center">
                 <span className="font-bold text-amber-400">5-6</span>
                 <p className="text-amber-300/80 mt-1">Developing</p>
               </div>
-              <div className="flex-1 rounded-lg bg-sky-500/20 border border-sky-500/30 p-2 text-center">
-                <span className="font-bold text-sky-400">7-8</span>
-                <p className="text-sky-300/80 mt-1">Strong</p>
+              <div className="flex-1 rounded-lg bg-brand-500/15 border border-brand-500/30 p-2 text-center">
+                <span className="font-bold text-brand-400">7-8</span>
+                <p className="text-brand-300/80 mt-1">Strong</p>
               </div>
-              <div className="flex-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 p-2 text-center">
-                <span className="font-bold text-emerald-400">9-10</span>
-                <p className="text-emerald-300/80 mt-1">Exceptional</p>
+              <div className="flex-1 rounded-lg bg-brand-500/25 border border-brand-400/40 p-2 text-center">
+                <span className="font-bold text-brand-300">9-10</span>
+                <p className="text-brand-200/80 mt-1">Exceptional</p>
               </div>
             </div>
           </div>

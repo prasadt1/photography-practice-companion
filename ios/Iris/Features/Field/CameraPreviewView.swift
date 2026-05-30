@@ -4,9 +4,10 @@ import SwiftUI
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     @ObservedObject var camera: CameraSessionModel
+    var onUserAdjustedFrame: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(camera: camera)
+        Coordinator(camera: camera, onUserAdjustedFrame: onUserAdjustedFrame)
     }
 
     func makeUIView(context: Context) -> CameraPreviewContainerView {
@@ -22,17 +23,24 @@ struct CameraPreviewView: UIViewRepresentable {
     func updateUIView(_ uiView: CameraPreviewContainerView, context: Context) {
         uiView.previewView.previewLayer.session = session
         context.coordinator.camera = camera
+        context.coordinator.onUserAdjustedFrame = onUserAdjustedFrame
         context.coordinator.containerView = uiView
     }
 
     @MainActor
     final class Coordinator: NSObject {
         var camera: CameraSessionModel
+        var onUserAdjustedFrame: (() -> Void)?
         weak var containerView: CameraPreviewContainerView?
         var pinchBaseZoom: CGFloat = 1
 
-        init(camera: CameraSessionModel) {
+        init(camera: CameraSessionModel, onUserAdjustedFrame: (() -> Void)?) {
             self.camera = camera
+            self.onUserAdjustedFrame = onUserAdjustedFrame
+        }
+
+        private func notifyFrameChanged() {
+            onUserAdjustedFrame?()
         }
 
         @objc func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
@@ -41,8 +49,10 @@ struct CameraPreviewView: UIViewRepresentable {
                 pinchBaseZoom = camera.zoomFactor
             case .changed:
                 camera.setZoomFactor(pinchBaseZoom * recognizer.scale)
+                notifyFrameChanged()
             case .ended, .cancelled:
                 pinchBaseZoom = camera.zoomFactor
+                notifyFrameChanged()
             default:
                 break
             }
@@ -51,6 +61,7 @@ struct CameraPreviewView: UIViewRepresentable {
         @objc func handleDoubleTap(_: UITapGestureRecognizer) {
             camera.resetZoom()
             pinchBaseZoom = camera.minZoomFactor
+            notifyFrameChanged()
         }
 
         @objc func handleSingleTap(_ recognizer: UITapGestureRecognizer) {
@@ -59,6 +70,7 @@ struct CameraPreviewView: UIViewRepresentable {
             let previewLayer = container.previewView.previewLayer
             camera.focus(at: point, previewLayer: previewLayer)
             container.showFocusReticle(at: point)
+            notifyFrameChanged()
         }
     }
 }

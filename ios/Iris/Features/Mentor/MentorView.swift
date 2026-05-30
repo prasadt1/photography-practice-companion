@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MentorView: View {
     @EnvironmentObject private var auth: AuthViewModel
+    @EnvironmentObject private var appState: AppState
     @StateObject private var chatStore = MentorChatStore()
 
     @State private var input = ""
@@ -43,13 +44,27 @@ struct MentorView: View {
                     }
                 }
             }
-            .task(id: auth.userId) {
-                chatStore.load(forUserId: auth.userId)
-                await loadStarters()
+            .onChange(of: appState.selectedTab) { _, tab in
+                if tab == .mentor { prepareIfNeeded() }
             }
-            .task(id: auth.persona) {
-                await loadStarters()
+            .onChange(of: auth.userId) { _, _ in
+                if appState.selectedTab == .mentor { prepareIfNeeded() }
             }
+            .onChange(of: auth.persona) { _, _ in
+                if appState.selectedTab == .mentor {
+                    Task { await loadStarters() }
+                }
+            }
+            .onAppear {
+                if appState.selectedTab == .mentor { prepareIfNeeded() }
+            }
+        }
+    }
+
+    private func prepareIfNeeded() {
+        chatStore.load(forUserId: auth.userId)
+        if starters.isEmpty {
+            Task { await loadStarters() }
         }
     }
 

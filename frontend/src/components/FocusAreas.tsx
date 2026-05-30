@@ -65,7 +65,7 @@ export const FocusAreas: React.FC<Props> = ({ scores, onStartPractice, compact =
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-bold text-white">{focusArea.label}</h3>
+              <h3 className="text-lg font-serif font-semibold text-white">{focusArea.label}</h3>
               <span className={`text-sm font-semibold ${ctx.color}`}>
                 {focusArea.score.toFixed(1)}
               </span>

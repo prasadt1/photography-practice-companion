@@ -32,6 +32,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanSummary, setScanSummary] = useState<string | null>(null);
+  const [stampedId, setStampedId] = useState<string | null>(null);
 
   const loadPreviews = useCallback(async () => {
     try {
@@ -115,12 +116,15 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
         priceChanged ? 'modify' : 'approve',
         priceChanged ? { suggestedListPrice: edited, list_price: edited } : undefined,
       );
-      setItems((prev) => prev.filter((p) => p.id !== item.id));
-      setScanSummary(
-        priceChanged
-          ? `Listed on ${draft.marketplace} at $${edited.toFixed(2)} (your price).`
-          : `Listed on ${draft.marketplace} at $${edited.toFixed(2)}.`,
-      );
+      const summary = priceChanged
+        ? `Listed on ${draft.marketplace} at $${edited.toFixed(2)} (your price).`
+        : `Listed on ${draft.marketplace} at $${edited.toFixed(2)}.`;
+      setStampedId(item.id);
+      window.setTimeout(() => {
+        setItems((prev) => prev.filter((p) => p.id !== item.id));
+        setStampedId(null);
+        setScanSummary(summary);
+      }, 1100);
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
@@ -197,7 +201,7 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
           <ShoppingBag className="w-5 h-5" />
           <span className="text-xs font-bold uppercase tracking-wide">List for Sale</span>
         </div>
-        <h1 className="text-2xl font-extrabold text-white">Approve marketplace listings</h1>
+        <h1 className="font-serif text-2xl md:text-3xl text-white">Approve marketplace listings</h1>
         <p className="text-muted text-sm mt-2 leading-relaxed">
           I draft listing copy and price — nothing goes live until you approve each card one by one.
           You can also ask in Ask Mentor:{' '}
@@ -261,8 +265,18 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
           return (
             <li
               key={item.id}
-              className="rounded-xl border border-warm bg-surface-1 overflow-hidden"
+              className="relative rounded-xl border border-warm bg-surface-1 overflow-hidden"
             >
+              {stampedId === item.id && (
+                <div
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-canvas/70 pointer-events-none animate-springIn"
+                  aria-hidden
+                >
+                  <div className="rotate-[-12deg] border-[3px] border-brand-500 rounded-lg px-8 py-3 font-serif text-2xl text-brand-400 uppercase tracking-[0.15em] shadow-xl bg-canvas/90">
+                    Approved
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row gap-4 p-4">
                 <div className="shrink-0 w-full sm:w-28 aspect-[3/4] sm:aspect-square rounded-lg overflow-hidden bg-black border border-warm">
                   {entry?.imageUrl ? (
@@ -291,11 +305,11 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onOpenSetti
                   <h3 className="text-sm font-semibold text-white leading-snug">{draft.title}</h3>
                   <p className="text-xs text-muted line-clamp-3">{draft.description}</p>
                   <HitlReasoningCallout reasoning={item.agentReasoning} />
-                  <label
+                    <label
                     htmlFor={`price-${item.id}`}
                     className="flex items-center gap-2 text-sm text-stone-300"
                   >
-                    <span className="shrink-0">Price ({draft.currency})</span>
+                    <span className="shrink-0 font-serif italic text-brand-400/90">Price ({draft.currency})</span>
                     <input
                       id={`price-${item.id}`}
                       type="number"

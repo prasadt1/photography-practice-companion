@@ -69,12 +69,12 @@ final class AppState: ObservableObject {
             let health = try await practice.checkHealth()
             let phase = health.phase ?? "?"
             bannerMessage = "API OK · phase \(phase)"
-            try await refreshAssignmentsSnapshot()
+            Task { try? await refreshAssignmentsSnapshot() }
         } catch {
             bannerMessage = "API unreachable: \(error.localizedDescription)"
         }
         Task {
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
             if bannerMessage?.hasPrefix("API OK") == true {
                 bannerMessage = nil
             }

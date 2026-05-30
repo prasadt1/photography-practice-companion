@@ -34,7 +34,7 @@ export const SettingsTab: React.FC<Props> = ({
           <Settings className="w-5 h-5" />
           <span className="text-xs font-bold uppercase tracking-wide">Settings</span>
         </div>
-        <h1 className="text-2xl font-extrabold text-white">Your profile</h1>
+        <h1 className="font-serif text-2xl md:text-3xl text-white">Your profile</h1>
         <p className="text-muted text-sm mt-2">
           Switch between hobbyist and working pro. I&apos;ll adjust listings, suggestions, and how
           I coach you.

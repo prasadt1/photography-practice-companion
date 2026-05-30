@@ -3,7 +3,7 @@
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
-  --color-canvas: #000000;
+  --color-canvas: #1a1816;
   --color-canvas-elevated: #242120;
   --color-surface-1: #2a2724;
   --color-surface-2: #332f2b;
@@ -97,6 +97,28 @@
 .score-badge:nth-child(3) { animation-delay: 100ms; }
 .score-badge:nth-child(4) { animation-delay: 150ms; }
 .score-badge:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes tabEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-tabEnter {
+  animation: tabEnter 0.28s var(--ease-out-expo) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .animate-tabEnter,
+  .animate-springIn,
+  .score-badge {
+    animation: none !important;
+  }
+}
 
 body {
   background-color: var(--color-canvas);
@@ -247,6 +269,12 @@ input:focus-visible,
   display: inline-block;
 }
 
+.aperture-blade-rotator {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+}
+
 .aperture-blade {
   position: absolute;
   top: 50%;
@@ -264,7 +292,15 @@ input:focus-visible,
   border-radius: 40% 40% 0 0;
   animation: aperturePulse 1.5s var(--ease-in-out-expo) infinite;
   animation-delay: calc(var(--blade-index) * (1.5s / var(--blade-count)));
-  opacity: 0.8;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aperture-blade {
+    animation: none;
+    opacity: 1;
+    transform: scaleY(0.85);
+  }
 }
 
 /* Viewfinder Frame - Camera focusing frame corners */

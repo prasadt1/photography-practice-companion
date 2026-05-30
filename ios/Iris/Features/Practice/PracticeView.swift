@@ -43,8 +43,13 @@ struct PracticeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.irisCanvas, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .task(id: auth.userId) { await load() }
-            .refreshable { await load() }
+            .onChange(of: appState.selectedTab) { _, tab in
+                if tab == .practice { Task { await loadIfNeeded() } }
+            }
+            .onAppear {
+                if appState.selectedTab == .practice { Task { await loadIfNeeded() } }
+            }
+            .refreshable { await load(force: true) }
             .sheet(item: $reflectionPresentation) { item in
                 ReflectionSheet(reflection: item.reflection) {
                     reflectionPresentation = nil
@@ -197,8 +202,15 @@ struct PracticeView: View {
         .opacity(style == .completed ? 0.75 : 1)
     }
 
-    private func load() async {
-        loading = assignments == nil
+    private func loadIfNeeded() async {
+        guard assignments == nil else { return }
+        await load(force: false)
+    }
+
+    private func load(force: Bool = false) async {
+        if force || assignments == nil {
+            loading = true
+        }
         errorMessage = nil
         defer { loading = false }
 
@@ -209,8 +221,9 @@ struct PracticeView: View {
         } catch is CancellationError {
             return
         } catch {
-            assignments = nil
-            errorMessage = error.localizedDescription
+            if assignments == nil {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

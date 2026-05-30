@@ -1,5 +1,6 @@
 import type { AnalysisResult } from '../types';
 import type { StudioAnalysis, StudioBoundingBox, EvidenceItem } from '../types/studio';
+import { deriveDimensionCritique } from './deriveDimensionCritique';
 
 /** Map spec-shaped API result → gemma4-style studio view model */
 export function mapAnalysisResult(result: AnalysisResult): StudioAnalysis {
@@ -47,6 +48,36 @@ export function mapAnalysisResult(result: AnalysisResult): StudioAnalysis {
     });
   }
 
+  const baseCritique = result.critique ?? {
+      composition: `Composition scored ${scores.composition}/10. ${glassBox.observations[0] ?? ''}`,
+      lighting: `Lighting scored ${scores.lighting}/10.`,
+      technique: `Technique scored ${scores.technique}/10.`,
+      overall: `Overall ${avg.toFixed(1)}/10. ${glassBox.observations.slice(0, 2).join(' ')}`,
+    };
+
+  const critique = {
+    composition: baseCritique.composition,
+    lighting: baseCritique.lighting,
+    technique: baseCritique.technique,
+    overall: baseCritique.overall,
+    creativity: deriveDimensionCritique(
+      'Creativity',
+      scores.creativity,
+      glassBox,
+      result.strengths,
+      result.improvements,
+      baseCritique.overall,
+    ),
+    subjectImpact: deriveDimensionCritique(
+      'Subject',
+      scores.subject_impact,
+      glassBox,
+      result.strengths,
+      result.improvements,
+      baseCritique.overall,
+    ),
+  };
+
   return {
     sceneDescription: result.sceneDescription,
     colourNotes: result.colourNotes ?? null,
@@ -57,12 +88,7 @@ export function mapAnalysisResult(result: AnalysisResult): StudioAnalysis {
       creativity: scores.creativity,
       subjectImpact: scores.subject_impact,
     },
-    critique: result.critique ?? {
-      composition: `Composition scored ${scores.composition}/10. ${glassBox.observations[0] ?? ''}`,
-      lighting: `Lighting scored ${scores.lighting}/10.`,
-      technique: `Technique scored ${scores.technique}/10.`,
-      overall: `Overall ${avg.toFixed(1)}/10. ${glassBox.observations.slice(0, 2).join(' ')}`,
-    },
+    critique,
     strengths: result.strengths ?? glassBox.observations.slice(0, 3),
     improvements:
       result.improvements ??

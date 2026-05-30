@@ -34,14 +34,14 @@ export const ApertureLoader: React.FC<Props> = ({
       {[...Array(blades)].map((_, i) => (
         <div
           key={i}
-          className="aperture-blade"
-          style={
-            {
-              '--blade-index': i,
-              transform: `rotate(${(i * 360) / blades}deg)`,
-            } as React.CSSProperties
-          }
-        />
+          className="aperture-blade-rotator"
+          style={{ transform: `rotate(${(i * 360) / blades}deg)` }}
+        >
+          <div
+            className="aperture-blade"
+            style={{ '--blade-index': i } as React.CSSProperties}
+          />
+        </div>
       ))}
       <span className="sr-only">Loading...</span>
     </div>

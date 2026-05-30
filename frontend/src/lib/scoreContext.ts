@@ -1,5 +1,5 @@
 /**
- * Score context utilities — translate raw numbers into meaningful labels and actions.
+ * Score context — warm darkroom scale (amber + rose only, no SaaS rainbow).
  */
 
 export type ScoreLevel = 'needs-work' | 'developing' | 'strong' | 'exceptional';
@@ -12,14 +12,13 @@ export interface ScoreContext {
   description: string;
 }
 
-/** Get context for a score value (1-10 scale) */
 export function getScoreContext(score: number): ScoreContext {
   if (score >= 9) {
     return {
       level: 'exceptional',
       label: 'Exceptional',
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/20',
+      color: 'text-brand-300',
+      bgColor: 'bg-brand-500/25',
       description: 'Top-tier work. This is portfolio-worthy.',
     };
   }
@@ -27,8 +26,8 @@ export function getScoreContext(score: number): ScoreContext {
     return {
       level: 'strong',
       label: 'Strong',
-      color: 'text-sky-400',
-      bgColor: 'bg-sky-500/20',
+      color: 'text-brand-400',
+      bgColor: 'bg-brand-500/15',
       description: 'Solid execution. Minor refinements possible.',
     };
   }
@@ -36,8 +35,8 @@ export function getScoreContext(score: number): ScoreContext {
     return {
       level: 'developing',
       label: 'Developing',
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/20',
+      color: 'text-amber-400/90',
+      bgColor: 'bg-amber-500/10',
       description: 'Good foundation. Focused practice will help.',
     };
   }
@@ -45,7 +44,7 @@ export function getScoreContext(score: number): ScoreContext {
     level: 'needs-work',
     label: 'Needs work',
     color: 'text-rose-400',
-    bgColor: 'bg-rose-500/20',
+    bgColor: 'bg-rose-500/15',
     description: 'Key area to focus on. See suggestions below.',
   };
 }
@@ -59,80 +58,62 @@ const DIMENSION_TIPS: Record<string, string[]> = {
     'Experiment with different angles and perspectives',
   ],
   lighting: [
-    'Shoot during golden hour (sunrise/sunset) for warm, soft light',
-    'Use window light for flattering indoor portraits',
-    'Notice where shadows fall — they shape your subject',
-    'Try backlighting for dramatic silhouettes',
+    'Notice where the light falls on your subject',
+    'Soften harsh shadows with reflectors or repositioning',
+    'Shoot during golden hour for warm, directional light',
+    'Avoid mixing color temperatures in one frame',
   ],
   technique: [
-    'Lock focus on your subject\'s eyes for portraits',
+    'Check focus on the nearest eye in portraits',
     'Use a faster shutter speed to freeze motion',
-    'Stabilize your camera — lean against something solid',
-    'Check your exposure before shooting, not after',
+    'Bracket exposure in high-contrast scenes',
+    'Stabilize the camera for sharper results',
   ],
   creativity: [
-    'Tell a story — what moment are you capturing?',
-    'Try an unexpected viewpoint (low, high, close)',
-    'Look for patterns, then break them intentionally',
-    'Shoot the same subject 10 different ways',
+    'Change your vantage point — get low or high',
+    'Look for unexpected framing in familiar scenes',
+    'Wait for a decisive moment before pressing the shutter',
+    'Study one photographer you admire and try their approach',
   ],
   subject_impact: [
-    'Get closer — fill the frame with your subject',
-    'Wait for the decisive moment',
-    'Capture genuine emotion, not posed expressions',
-    'Create contrast between subject and background',
+    'Connect with your subject before you shoot',
+    'Simplify the background so the subject reads clearly',
+    'Capture expression or gesture that tells a story',
+    'Get closer — fill the frame with what matters',
   ],
 };
 
-/** Get 1-2 actionable tips for a dimension based on score */
-export function getTipsForDimension(dimension: string, score: number): string[] {
-  const tips = DIMENSION_TIPS[dimension.toLowerCase()] ?? DIMENSION_TIPS.composition;
-
-  // Lower scores get more basic tips, higher scores get more advanced
-  if (score < 5) {
-    return tips.slice(0, 2);
-  }
-  if (score < 7) {
-    return tips.slice(1, 3);
-  }
-  return tips.slice(2, 4);
+export function getDimensionTips(dimension: string): string[] {
+  const key = dimension.toLowerCase().replace(/\s+/g, '_');
+  return DIMENSION_TIPS[key] ?? DIMENSION_TIPS.composition;
 }
 
-/** Identify the user's focus area (lowest scoring dimension) */
-export function getFocusArea(scores: Record<string, number | null | undefined>): {
-  dimension: string;
-  score: number;
-  label: string;
-  tips: string[];
-} | null {
-  const entries = Object.entries(scores)
-    .filter((entry): entry is [string, number] => entry[1] != null)
-    .map(([key, value]) => ({ key, value }));
+const DIMENSION_LABELS: Record<string, string> = {
+  composition: 'Composition',
+  lighting: 'Lighting',
+  technique: 'Technique',
+  creativity: 'Creativity',
+  subject_impact: 'Subject impact',
+};
 
-  if (entries.length === 0) return null;
+export function getTipsForDimension(dimension: string, _score?: number): string[] {
+  return getDimensionTips(dimension);
+}
 
-  const lowest = entries.reduce((min, curr) =>
-    curr.value < min.value ? curr : min
+export function getFocusArea(
+  scores: Record<string, number | null | undefined>,
+): { dimension: string; label: string; score: number; tips: string[] } | null {
+  const entries = Object.entries(scores).filter(
+    (entry): entry is [string, number] => entry[1] != null,
   );
-
-  const labels: Record<string, string> = {
-    composition: 'Composition',
-    lighting: 'Lighting',
-    technique: 'Technique',
-    creativity: 'Creativity',
-    subject_impact: 'Subject Impact',
-  };
-
+  if (entries.length === 0) return null;
+  const [dimension, score] = entries.reduce((lowest, current) =>
+    current[1] < lowest[1] ? current : lowest,
+  );
   return {
-    dimension: lowest.key,
-    score: lowest.value,
-    label: labels[lowest.key] ?? lowest.key,
-    tips: getTipsForDimension(lowest.key, lowest.value),
+    dimension,
+    label: DIMENSION_LABELS[dimension] ?? dimension.replace(/_/g, ' '),
+    score,
+    tips: getDimensionTips(dimension).slice(0, 3),
   };
-}
-
-/** Format a score with its level label */
-export function formatScoreWithLevel(score: number): string {
-  const ctx = getScoreContext(score);
-  return `${score.toFixed(1)} — ${ctx.label}`;
 }

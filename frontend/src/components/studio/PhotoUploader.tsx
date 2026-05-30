@@ -12,13 +12,18 @@ import {
   Zap,
   Target,
   Eye,
+  X,
 } from 'lucide-react';
+import { analyzeLoadingStage, analyzeWaitHint } from '../../lib/analyzeWaitCopy';
 import { FilmGrain } from '../FilmGrain';
 import { ApertureLoader } from '../ApertureLoader';
+import { InlineAlertBanner } from '../InlineAlertBanner';
 
 interface PhotoUploaderProps {
   onImageSelected: (file: File, previewUrl: string) => void;
   isAnalyzing: boolean;
+  waitSec?: number;
+  onCancel?: () => void;
 }
 
 const THINKING_STEPS = [
@@ -29,9 +34,16 @@ const THINKING_STEPS = [
   { text: 'Building Glass Box critique…', icon: Aperture },
 ];
 
-const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyzing }) => {
+const PhotoUploader: React.FC<PhotoUploaderProps> = ({
+  onImageSelected,
+  isAnalyzing,
+  waitSec = 0,
+  onCancel,
+}) => {
   const [dragActive, setDragActive] = useState(false);
   const [currentThinkingStep, setCurrentThinkingStep] = useState(0);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const stageMessage = analyzeLoadingStage(waitSec);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -46,9 +58,10 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      setFileError('Please upload an image file (JPG, PNG, or WEBP).');
       return;
     }
+    setFileError(null);
     onImageSelected(file, URL.createObjectURL(file));
   };
 
@@ -67,8 +80,10 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto relative z-10">
-      {/* Double matte bezel (Pass 3) */}
+    <div className="w-full max-w-4xl mx-auto relative z-10 space-y-3">
+      {fileError && (
+        <InlineAlertBanner message={fileError} onDismiss={() => setFileError(null)} />
+      )}
       <div className="p-3 md:p-4 rounded-[2.25rem] bg-surface-1 border border-warm shadow-2xl shadow-black/40">
       <div
         className={`relative group flex flex-col items-center justify-center w-full min-h-[320px] md:min-h-[400px] rounded-[1.75rem] border-2 border-dashed transition-all duration-500 cursor-pointer overflow-hidden
@@ -104,7 +119,20 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                 <div className="absolute inset-0 bg-brand-500/20 blur-xl rounded-full animate-pulse" />
                 <ApertureLoader size={64} blades={8} className="relative z-10" />
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-4">Coach is analyzing…</h3>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl md:text-2xl font-bold text-white">Coach is analyzing…</h3>
+                {onCancel && waitSec >= 8 && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted hover:text-white border border-warm hover:border-warm"
+                  >
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-muted mb-4">{stageMessage}</p>
               <div className="w-full mt-2 bg-surface-1 rounded-xl border border-warm p-4 text-sm text-left shadow-inner">
                 <div className="space-y-3">
                   {THINKING_STEPS.map((step, index) => {
@@ -134,7 +162,14 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                     );
                   })}
                 </div>
+                <div className="mt-4 h-1 rounded-full bg-surface-3 overflow-hidden">
+                  <div
+                    className="h-full bg-brand-500/80 transition-all duration-1000 ease-out-expo"
+                    style={{ width: `${Math.min(95, 12 + waitSec * 1.2)}%` }}
+                  />
+                </div>
               </div>
+              <p className="text-xs text-muted mt-4">{analyzeWaitHint(waitSec)}</p>
             </div>
           ) : (
             <>
@@ -145,11 +180,9 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                 <Aperture className="absolute -top-2 -right-2 w-6 h-6 text-stone-600 group-hover:text-brand-500/50 animate-pulse" />
                 <ImageIcon className="absolute -bottom-2 -left-2 w-6 h-6 text-stone-600 group-hover:text-brand-500/50" />
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
+              <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-3 tracking-tight">
                 Upload for{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-brand-500">
-                  Glass Box
-                </span>{' '}
+                <span className="text-brand-400">Glass Box</span>{' '}
                 critique
               </h3>
               <p className="text-base text-muted max-w-md mb-8">

@@ -45,6 +45,19 @@ final class AuthViewModel: ObservableObject {
         let stored = UserDefaults.standard.string(forKey: AppConfig.demoUserIdKey) ?? ""
         userId = stored
         APIClient.shared.userId = stored.isEmpty ? nil : stored
+        applyCachedPhase()
+    }
+
+    /// Skip the loading gate when we already know the user finished onboarding.
+    private func applyCachedPhase() {
+        let onboardingScope = userId.isEmpty ? "" : userId
+        if AppConfig.isOnboardingComplete(userId: onboardingScope) {
+            phase = .ready
+        } else if !userId.isEmpty {
+            phase = .persona
+        } else {
+            phase = .signIn
+        }
     }
 
     func bootstrap() {
@@ -52,6 +65,9 @@ final class AuthViewModel: ObservableObject {
         #if canImport(FirebaseAuth)
         if isFirebaseAvailable {
             installAuthListener()
+            if Auth.auth().currentUser == nil {
+                resolvePhaseWithoutFirebase()
+            }
         } else {
             resolvePhaseWithoutFirebase()
         }

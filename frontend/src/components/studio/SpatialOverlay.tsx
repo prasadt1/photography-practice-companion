@@ -12,6 +12,8 @@ interface SpatialOverlayProps {
   activeIndex: number | null;
   onHover: (idx: number | null) => void;
   onPinClick?: (idx: number) => void;
+  /** Show all issue regions (How to Fix tab) */
+  showAllRegions?: boolean;
 }
 
 const SEVERITY_STYLES = {
@@ -28,10 +30,10 @@ const SEVERITY_STYLES = {
     glow: 'shadow-[0_0_20px_rgba(251,191,36,0.5)]',
   },
   minor: {
-    border: 'border-sky-400',
-    bg: 'bg-sky-400/10',
-    pin: 'bg-sky-400 text-white ring-sky-300',
-    glow: 'shadow-[0_0_20px_rgba(56,189,248,0.5)]',
+    border: 'border-brand-300',
+    bg: 'bg-brand-300/10',
+    pin: 'bg-brand-400 text-on-brand ring-brand-300',
+    glow: 'shadow-[0_0_20px_rgba(251,191,36,0.35)]',
   },
 };
 
@@ -42,7 +44,8 @@ const BoxPin: React.FC<{
   onEnter: () => void;
   onLeave: () => void;
   onClick: () => void;
-}> = ({ box, index, isActive, onEnter, onLeave, onClick }) => {
+  showRegion: boolean;
+}> = ({ box, index, isActive, onEnter, onLeave, onClick, showRegion }) => {
   const [localHover, setLocalHover] = useState(false);
   const active = isActive || localHover;
   const s = SEVERITY_STYLES[box.severity] ?? SEVERITY_STYLES.minor;
@@ -53,7 +56,7 @@ const BoxPin: React.FC<{
     <>
       <div
         className={`absolute border-2 rounded-sm pointer-events-none transition-all duration-150 ${s.border} ${s.bg} ${
-          active ? `opacity-100 ${s.glow}` : 'opacity-0'
+          active || showRegion ? `opacity-100 ${active ? s.glow : ''}` : 'opacity-0'
         }`}
         style={{
           left: `${box.x}%`,
@@ -96,6 +99,7 @@ const SpatialOverlay: React.FC<SpatialOverlayProps> = ({
   activeIndex,
   onHover,
   onPinClick,
+  showAllRegions = false,
 }) => {
   if (!show || boundingBoxes.length === 0) return null;
 
@@ -107,6 +111,7 @@ const SpatialOverlay: React.FC<SpatialOverlayProps> = ({
           box={box}
           index={i}
           isActive={activeIndex === i}
+          showRegion={showAllRegions}
           onEnter={() => onHover(i)}
           onLeave={() => onHover(null)}
           onClick={() => onPinClick?.(i)}

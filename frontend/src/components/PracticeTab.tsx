@@ -165,7 +165,7 @@ export const PracticeTab: React.FC<Props> = ({
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">My Practice</h2>
+          <h2 className="font-serif text-2xl md:text-3xl text-white mb-1">My Practice</h2>
           <p className="text-muted text-sm">
             I&apos;ll suggest a focused assignment — you accept or pass — then shoot in the field
             or Studio.

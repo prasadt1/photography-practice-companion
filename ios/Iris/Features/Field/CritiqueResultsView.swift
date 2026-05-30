@@ -88,17 +88,33 @@ struct CritiqueResultsView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(format: "%.1f", result.scores.average))
-                    .font(IrisFont.serif(36))
-                    .foregroundStyle(Color.irisTextPrimary)
-                Text("Average · out of 10")
-                    .font(IrisFont.sans(12))
-                    .foregroundStyle(Color.irisTextMuted)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(format: "%.1f", result.scores.average))
+                        .font(IrisFont.serif(36))
+                        .foregroundStyle(Color.irisTextPrimary)
+                    Text("Average · out of 10")
+                        .font(IrisFont.sans(12))
+                        .foregroundStyle(Color.irisTextMuted)
+                }
+                Spacer()
+                IrisSkillBadge(average: result.scores.average)
             }
-            Spacer()
-            IrisSkillBadge(average: result.scores.average)
+
+            if let headline = result.critique?.headline {
+                Text(headline)
+                    .font(IrisFont.serif(18))
+                    .foregroundStyle(Color.irisTextPrimary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let first = result.glassBox?.observations?.first, !first.isEmpty {
+                Text(first)
+                    .font(IrisFont.sans(14))
+                    .foregroundStyle(Color.irisTextMuted)
+                    .lineSpacing(3)
+                    .lineLimit(3)
+            }
         }
     }
 

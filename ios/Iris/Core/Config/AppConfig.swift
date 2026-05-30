@@ -53,6 +53,6 @@ enum AppConfig {
         set { UserDefaults.standard.set(newValue, forKey: liveCoachVoiceKey) }
     }
 
-    /// AVSpeechUtterance rate (0.0–1.0). Default slightly slower for coaching.
-    static let liveCoachSpeechRate: Float = 0.48
+    /// AVSpeechUtterance rate (0.0–1.0). Slightly faster for field coaching.
+    static let liveCoachSpeechRate: Float = 0.54
 }

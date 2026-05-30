@@ -38,6 +38,23 @@ struct GlassBoxSummary: Codable {
     }
 }
 
+struct CritiqueBreakdown: Codable {
+    let composition: String?
+    let lighting: String?
+    let technique: String?
+    let overall: String?
+
+    /// First sentence of overall critique — matches web OverallVerdictCard headline.
+    var headline: String? {
+        guard let overall, !overall.isEmpty else { return nil }
+        let trimmed = overall.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let end = trimmed.firstIndex(where: { ".!?".contains($0) }) else {
+            return trimmed + "."
+        }
+        return String(trimmed[...end])
+    }
+}
+
 /// Coach `analyze_photo` API payload (subset used on Field).
 struct AnalysisResult: Codable {
     let portfolioEntryId: String
@@ -45,6 +62,7 @@ struct AnalysisResult: Codable {
     let sceneDescription: String?
     let imageUrl: String?
     let scores: AnalysisScores
+    let critique: CritiqueBreakdown?
     let glassBox: GlassBoxSummary?
     let aestheticTags: [String]?
 
@@ -54,6 +72,7 @@ struct AnalysisResult: Codable {
         case sceneDescription
         case imageUrl
         case scores
+        case critique
         case glassBox
         case aestheticTags
     }

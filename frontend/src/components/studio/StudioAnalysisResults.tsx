@@ -2,12 +2,11 @@
  * Studio analysis UI — Gallery Atelier warm theme.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   Aperture,
   Target,
-  Star,
   ScanEye,
   Download,
   Clock,
@@ -16,10 +15,12 @@ import {
 import type { StudioAnalysis } from '../../types/studio';
 import SpatialOverlay from './SpatialOverlay';
 import DimensionOverlay from './DimensionOverlay';
+import { PhotoOverlayCanvas } from './PhotoOverlayCanvas';
 import GlassBoxPanel from './GlassBoxPanel';
 import { LearningInsights } from './LearningInsights';
 import { PortfolioTrendInsights } from './PortfolioTrendInsights';
 import { ScoreBreakdownPanel } from './ScoreBreakdownPanel';
+import { OverallVerdictCard } from './OverallVerdictCard';
 import { exportXMPSidecar } from '../../services/xmpService';
 
 type TabId = 'overview' | 'glass-box' | 'fix';
@@ -37,11 +38,30 @@ const StudioAnalysisResults: React.FC<Props> = ({
   originalFilename = 'photo.jpg',
   onReset,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabId>('glass-box');
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [activeBoxIndex, setActiveBoxIndex] = useState<number | null>(null);
   const [showOverlays, setShowOverlays] = useState(true);
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null);
   const [hoveredDimension, setHoveredDimension] = useState<string | null>(null);
+
+  const chartData = [
+    { subject: 'Composition', score: analysis.scores.composition, critique: analysis.critique.composition },
+    { subject: 'Lighting', score: analysis.scores.lighting, critique: analysis.critique.lighting },
+    { subject: 'Technique', score: analysis.scores.technique, critique: analysis.critique.technique },
+    { subject: 'Creativity', score: analysis.scores.creativity, critique: analysis.critique.creativity },
+    { subject: 'Subject', score: analysis.scores.subjectImpact, critique: analysis.critique.subjectImpact },
+  ];
+
+  useEffect(() => {
+    setSelectedDimension(null);
+    setHoveredDimension(null);
+  }, [analysis]);
+
+  useEffect(() => {
+    if (activeTab === 'fix') {
+      setHoveredDimension(null);
+    }
+  }, [activeTab]);
 
   const avg =
     (analysis.scores.composition +
@@ -61,15 +81,8 @@ const StudioAnalysisResults: React.FC<Props> = ({
     badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
   }
 
-  const chartData = [
-    { subject: 'Composition', score: analysis.scores.composition, critique: analysis.critique.composition },
-    { subject: 'Lighting', score: analysis.scores.lighting, critique: analysis.critique.lighting },
-    { subject: 'Technique', score: analysis.scores.technique, critique: analysis.critique.technique },
-    { subject: 'Creativity', score: analysis.scores.creativity, critique: analysis.critique.overall },
-    { subject: 'Subject', score: analysis.scores.subjectImpact, critique: analysis.critique.overall },
-  ].sort((a, b) => a.score - b.score);
-
-  const focusDimension = hoveredDimension ?? selectedDimension;
+  const previewDimension = hoveredDimension ?? selectedDimension;
+  const verdictHeadline = `${analysis.critique.overall.split(/[.!?]/)[0]}.`;
 
   const focusScoreDimension = (subject: string) => {
     setSelectedDimension(subject);
@@ -94,91 +107,57 @@ const StudioAnalysisResults: React.FC<Props> = ({
     { id: 'fix', label: 'How to Fix', icon: Target },
   ];
 
+  const showScorePanel = activeTab === 'overview' || activeTab === 'glass-box';
+  const onFixTab = activeTab === 'fix';
+  const showSpatialPins =
+    showOverlays && (onFixTab || !previewDimension);
+
   return (
-    <div className="w-full max-w-7xl mx-auto animate-fadeIn mt-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: photo + (on Overview) score breakdown directly underneath */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="space-y-3">
-            {/* Photo container - relative for Glass Box positioning */}
-            <div className="relative rounded-2xl bg-photo-black border border-warm shadow-2xl flex justify-center p-4">
-              <div className="relative inline-block max-w-full w-full">
-                <img
-                  src={imageSrc}
-                  alt={analysis.critique.overall.slice(0, 120)}
-                  className="block w-full max-h-[min(50vh,420px)] object-contain rounded-lg mx-auto"
-                />
-                <DimensionOverlay dimension={hoveredDimension} analysis={analysis} />
-                <SpatialOverlay
-                  boundingBoxes={analysis.boundingBoxes}
-                  show={showOverlays && !hoveredDimension}
-                  activeIndex={activeBoxIndex}
-                  onHover={setActiveBoxIndex}
-                  onPinClick={(idx) => {
-                    setActiveTab('fix');
-                    setActiveBoxIndex(idx);
-                  }}
-                />
-              </div>
-              {analysis.boundingBoxes.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowOverlays((s) => !s)}
-                  className="absolute top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-photo-black/85 text-white border border-warm"
-                >
-                  <ScanEye className="w-3.5 h-3.5" />
-                  {showOverlays ? 'Hide pins' : 'Show pins'}
-                </button>
-              )}
+    <div className="w-full max-w-7xl mx-auto animate-fadeIn mt-4 md:mt-6 space-y-6 md:space-y-8">
+      <OverallVerdictCard
+        overallScore={avg}
+        skillLevel={skillLevel}
+        badgeClass={badgeClass}
+        headline={verdictHeadline}
+        fullCritique={analysis.critique.overall}
+      />
 
-              {/* Desktop: Asymmetric Glass Box overlay - positioned bottom-right of photo, scrollable */}
-              {activeTab === 'glass-box' && (
-                <div className="hidden lg:block absolute inset-2 z-20 pointer-events-none">
-                  <div className="absolute bottom-0 right-0 max-w-xs max-h-[calc(100%-1rem)] overflow-y-auto pointer-events-auto rounded-xl">
-                  <GlassBoxPanel
-                    rationale={analysis.rationale}
-                    groundingPrinciples={analysis.groundingPrinciples}
-                    groundingCitations={analysis.groundingCitations}
-                    evidence={analysis.evidence}
-                    focusDimension={focusDimension}
-                    onFocusDimension={(dim) => {
-                      if (dim) focusScoreDimension(dim);
-                      else {
-                        setSelectedDimension(null);
-                        setHoveredDimension(null);
-                      }
-                    }}
-                  />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Always rendered to prevent layout shift, opacity transition for smooth UX */}
-            <p
-              className={`text-center text-xs font-medium transition-opacity duration-200 h-4 ${
-                focusDimension ? 'text-brand-400 opacity-100' : 'opacity-0'
-              }`}
-              role="status"
-              aria-live="polite"
+      {/* Photo + score breakdown side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+        <div className="lg:col-span-7 space-y-4">
+          <div className="relative rounded-2xl bg-photo-black border border-warm shadow-xl flex justify-center p-3 md:p-4">
+            <PhotoOverlayCanvas
+              src={imageSrc}
+              alt={analysis.critique.overall.slice(0, 120)}
+              toolbar={
+                analysis.boundingBoxes.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowOverlays((s) => !s)}
+                    className="absolute top-0 right-0 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-photo-black/85 text-white border border-warm"
+                  >
+                    <ScanEye className="w-3.5 h-3.5" />
+                    {showOverlays ? 'Hide pins' : 'Show pins'}
+                  </button>
+                ) : undefined
+              }
             >
-              {focusDimension ? `Highlighting ${focusDimension} on photo` : '\u00A0'}
-            </p>
+              {showScorePanel && (
+                <DimensionOverlay dimension={previewDimension} analysis={analysis} />
+              )}
+              <SpatialOverlay
+                boundingBoxes={analysis.boundingBoxes}
+                show={showSpatialPins}
+                showAllRegions={onFixTab}
+                activeIndex={activeBoxIndex}
+                onHover={setActiveBoxIndex}
+                onPinClick={(idx) => {
+                  setActiveTab('fix');
+                  setActiveBoxIndex(idx);
+                }}
+              />
+            </PhotoOverlayCanvas>
           </div>
-
-          {activeTab === 'overview' && (
-            <ScoreBreakdownPanel
-              rows={chartData}
-              hoveredDimension={hoveredDimension}
-              selectedDimension={selectedDimension}
-              onHoverDimension={setHoveredDimension}
-              onSelectDimension={(subject) => {
-                setSelectedDimension(subject);
-                setHoveredDimension(subject);
-              }}
-              onWhyClick={focusScoreDimension}
-            />
-          )}
 
           {(analysis.sceneDescription || analysis.colourNotes) && (
             <div className="space-y-3 rounded-2xl bg-surface-1 border border-warm p-4">
@@ -235,115 +214,27 @@ const StudioAnalysisResults: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Right: tabs */}
-        <div className="lg:col-span-7 pb-12">
-          <div className="flex flex-wrap gap-2 mb-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-brand-500 text-on-brand shadow-lg shadow-brand-500/20'
-                    : 'bg-surface-2 text-muted border border-warm hover:text-white'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === 'overview' && (
-            <div className="space-y-6 animate-fadeIn">
-              {analysis.rationale.observations[0] && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('glass-box')}
-                  className="w-full text-left rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 hover:bg-brand-500/10 transition-colors"
-                >
-                  <p className="text-[10px] font-bold uppercase text-brand-400/90 tracking-wide mb-1">
-                    Glass Box preview
-                  </p>
-                  <p className="text-sm text-stone-200 line-clamp-2">
-                    {analysis.rationale.observations[0]}
-                  </p>
-                  <span className="text-xs text-brand-400 mt-2 inline-block">
-                    See full reasoning →
-                  </span>
-                </button>
-              )}
-
-              <LearningInsights
-                rows={chartData}
-                onViewGlassBox={() => setActiveTab('glass-box')}
-              />
-
-              <PortfolioTrendInsights />
-
-              <div className="bg-surface-1 rounded-3xl p-6 border border-warm">
-                <h2 className="text-xl font-bold text-stone-100 flex items-start gap-2 mb-3">
-                  <Star className="w-6 h-6 text-brand-400 fill-brand-400 shrink-0" />
-                  {analysis.critique.overall.split(/[.!?]/)[0]}.
-                </h2>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}>
-                    {skillLevel}
-                  </span>
-                  <span className="text-sm text-muted">{avg.toFixed(1)}/10 overall</span>
-                </div>
-                <p className="text-sm text-muted leading-relaxed border-l-2 border-warm pl-4">
-                  {analysis.critique.overall}
-                </p>
-              </div>
-
-              {analysis.learningPath.length > 0 && (
-                <div className="bg-surface-1 rounded-xl p-5 border border-warm">
-                  <h3 className="text-sm font-bold text-stone-100 mb-3">Next skills to practice</h3>
-                  <ul className="space-y-2 text-sm text-stone-100">
-                    {analysis.learningPath.map((s, i) => (
-                      <li key={i} className="flex gap-2">
-                        <span className="text-brand-400">→</span>
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'glass-box' && (
-            <div className="space-y-6 animate-fadeIn">
-              {/* Mobile/Tablet: Normal flow in right column */}
-              <div className="lg:hidden">
-                <GlassBoxPanel
-                  rationale={analysis.rationale}
-                  groundingPrinciples={analysis.groundingPrinciples}
-                  groundingCitations={analysis.groundingCitations}
-                  evidence={analysis.evidence}
-                  focusDimension={focusDimension}
-                  onFocusDimension={(dim) => {
-                    if (dim) focusScoreDimension(dim);
-                    else {
-                      setSelectedDimension(null);
-                      setHoveredDimension(null);
-                    }
-                  }}
-                />
-              </div>
-              <PortfolioTrendInsights />
-            </div>
-          )}
-
-          {activeTab === 'fix' && (
+        <div className="lg:col-span-5 lg:sticky lg:top-4 lg:self-start">
+          {showScorePanel ? (
+            <ScoreBreakdownPanel
+              variant="sidebar"
+              rows={chartData}
+              previewDimension={previewDimension}
+              selectedDimension={selectedDimension}
+              onPreviewDimension={setHoveredDimension}
+              onSelectDimension={(subject) => {
+                setSelectedDimension(subject);
+                setHoveredDimension(subject);
+              }}
+              onWhyClick={focusScoreDimension}
+            />
+          ) : (
             <div className="space-y-4 animate-fadeIn">
               {analysis.boundingBoxes.map((box, idx) => (
                 <div
                   key={idx}
                   id={`spatial-card-${idx}`}
-                  className={`p-4 rounded-xl border transition-all ${
+                  className={`p-4 rounded-xl border transition-colors ${
                     activeBoxIndex === idx
                       ? 'border-brand-500 bg-brand-500/5'
                       : 'border-warm bg-surface-1'
@@ -364,7 +255,7 @@ const StudioAnalysisResults: React.FC<Props> = ({
                   </p>
                 </div>
               ))}
-              <div className="mt-6 p-4 rounded-xl bg-canvas-elevated/80 text-stone-200 text-sm border border-warm">
+              <div className="p-4 rounded-xl bg-canvas-elevated/80 text-stone-200 text-sm border border-warm">
                 <h4 className="font-semibold mb-2">Lighting map</h4>
                 <p>Key: {analysis.lightingMap.key_light_direction}</p>
                 <p>Fill: {analysis.lightingMap.fill_light_strength}</p>
@@ -372,24 +263,116 @@ const StudioAnalysisResults: React.FC<Props> = ({
               </div>
             </div>
           )}
+        </div>
+      </div>
 
-          <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-warm">
+      {/* Deeper dive tabs */}
+      <div className="pb-12">
+        <div className="flex flex-wrap gap-2 mb-6">
+          {tabs.map((tab) => (
             <button
+              key={tab.id}
               type="button"
-              onClick={handleExportXMP}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-white text-sm font-semibold hover:bg-surface-3 border border-warm"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-brand-500 text-on-brand shadow-lg shadow-brand-500/20'
+                  : 'bg-surface-2 text-muted border border-warm hover:text-white'
+              }`}
             >
-              <Download className="w-4 h-4" />
-              Export XMP for Lightroom
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
             </button>
-            <button
-              type="button"
-              onClick={onReset}
-              className="px-4 py-2.5 rounded-xl border-2 border-brand-500 text-brand-500 text-sm font-semibold hover:bg-brand-500/10"
-            >
-              Upload another photo
-            </button>
+          ))}
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="space-y-6 animate-fadeIn">
+            {analysis.rationale.observations[0] && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('glass-box')}
+                className="w-full text-left rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 hover:bg-brand-500/10 transition-colors"
+              >
+                <p className="text-[10px] font-bold uppercase text-brand-400/90 tracking-wide mb-1">
+                  Glass Box preview
+                </p>
+                <p className="text-sm text-stone-200 line-clamp-2">
+                  {analysis.rationale.observations[0]}
+                </p>
+                <span className="text-xs text-brand-400 mt-2 inline-block">
+                  See full reasoning →
+                </span>
+              </button>
+            )}
+
+            <LearningInsights
+              rows={chartData}
+              onViewGlassBox={() => setActiveTab('glass-box')}
+            />
+
+            <PortfolioTrendInsights />
+
+            {analysis.learningPath.length > 0 && (
+              <div className="bg-surface-1 rounded-xl p-5 border border-warm">
+                <h3 className="text-sm font-bold text-stone-100 mb-3">Next skills to practice</h3>
+                <ul className="space-y-2 text-sm text-stone-100">
+                  {analysis.learningPath.map((s, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-brand-400">→</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
+        )}
+
+        {activeTab === 'glass-box' && (
+          <div className="space-y-6 animate-fadeIn">
+            <GlassBoxPanel
+              rationale={analysis.rationale}
+              groundingPrinciples={analysis.groundingPrinciples}
+              groundingCitations={analysis.groundingCitations}
+              evidence={analysis.evidence}
+              focusDimension={previewDimension}
+              onFocusDimension={(dim) => {
+                if (dim) {
+                  setSelectedDimension(dim);
+                  setHoveredDimension(dim);
+                } else {
+                  setSelectedDimension(null);
+                  setHoveredDimension(null);
+                }
+              }}
+            />
+            <PortfolioTrendInsights />
+          </div>
+        )}
+
+        {activeTab === 'fix' && (
+          <p className="text-sm text-muted animate-fadeIn">
+            Fix suggestions are highlighted on your photo — see the cards beside it above.
+          </p>
+        )}
+
+        <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-warm">
+          <button
+            type="button"
+            onClick={handleExportXMP}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-white text-sm font-semibold hover:bg-surface-3 border border-warm"
+          >
+            <Download className="w-4 h-4" />
+            Export XMP for Lightroom
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="px-4 py-2.5 rounded-xl border-2 border-brand-500 text-brand-500 text-sm font-semibold hover:bg-brand-500/10"
+          >
+            Upload another photo
+          </button>
         </div>
       </div>
     </div>
