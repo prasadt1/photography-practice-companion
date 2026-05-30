@@ -64,6 +64,7 @@ export const HomeTab: React.FC<Props> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzingImageUrl, setAnalyzingImageUrl] = useState<string | null>(null);
+  const [portfolioFilter, setPortfolioFilter] = useState<'all' | 'best' | 'recent'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -136,6 +137,17 @@ export const HomeTab: React.FC<Props> = ({
   const isReturningUser = bestPhoto !== null;
   const photoCount = profile?.photoCount ?? 0;
 
+  // Filter portfolio photos
+  const filteredPhotos = (() => {
+    let photos = recentPhotos;
+    if (portfolioFilter === 'best') {
+      return [...recentPhotos].sort((a, b) => b.overallAverage - a.overallAverage);
+    } else if (portfolioFilter === 'recent') {
+      return [...recentPhotos].sort((a, b) => b.photoNumber - a.photoNumber);
+    }
+    return photos;
+  })();
+
   // Find best trend for display
   const bestTrend = trends?.dimensions?.find(
     (d) => d.delta != null && d.delta > 0 && (d.key === 'composition' || d.key === 'lighting' || d.key === 'overall')
@@ -172,21 +184,10 @@ export const HomeTab: React.FC<Props> = ({
         <AnalyzingOverlay imageUrl={analyzingImageUrl} />
       )}
 
-      <div className="animate-fadeIn space-y-8">
-      {/* Memory counter - reinforces "memory makes meaning" */}
-      <div className="text-center max-w-5xl mx-auto">
-        <p className="text-muted text-sm">
-          {portfolioTotal > 0
-            ? portfolioTotal === 1
-              ? 'Photo #1 with Iris'
-              : `Photo #${portfolioTotal} with Iris`
-            : "Your first photo awaits"}
-        </p>
-      </div>
-
-      {/* Hero Photo with Glass Box overlay - EDGE TO EDGE */}
-      <div className="relative rounded-2xl overflow-hidden border border-warm bg-photo-black shadow-2xl shadow-black/50">
-        <div className="relative aspect-[16/10] md:aspect-[2/1] lg:aspect-[21/9]">
+      <div className="animate-fadeIn">
+      {/* FULL-BLEED HERO - No borders, edge to edge, 70vh */}
+      <div className="relative overflow-hidden bg-black -mx-3 md:-mx-6">
+        <div className="relative h-[70vh] min-h-[500px]">
           {/* Loading placeholder */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-surface-2 animate-pulse flex items-center justify-center">
@@ -204,44 +205,198 @@ export const HomeTab: React.FC<Props> = ({
             onLoad={() => setImageLoaded(true)}
           />
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          {/* Gradient overlay - bottom only for readability */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
 
-          {/* Glass Box panel */}
-          <div className="absolute bottom-4 left-4 right-4 md:right-auto md:max-w-md">
-            <div className="rounded-xl bg-photo-black/85 border border-warm/50 p-4 shadow-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-brand-500/15 border border-brand-500/30">
-                  <Sparkles className="w-4 h-4 text-brand-400" aria-hidden />
+          {/* Glass Box panel - bottom-left, cleaner design */}
+          <div className="absolute bottom-8 left-8 right-8 md:right-auto md:max-w-lg">
+            <div className="backdrop-blur-md bg-black/70 border border-white/10 p-6 rounded-lg">
+              {/* Score badge */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500 shadow-lg">
+                  <span className="text-2xl font-bold text-black tabular-nums">
+                    {displayPhoto.overallAverage.toFixed(1)}
+                  </span>
+                  <span className="text-xs font-semibold text-black/70">/ 10</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-white">
-                    {isReturningUser ? 'Your strongest work' : 'Glass Box critique'}
+                  <p className="text-sm font-semibold text-white">
+                    {isReturningUser ? 'Your strongest work' : 'Glass Box example'}
                   </p>
-                  <p className="text-[10px] text-muted">
+                  <p className="text-xs text-neutral-400">
                     {isReturningUser
-                      ? `From ${photoCount} photo${photoCount === 1 ? '' : 's'} in your library`
+                      ? `Photo #${portfolioTotal} with Iris`
                       : 'This is what Iris sees'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/90 shadow-md">
-                  <span className="text-sm font-bold text-on-brand tabular-nums">
-                    {displayPhoto.overallAverage.toFixed(1)}
-                  </span>
-                </div>
               </div>
+
+              {/* Glass Box summary */}
               {displayPhoto.glassBoxSummary && (
-                <p className="text-sm text-stone-300 leading-relaxed line-clamp-2">
+                <p className="text-sm text-neutral-200 leading-relaxed mb-6 line-clamp-2">
                   {displayPhoto.glassBoxSummary}
                 </p>
               )}
+
+              {/* Primary CTAs */}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-500 text-black font-semibold hover:bg-brand-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  <Upload className="w-5 h-5" />
+                  Upload New Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('practice')}
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition-all border border-white/20"
+                >
+                  Continue Practice
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Context pills: Progress + Assignment */}
-      <div className="grid sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
+      {/* Before/After Growth Section - only for returning users */}
+      {isReturningUser && recentPhotos.length >= 2 && (
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-serif font-bold text-white mb-2">Your Growth</h2>
+            <p className="text-neutral-400">
+              From Photo #{recentPhotos[recentPhotos.length - 1]?.photoNumber || 1} to Photo #{portfolioTotal}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* First photo */}
+            <div className="relative group">
+              <div className="aspect-[4/3] rounded-lg overflow-hidden bg-neutral-900">
+                <img
+                  src={recentPhotos[recentPhotos.length - 1]?.imageUrl}
+                  alt="Your first photo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="mt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Your beginning</span>
+                  <span className="px-3 py-1 rounded-full bg-neutral-800 text-white font-semibold text-sm">
+                    {recentPhotos[recentPhotos.length - 1]?.overallAverage.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Latest photo */}
+            <div className="relative group">
+              <div className="aspect-[4/3] rounded-lg overflow-hidden bg-neutral-900 ring-2 ring-brand-500">
+                <img
+                  src={bestPhoto.imageUrl}
+                  alt="Your latest best"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="mt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Your strongest</span>
+                  <span className="px-3 py-1 rounded-full bg-brand-500 text-black font-semibold text-sm">
+                    {bestPhoto.overallAverage.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {trendDelta !== null && trendDelta > 0 && (
+            <div className="text-center mt-6">
+              <p className="text-brand-400 font-semibold">
+                <TrendingUp className="w-5 h-5 inline mr-2" />
+                +{trendDelta.toFixed(1)} improvement
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Masonry Portfolio Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-2xl font-serif font-bold text-white">
+            {isReturningUser ? 'Your Portfolio' : 'Example Critiques'}
+          </h2>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2">
+            {(['all', 'best', 'recent'] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setPortfolioFilter(filter)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  portfolioFilter === filter
+                    ? 'bg-brand-500 text-black'
+                    : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+            {isReturningUser && (
+              <button
+                type="button"
+                onClick={() => onNavigate('work')}
+                className="ml-2 text-sm text-brand-400 hover:text-brand-300 font-medium whitespace-nowrap"
+              >
+                View all →
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Grid with filtered photos */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredPhotos.slice(0, 8).map((photo, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onNavigate('work')}
+              className="group relative aspect-[4/3] rounded-lg overflow-hidden bg-neutral-900 hover:ring-2 hover:ring-brand-500 transition-all"
+            >
+              <img
+                src={photo.imageUrl}
+                alt={photo.sceneDescription || 'Photo'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-white font-semibold text-sm mb-1 line-clamp-2">
+                    {photo.sceneDescription || 'Untitled'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 rounded bg-brand-500 text-black text-xs font-bold">
+                      {photo.overallAverage.toFixed(1)}
+                    </span>
+                    {photo.glassBoxSummary?.[0] && (
+                      <span className="text-xs text-neutral-300 line-clamp-1">
+                        {photo.glassBoxSummary[0]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Old context pills - keeping for reference, will remove */}
+      <div className="hidden grid sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
         {/* Progress pill */}
         <div className="rounded-xl border border-warm bg-surface-1 p-4 flex items-center gap-4">
           <div className="p-2.5 rounded-lg bg-brand-500/15 border border-brand-500/30 shrink-0">
@@ -342,34 +497,46 @@ export const HomeTab: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Primary CTAs */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-5xl mx-auto">
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleFileSelect}
-          className="hidden"
-          aria-label="Upload photo"
-        />
+      {/* Hidden file input - keep for upload functionality */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+        aria-label="Upload photo"
+      />
+
+      {/* Sticky Upload FAB - Always visible */}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        className="fixed bottom-24 lg:bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-full bg-brand-500 text-black font-bold shadow-2xl hover:bg-brand-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+        aria-label="Upload photo"
+      >
+        {uploading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+            <span className="hidden sm:inline">Analyzing...</span>
+          </>
+        ) : (
+          <>
+            <Camera className="w-5 h-5" />
+            <span className="hidden sm:inline">Upload Photo</span>
+          </>
+        )}
+      </button>
+
+      {/* Old CTAs - removed, now in hero Glass Box */}
+      <div className="hidden flex-col sm:flex-row items-center justify-center gap-4 max-w-5xl mx-auto">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 text-on-brand font-semibold text-sm hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="hidden"
         >
-          {uploading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
-              Let me take a close look...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4" aria-hidden />
-              Upload Photo
-            </>
-          )}
+          Upload Photo
         </button>
         {activeAssignment && (
           <button
