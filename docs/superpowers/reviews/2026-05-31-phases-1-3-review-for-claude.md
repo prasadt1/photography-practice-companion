@@ -182,7 +182,9 @@ API_URL=https://practice-companion-api-l6kusl5xcq-uc.a.run.app make deploy-hosti
 
 ## Suggested next work (outside Phases 1–3)
 
-- Hackathon **Devpost** / demo script (draft exists locally: `docs/devpost-article-draft.md`, untracked).  
+Full inventory: **[`docs/PENDING-AND-SCOPE.md`](../../PENDING-AND-SCOPE.md)** (pending, out of scope, Claude validation prompt).
+
+- Hackathon **Devpost** / demo script (draft exists locally: `docs/devpost-article-draft.md`, may be untracked).  
 - Optional: Field QR, tour polish, light mode, Etsy integration.  
 - iOS parity audit vs web (separate codebase under `ios/`).  
 
@@ -205,5 +207,6 @@ API_URL=https://practice-companion-api-l6kusl5xcq-uc.a.run.app make deploy-hosti
 | `2026-05-31-iris-full-polish-design.md` | Approved design spec |
 | `2026-05-31-phase1-cursor-implementation.md` | Cursor task-by-task Phase 1 log (historical) |
 | `docs/deploy.md` | Firebase + Cloud Run deploy |
+| `docs/PENDING-AND-SCOPE.md` | Pending vs out of scope + validation prompt |
 
 **End of Phases 1–3.** No Phase 4 in spec. Further product work = new spec or hackathon collateral only.
