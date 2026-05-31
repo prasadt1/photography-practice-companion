@@ -14,6 +14,24 @@ export const MemoryGridSkeleton: React.FC = () => (
   </div>
 );
 
+export const PrintListingCardsSkeleton: React.FC = () => (
+  <ul className="space-y-5 animate-pulse" aria-hidden>
+    {Array.from({ length: 2 }).map((_, i) => (
+      <li key={i} className="rounded-xl border border-warm bg-surface-1 overflow-hidden">
+        <div className="flex flex-col sm:flex-row gap-4 p-4">
+          <div className="shrink-0 w-full sm:w-28 aspect-[3/4] sm:aspect-square rounded-lg bg-surface-3" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-surface-3 rounded w-16" />
+            <div className="h-4 bg-surface-3 rounded w-3/4" />
+            <div className="h-3 bg-surface-3 rounded w-full" />
+            <div className="h-8 bg-surface-3 rounded w-24" />
+          </div>
+        </div>
+      </li>
+    ))}
+  </ul>
+);
+
 export const PracticeCardsSkeleton: React.FC = () => (
   <div className="space-y-4 animate-pulse" aria-hidden>
     {Array.from({ length: 2 }).map((_, i) => (

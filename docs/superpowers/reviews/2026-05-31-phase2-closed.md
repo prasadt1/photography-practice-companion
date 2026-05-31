@@ -34,4 +34,4 @@
 
 ## Next phase gate
 
-Do **not** start Phase 3 until you confirm Phase 2 is accepted. See spec §Phase 3.
+Phase 3 closed in `docs/superpowers/reviews/2026-05-31-phase3-closed.md`.

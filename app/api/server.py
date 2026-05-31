@@ -47,6 +47,7 @@ from memory.pending_approvals import apply_decision, list_pending  # noqa: E402
 from memory.users import get_user_profile, set_persona  # noqa: E402
 from api.triage_scan import run_triage_scan  # noqa: E402
 from api.print_sales_scan import run_print_sales_scan  # noqa: E402
+from memory.print_sales_list import list_print_sales  # noqa: E402
 from api.field_capture_service import analyze_field_frame  # noqa: E402
 from memory.capture_sessions import create_capture_session, end_capture_session  # noqa: E402
 from memory.session_context import set_request_user_id  # noqa: E402
@@ -188,6 +189,15 @@ def triage_scan(user_id: str | None = None) -> dict:
         return run_triage_scan(user_id=user_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/print-sales")
+def print_sales_list(user_id: str | None = None, limit: int = 50) -> dict:
+    """Saved listings after user approval (not live on Etsy in this preview)."""
+    try:
+        return list_print_sales(user_id=user_id, limit=limit)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

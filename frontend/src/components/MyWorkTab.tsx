@@ -18,6 +18,7 @@ import { getScoreContext } from '../lib/scoreContext';
 import { apiUnreachableMessage } from '../lib/apiHelp';
 import { friendlyErrorMessage } from '../lib/friendlyError';
 import { formatSkillLabel } from '../lib/formatSkillLabel';
+import { isListedForSale, LISTED_FOR_SALE_TAG, listedForSaleLabel } from '../lib/listedForSale';
 import { MemoryGridSkeleton } from './SkeletonBlocks';
 import PhotoUploader from './studio/PhotoUploader';
 import StudioAnalysisResults from './studio/StudioAnalysisResults';
@@ -130,7 +131,11 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           tagSet.add(tag);
         }
       }
-      setAllUserTags(Array.from(tagSet).sort());
+      const sorted = Array.from(tagSet).sort();
+      if (!sorted.includes(LISTED_FOR_SALE_TAG)) {
+        sorted.unshift(LISTED_FOR_SALE_TAG);
+      }
+      setAllUserTags(sorted);
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
@@ -336,7 +341,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                 <option value="">All photos</option>
                 {allUserTags.map((tag) => (
                   <option key={tag} value={tag}>
-                    {tag.replace(/_/g, ' ')}
+                    {tag === LISTED_FOR_SALE_TAG ? listedForSaleLabel() : tag.replace(/_/g, ' ')}
                   </option>
                 ))}
               </select>
@@ -351,7 +356,9 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
               onClick={() => setUserTagFilter(null)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-brand-400 text-xs font-medium hover:bg-brand-500/30"
             >
-              {userTagFilter.replace(/_/g, ' ')}
+              {userTagFilter === LISTED_FOR_SALE_TAG
+                ? listedForSaleLabel()
+                : userTagFilter.replace(/_/g, ' ')}
               <X className="w-3 h-3" />
             </button>
           )}
@@ -595,10 +602,17 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                 >
                   <div className="p-3 bg-photo-black border-b border-warm/40">
                     <div className="aspect-[4/3] bg-photo-black relative rounded-md overflow-hidden ring-1 ring-warm/60 shadow-inner">
+                      {isListedForSale(entry.userTags) && (
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface-1/90 border border-brand-500/50 text-brand-400 text-[10px] font-bold uppercase tracking-wide shadow-md">
+                          Listed
+                        </span>
+                      )}
                       {entry.imageUrl ? (
                         <img
                           src={entry.imageUrl}
                           alt={entry.sceneDescription?.slice(0, 120) || 'Portfolio photo'}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -646,7 +660,10 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                     {/* User-applied tags (amber) */}
                     {(entry.userTags?.length ?? 0) > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {entry.userTags.slice(0, expanded ? 8 : 3).map((tag) => (
+                        {entry.userTags
+                          .filter((tag) => tag !== LISTED_FOR_SALE_TAG)
+                          .slice(0, expanded ? 8 : 3)
+                          .map((tag) => (
                           <span
                             key={`user-${tag}`}
                             className="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30 font-medium"

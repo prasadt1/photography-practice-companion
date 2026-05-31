@@ -1,5 +1,6 @@
 import { apiUnreachableMessage } from '../lib/apiHelp';
 import { apiFetch } from '../lib/apiFetch';
+import type { PrintSalesListResponse } from '../types/printSales';
 import type { PendingApproval } from '../types/triage';
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -25,6 +26,17 @@ export function fetchPrintPending(): Promise<{ items: PendingApproval[]; total: 
   return apiFetch(`/api/v1/pending-approvals?${q}`).then(
     parseJson<{ items: PendingApproval[]; total: number }>,
   );
+}
+
+export function fetchPrintRejected(): Promise<{ items: PendingApproval[]; total: number }> {
+  const q = new URLSearchParams({ status: 'rejected', agent_name: 'print_sales', limit: '20' });
+  return apiFetch(`/api/v1/pending-approvals?${q}`).then(
+    parseJson<{ items: PendingApproval[]; total: number }>,
+  );
+}
+
+export function fetchSavedPrintListings(): Promise<PrintSalesListResponse> {
+  return apiFetch('/api/v1/print-sales').then(parseJson<PrintSalesListResponse>);
 }
 
 export function runPrintSalesScan(marketplace = 'etsy'): Promise<PrintSalesScanResult> {

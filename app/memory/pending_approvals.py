@@ -119,6 +119,13 @@ def _execute_approved(doc: dict[str, Any], override_payload: dict[str, Any] | No
             "marketplace_listing_metadata": listing_base["marketplace_listing_metadata"],
         }
         get_db().print_sales.insert_one(listing_doc)
+        try:
+            get_db().portfolio_entries.update_one(
+                {"_id": ObjectId(eid)},
+                {"$addToSet": {"user_tags": "listed_for_sale"}},
+            )
+        except Exception:
+            pass
 
 
 def apply_decision(

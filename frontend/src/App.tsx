@@ -346,6 +346,7 @@ function App() {
             <PrintSalesTab
               mode={userMode}
               onGoToMentor={() => navigate('mentor')}
+              onGoToWork={() => navigate('work')}
               onOpenSettings={() => navigate('settings')}
             />
           )}
