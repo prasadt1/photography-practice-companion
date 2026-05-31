@@ -12,6 +12,7 @@ Published docs for contributors and judges.
 | `docs/devpost-article-draft.md` | Devpost narrative draft |
 | `docs/devpost-draft.md` | Devpost short fields |
 | `docs/devpost-media-checklist.md` | Screenshots, diagrams, video capture list |
+| `docs/devpost-screenshot-guide.md` | How to capture long pages + figure catalog |
 | `docs/demo-video-script-3min.md` | 3-minute Devpost recording script |
 | `docs/devpost-visual-prompts.md` | Devpost image/diagram AI prompts |
 | `docs/ios-demo-video-script.md` | Recording script |
