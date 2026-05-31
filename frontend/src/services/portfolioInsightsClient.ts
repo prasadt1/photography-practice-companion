@@ -12,6 +12,7 @@ export interface PortfolioSearchResponse {
   query: string;
   mode?: string;
   matches: Array<PortfolioListItem & { matchedObservations?: string[] }>;
+  searchTerms?: string[];
   message?: string;
 }
 
@@ -30,6 +31,27 @@ export function fetchSimilarPhotos(
 ): Promise<SimilarPhotosResponse> {
   const params = new URLSearchParams({ limit: String(limit) });
   return getJson(`/api/v1/portfolio/${encodeURIComponent(entryId)}/similar?${params}`);
+}
+
+export function searchModeLabel(mode: string | null): string {
+  switch (mode) {
+    case 'hybrid':
+      return 'semantic + keyword (MongoDB Atlas)';
+    case 'semantic_text_vector':
+    case 'cosine_text_semantic':
+      return 'semantic match (text embeddings)';
+    case 'semantic_vector':
+    case 'cosine_semantic':
+      return 'semantic match (embeddings)';
+    case 'atlas_search':
+      return 'keyword (MongoDB Atlas Search)';
+    case 'expanded_search':
+      return 'expanded keyword search';
+    case 'regex_fallback':
+      return 'keyword text match';
+    default:
+      return 'search';
+  }
 }
 
 export function searchPortfolioLibrary(

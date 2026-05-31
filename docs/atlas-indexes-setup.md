@@ -34,6 +34,33 @@ Run **after** `python3 scripts/bootstrap-mongodb.py` succeeds.
 
 ---
 
+## 1b. Vector Search index (text embeddings for NL library search)
+
+Natural-language library search compares **query text** to **`text_embedding`** (scene description + tags), not raw image pixels.
+
+1. Same cluster → **Atlas Search** → **Create Search Index** → **Atlas Vector Search**.
+2. **Database:** `practice_companion` · **Collection:** `portfolio_entries`.
+3. **Index name:** `portfolio_text_vector` — must match `ATLAS_TEXT_VECTOR_INDEX` in `.env`.
+4. Paste:
+
+```json
+{
+  "fields": [
+    {
+      "type": "vector",
+      "path": "text_embedding",
+      "numDimensions": 1408,
+      "similarity": "cosine"
+    }
+  ]
+}
+```
+
+5. **Create** → wait until **Active**.
+6. Backfill existing entries: `python3 scripts/backfill-text-embeddings.py` (from repo root, with `.env` and Vertex credentials).
+
+---
+
 ## 2. Atlas Search index (Glass Box full-text)
 
 1. Same cluster → **Atlas Search** → **Create Search Index**.
@@ -47,6 +74,9 @@ Run **after** `python3 scripts/bootstrap-mongodb.py` succeeds.
   "mappings": {
     "dynamic": false,
     "fields": {
+      "scene_description": { "type": "string" },
+      "colour_notes": { "type": "string" },
+      "user_tags": { "type": "string" },
       "glass_box": {
         "type": "document",
         "fields": {
@@ -66,7 +96,9 @@ Run **after** `python3 scripts/bootstrap-mongodb.py` succeeds.
 }
 ```
 
-6. **Create** → wait until **Active**.
+**If you already created `glass_box_search` without `scene_description`:** edit the index in Atlas → **Edit definition** → add the three string fields above → save and wait for **Active**. Library search reads scene text (where “van”, “RV”, “glacier” live), not just Glass Box bullets.
+
+6. **Create** (or save edit) → wait until **Active**.
 
 ---
 

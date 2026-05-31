@@ -14,7 +14,7 @@ from google.genai import types
 
 from memory.db import get_db
 from memory.schema import BoundingBoxPct, CoachAnalysisOutput, GroundingCitation, SpatialAnnotation
-from tools.embeddings import embed_image_bytes
+from tools.embeddings import embed_image_bytes, embed_text, portfolio_search_text
 from tools.gcs import upload_portfolio_image
 from tools.grounding import detect_scene_type_hint, ground_principles
 
@@ -203,10 +203,21 @@ def analyze_photo(
     image_url = upload_portfolio_image(image_bytes, content_type, str(uid), str(sid))
 
     embedding: list[float] | None = None
+    text_embedding: list[float] | None = None
     try:
         embedding = embed_image_bytes(image_bytes)
     except Exception as exc:
-        print(f"[coach] embedding skipped: {exc}")
+        print(f"[coach] image embedding skipped: {exc}")
+    search_text = portfolio_search_text(
+        output.scene_description,
+        output.aesthetic_tags,
+        colour_notes=output.colour_notes,
+    )
+    if search_text:
+        try:
+            text_embedding = embed_text(search_text)
+        except Exception as exc:
+            print(f"[coach] text embedding skipped: {exc}")
 
     doc: dict[str, Any] = {
         "user_id": uid,
@@ -228,6 +239,8 @@ def analyze_photo(
     }
     if embedding:
         doc["embedding"] = embedding
+    if text_embedding:
+        doc["text_embedding"] = text_embedding
     if assignment_oid:
         doc["assignment_id"] = assignment_oid
 

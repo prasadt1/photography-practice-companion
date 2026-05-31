@@ -14,7 +14,7 @@ from sub_agents.tools.coach_tools import ground_in_data_store_principles
 
 
 def atlas_search_glass_box(query: str, limit: int = 5) -> dict[str, Any]:
-    """Full-text search over glass_box / scene fields (Atlas Search + fallback)."""
+    """Semantic + keyword search over portfolio memory (embeddings + Atlas Search)."""
     return search_glass_box_feedback(query=query, limit=limit)
 
 

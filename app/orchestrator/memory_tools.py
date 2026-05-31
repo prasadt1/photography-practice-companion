@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+import re
 from typing import Any
 
 from memory.assignments import get_active_assignment, list_assignments
@@ -46,29 +46,19 @@ def list_practice_assignments() -> dict[str, Any]:
     return list_assignments()
 
 
-# Broaden common library searches (scene often says "deer"/"lion", not "animal").
-_SEARCH_SYNONYMS: dict[str, list[str]] = {
-    "animal": ["deer", "lion", "eagle", "bird", "wildlife", "buck", "savanna"],
-    "animals": ["deer", "lion", "eagle", "bird", "wildlife"],
-}
-
-
-def _search_terms(query: str) -> list[str]:
-    q = query.strip()
-    terms = [q] if q else []
-    extra = _SEARCH_SYNONYMS.get(q.lower())
-    if extra:
-        for t in extra:
-            if t not in terms:
-                terms.append(t)
-    return terms
+def _regex_for_term(term: str) -> str:
+    """Whole-word match so e.g. car does not match cardboard."""
+    escaped = re.escape(term.strip())
+    if not escaped:
+        return escaped
+    return rf"\b{escaped}\b"
 
 
 def _portfolio_text_search_filter(terms: list[str], match: dict[str, Any]) -> dict[str, Any]:
-    """Match query (and synonyms) across scene, tags, and Glass Box text."""
+    """Match expanded search terms across scene, tags, and Glass Box text."""
     clauses: list[dict[str, Any]] = []
     for term in terms:
-        regex = {"$regex": term, "$options": "i"}
+        regex = {"$regex": _regex_for_term(term), "$options": "i"}
         clauses.extend(
             [
                 {"scene_description": regex},
@@ -82,6 +72,35 @@ def _portfolio_text_search_filter(terms: list[str], match: dict[str, Any]) -> di
     return {**match, "$or": clauses}
 
 
+def _doc_search_blob(doc: dict[str, Any]) -> str:
+    gb = doc.get("glass_box") or {}
+    parts = [
+        doc.get("scene_description") or "",
+        " ".join(doc.get("aesthetic_tags") or []),
+        " ".join(doc.get("user_tags") or []),
+        doc.get("colour_notes") or "",
+        " ".join(gb.get("observations") or []),
+        " ".join(gb.get("reasoning_steps") or []),
+    ]
+    return " ".join(parts)
+
+
+def _score_doc_for_terms(doc: dict[str, Any], terms: list[str]) -> int:
+    """Earlier expanded terms weigh more so van beats a generic road match."""
+    blob = _doc_search_blob(doc)
+    score = 0
+    for idx, term in enumerate(terms):
+        if re.search(_regex_for_term(term), blob, re.I):
+            score += max(1, len(terms) - idx)
+    return score
+
+
+def _rank_docs_by_terms(docs: list[dict[str, Any]], terms: list[str]) -> list[dict[str, Any]]:
+    if len(docs) <= 1 or not terms:
+        return docs
+    return sorted(docs, key=lambda doc: _score_doc_for_terms(doc, terms), reverse=True)
+
+
 def _serialize_search_hit(doc: dict[str, Any]) -> dict[str, Any]:
     gb = doc.get("glass_box") or {}
     return {
@@ -92,24 +111,72 @@ def _serialize_search_hit(doc: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def search_glass_box_feedback(query: str, limit: int = 5) -> dict[str, Any]:
-    """
-    Full-text search over portfolio memory (Atlas Search when indexed, else expanded regex).
-    """
-    from memory.assignments import _resolve_user_id
-    from memory.db import get_db
-
-    limit = max(1, min(int(limit), 15))
-    uid = _resolve_user_id(None)
-    match: dict[str, Any] = {"user_id": uid} if uid else {}
-    terms = _search_terms(query)
-    if not terms:
-        return {"matches": [], "message": "Provide a search query."}
-
+def _atlas_text_search(
+    terms: list[str],
+    *,
+    uid: Any,
+    limit: int,
+    projection: dict[str, Any],
+) -> tuple[list[dict[str, Any]], str | None]:
+    """Full-text search over scene descriptions and Glass Box text."""
     from memory import mcp_reads
     from memory.atlas_features import atlas_fallback_allowed, require_atlas_features
+    from memory.db import get_db
+
+    if not terms:
+        return [], None
 
     coll = get_db().portfolio_entries
+    match: dict[str, Any] = {"user_id": uid} if uid else {}
+    atlas_query = " ".join(terms)
+
+    try:
+        pipeline: list[dict[str, Any]] = [
+            {"$search": {"index": "glass_box_search", "text": {"query": atlas_query}}},
+        ]
+        if match:
+            pipeline.append({"$match": match})
+        pipeline.extend([{"$limit": max(limit * 4, 24)}, {"$project": projection}])
+        docs = _rank_docs_by_terms(list(mcp_reads.aggregate(coll, pipeline)), terms)[:limit]
+        if docs:
+            return [_serialize_search_hit(doc) for doc in docs], "atlas_search"
+    except Exception as exc:
+        if require_atlas_features() and not atlas_fallback_allowed():
+            raise RuntimeError(f"Atlas Search required: {exc}") from exc
+
+    docs = list(
+        mcp_reads.find(
+            coll,
+            _portfolio_text_search_filter(terms, match),
+            projection=projection,
+            limit=max(limit * 4, 24),
+            sort=[("created_at", -1)],
+        )
+    )
+    docs = _rank_docs_by_terms(docs, terms)[:limit]
+    if docs:
+        return [_serialize_search_hit(doc) for doc in docs], "regex_fallback"
+    return [], None
+
+
+def search_glass_box_feedback(query: str, limit: int = 5) -> dict[str, Any]:
+    """
+    Natural-language portfolio search over scene descriptions and tags.
+
+    Gemini expands short queries into related metadata terms (tiger → lion, wildlife),
+    then Atlas Search / word-boundary regex match the portfolio text. Image embeddings
+    are reserved for photo-to-photo similarity, not NL library search.
+    """
+    from memory.assignments import _resolve_user_id
+    from tools.search_query import expand_library_search_terms
+
+    limit = max(1, min(int(limit), 15))
+    q = query.strip()
+    if not q:
+        return {"matches": [], "message": "Provide a search query."}
+
+    uid = _resolve_user_id(None)
+    terms = list(expand_library_search_terms(q))
     projection = {
         "scores": 1,
         "aesthetic_tags": 1,
@@ -117,37 +184,17 @@ def search_glass_box_feedback(query: str, limit: int = 5) -> dict[str, Any]:
         "glass_box": 1,
         "created_at": 1,
     }
-    docs: list[dict[str, Any]] = []
-    mode = "regex_fallback"
 
-    try:
-        pipeline: list[dict[str, Any]] = [
-            {"$search": {"index": "glass_box_search", "text": {"query": query.strip()}}},
-        ]
-        if match:
-            pipeline.append({"$match": match})
-        pipeline.extend([{"$limit": limit}, {"$project": projection}])
-        docs = list(mcp_reads.aggregate(coll, pipeline))
-        if docs:
-            mode = "atlas_search"
-    except Exception as exc:
-        if require_atlas_features() and not atlas_fallback_allowed():
-            raise RuntimeError(f"Atlas Search required: {exc}") from exc
-
-    if not docs:
-        docs = list(
-            mcp_reads.find(
-                coll,
-                _portfolio_text_search_filter(terms, match),
-                projection=projection,
-                limit=limit,
-                sort=[("created_at", -1)],
-            )
-        )
-        mode = "regex_fallback"
+    matches, mode = _atlas_text_search(
+        terms,
+        uid=uid,
+        limit=limit,
+        projection=projection,
+    )
 
     return {
-        "query": query.strip(),
-        "mode": mode,
-        "matches": [_serialize_search_hit(doc) for doc in docs],
+        "query": q,
+        "searchTerms": terms,
+        "mode": mode or "none",
+        "matches": matches,
     }

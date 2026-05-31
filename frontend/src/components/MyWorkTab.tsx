@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { SimilarPhotosRow } from './SimilarPhotosRow';
 import { LazyPortfolioImage } from './LazyPortfolioImage';
-import { searchPortfolioLibrary } from '../services/portfolioInsightsClient';
+import { searchModeLabel, searchPortfolioLibrary } from '../services/portfolioInsightsClient';
 import { SubViewBack } from './SubViewBack';
 import { FilmGrain } from './FilmGrain';
 import { FocusAreas } from './FocusAreas';
@@ -484,7 +484,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
         </button>
       )}
 
-      {/* Library search (Atlas Search on Glass Box text) */}
+      {/* Library search (semantic embeddings + Atlas keyword) */}
       <form
         className="flex flex-col sm:flex-row gap-2 max-w-2xl"
         onSubmit={(e) => {
@@ -498,9 +498,9 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             type="search"
             value={librarySearch}
             onChange={(e) => setLibrarySearch(e.target.value)}
-            placeholder="Search your library (e.g. backlit portrait)"
+            placeholder="Search your library (e.g. car, tiger, backlit portrait)"
             className="w-full pl-10 pr-3 py-2.5 rounded-lg border border-warm bg-surface-1 text-stone-200 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-brand-500"
-            aria-label="Search portfolio by critique text"
+            aria-label="Search portfolio by meaning or keywords"
           />
         </div>
         <button
@@ -523,7 +523,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       {searchResults !== null && (
         <p className="text-xs text-muted -mt-4">
           {searchResults.length} result{searchResults.length === 1 ? '' : 's'}
-          {searchMode ? ` · ${searchMode === 'atlas_search' ? 'MongoDB Atlas Search' : 'text match'}` : ''}
+          {searchMode ? ` · ${searchModeLabel(searchMode)}` : ''}
         </p>
       )}
 

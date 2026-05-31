@@ -141,7 +141,7 @@ def search_portfolio_library(
     user_id: str | None = None,
     limit: int = 8,
 ) -> dict[str, Any]:
-    """Full-text search over Glass Box observations and scene descriptions."""
+    """Full-text + semantic search over scene descriptions and portfolio embeddings."""
     effective = resolve_effective_user_id(user_id)
     uid = _resolve_user_id(effective)
     if not uid:
@@ -152,11 +152,15 @@ def search_portfolio_library(
     match_ids = [m["id"] for m in raw.get("matches") or [] if m.get("id")]
     enriched = _enrich_match_ids(match_ids)
     obs_by_id = {m["id"]: m.get("observations") for m in raw.get("matches") or []}
+    score_by_id = {m["id"]: m.get("similarityScore") for m in raw.get("matches") or []}
     for row in enriched:
         row["matchedObservations"] = obs_by_id.get(row["id"]) or []
+        if score_by_id.get(row["id"]) is not None:
+            row["similarityScore"] = score_by_id[row["id"]]
 
     return {
         "query": raw.get("query", query),
+        "searchTerms": raw.get("searchTerms") or [],
         "mode": raw.get("mode"),
         "matches": enriched,
         "message": raw.get("message"),

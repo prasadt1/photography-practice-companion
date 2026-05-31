@@ -55,6 +55,16 @@ def main() -> None:
         "ATLAS_VECTOR_INDEX": os.getenv(
             "ATLAS_VECTOR_INDEX", "portfolio_embedding_vector"
         ),
+        "ATLAS_TEXT_VECTOR_INDEX": os.getenv(
+            "ATLAS_TEXT_VECTOR_INDEX", "portfolio_text_vector"
+        ),
+        "ATLAS_TEXT_VECTOR_PATH": os.getenv("ATLAS_TEXT_VECTOR_PATH", "text_embedding"),
+        "SEARCH_MIN_SIMILARITY": os.getenv("SEARCH_MIN_SIMILARITY", "0.54"),
+        "SEARCH_EXPAND_QUERIES": os.getenv("SEARCH_EXPAND_QUERIES", "true"),
+        "SEARCH_EXPAND_MODEL": os.getenv(
+            "SEARCH_EXPAND_MODEL",
+            os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview"),
+        ),
         "CORS_ORIGINS": cors_full,
         "MONGODB_URI": mongodb_uri,
         "ORCHESTRATOR_USE_MCP": os.getenv("ORCHESTRATOR_USE_MCP", "true"),
