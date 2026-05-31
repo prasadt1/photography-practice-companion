@@ -210,9 +210,27 @@ Only ask what you need to choose between Path A/B/C (e.g. hours/week, TestFlight
 
 *After Claude responds, optionally append summary to §12 below or link from Devpost checklist.*
 
-## 12. Claude response (paste below)
+## 12. Claude response (2026-05-31)
 
-*(Optional: paste Claude’s plan here for version control.)*
+**Recommendation:** **Path B** — submit-first (Days 1–4), then **one spike: Similar photos** (§4.C). Skip Agent Engine (Path C).
+
+**Stop line:** End of Day 7 (Fri Jun 6) — code freeze; Days 8–10 video re-record + early submit (Mon Jun 9).
+
+**Spike scope:** `GET /api/v1/portfolio/{id}/similar` wrapping existing `vector_search_similar_photos` in `app/sub_agents/tools/mentor_tools.py` (index name `portfolio_vector`). My Work detail: 4-thumbnail row.
+
+**Traps (don’t build):** NL search bar, Mentor action chips, Judge auto-tour v2.
+
+**First 60s video:** Hook → upload + Glass Box → Home memory proof → Organize HITL → MongoDB one-liner; iPhone at 1:50.
+
+### Cursor answers to Claude’s five questions (repo-grounded)
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Hours per day? | **Author decides** — plan assumes ~2h evenings + one weekend block; scale Day 5–7 if full days |
+| 2 | Vector index? | Code expects Atlas index **`portfolio_vector`** on `portfolio_entries.embedding` (`mentor_tools.py`). **Not** in `memory/indexes.py` bootstrap — verify in Atlas UI or create before spike. **`make seed-demo` does not seed embeddings** — spike demo needs real uploads or extend seed script |
+| 3 | TestFlight? | **Author decides** — `ios/README.md`: Xcode device build; no TestFlight requirement in repo |
+| 4 | Demo account? | **`make seed-demo`** exists (`scripts/seed-demo-data.py`); stable `DEMO_USER_ID=6577a1f2b3c4d5e6f7a8b9c0`; 16 Unsplash entries — re-run with `--reset` if needed |
+| 5 | Track? | **Author decides** — doc assumes **MongoDB partner** primary; grounding chip secondary if also Google track |
 
 ---
 
