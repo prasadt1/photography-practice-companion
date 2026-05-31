@@ -46,7 +46,7 @@ Claude reviewer pass (2026-05-31): **0 material gaps** vs Phases 1–3 spec.
 | Devpost **written submission** | `docs/devpost-article-draft.md` exists locally; may be untracked |
 | **Manual QA** | Checklist in phases 1–3 review doc — boxes may be unchecked |
 | **Physical iPhone** recording | Live coach + shutter for video B-roll |
-| Push **review docs** | Ensure `origin/main` includes `da50c0f`, `PENDING-AND-SCOPE.md` |
+| Push **review docs** | Done — `origin/main` includes `8608a76` (`PENDING-AND-SCOPE.md`, phases review) |
 
 ### B. Code / features (optional or post-hackathon)
 
@@ -210,6 +210,24 @@ List any phrase in devpost-article-draft.md (if present) that over-claims vs PEN
 - If README.md conflicts with ios/README.md on iOS phase status, report it and state which to trust.
 - Production URLs: practice-companion-hackathon.web.app and practice-companion-api-l6kusl5xcq-uc.a.run.app
 ```
+
+---
+
+## 8. External validation (Claude, 2026-05-31)
+
+**Verdict:** Yes — inventory accurate; five spot-checks passed; no corrections.
+
+| Claim | Evidence cited |
+|-------|----------------|
+| `GET /api/v1/print-sales` + `listed_for_sale` | `pending_approvals.py`, `print_sales_list.py`, `test_print_sales_hitl.py` |
+| Print dedupe by `shoot_id` | `print_sales_scan.py` (`_dedupe_key`) |
+| Growth caption = `growthFrameOverallDelta` | `HomeTab.tsx` |
+| Organize humanize + feedback banner | `humanizeOrganizeReasoning.ts`, `MentorTab.tsx` |
+| iOS live coach + `field_capture` | `LiveFieldCoachModel.swift`, `FieldCoachService.swift` |
+
+**Submit blocker (remaining):** Devpost **demo video URL** only.
+
+**Devpost draft:** `devpost-article-draft.md` — no over-claims vs this doc (Cloud Run not Agent Engine prod; VI not shipped UI; no live Etsy; coach = periodic snapshots).
 
 ---
 
