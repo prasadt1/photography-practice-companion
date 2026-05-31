@@ -37,6 +37,7 @@ firebase-debug.*.log
 
 # Cursor / local IDE (personal)
 .cursor/
+.superpowers/
 
 # ─── Private / local-only docs (keep on disk; not published to GitHub) ───
 # Agent context, phase tracking, drafts, hackathon prep, design audits, iOS plans.
@@ -71,3 +72,11 @@ docs/design-review-brief.md
 docs/design-implementation-status.md
 docs/claude-code-handoff.md
 docs/MongoDB Story Document - Strategic Report.md
+
+# Hackathon / agent prep (author-only — not for public repo)
+docs/HACKATHON-11DAY-STRATEGY-FOR-CLAUDE.md
+docs/PENDING-AND-SCOPE.md
+docs/superpowers/
+docs/devpost-article-draft.md
+docs/ios-demo-recording-checklist.md
+docs/ios-demo-video-script.md

@@ -1,6 +1,16 @@
 # Documentation (public)
 
-Published docs for contributors and judges. **Phase logs, drafts, agent handoffs, and iOS planning notes** stay local only (see repo root `.gitignore`).
+Published docs for contributors and judges.
+
+**Local-only (gitignored, not on GitHub):** phase logs, agent handoffs, hackathon calendar, scope inventory, Devpost drafts, demo scripts — see repo root `.gitignore` § “Private / local-only docs”. Examples:
+
+| Path | Purpose |
+|------|---------|
+| `docs/HACKATHON-11DAY-STRATEGY-FOR-CLAUDE.md` | Jun 1–10 calendar, Claude prompts, Path B |
+| `docs/PENDING-AND-SCOPE.md` | Done / pending / out of scope |
+| `docs/superpowers/` | Polish specs, plans, phase reviews |
+| `docs/devpost-article-draft.md` | Devpost narrative draft |
+| `docs/ios-demo-video-script.md` | Recording script |
 
 | Document | Purpose |
 |----------|---------|
