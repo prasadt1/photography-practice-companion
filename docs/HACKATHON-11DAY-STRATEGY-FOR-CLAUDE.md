@@ -130,7 +130,34 @@ See full lists: [`PENDING-AND-SCOPE.md`](PENDING-AND-SCOPE.md) §4.
 
 ---
 
-## 9. Suggested 11-day calendar (template)
+## 9. Calendar — Prasad availability (deadline **Jun 10, 22:00 CET**)
+
+| Window | Hours (approx.) | Cumulative |
+|--------|-------------------|------------|
+| Jun 1–5 | 3–4 h/day → **~17 h** | 17 h |
+| Jun 6–7 | 10 h/day → **~20 h** | 37 h |
+| Jun 8–10 | 3–4 h/day → **~10 h** | **~47 h total** |
+
+**Recommendation:** **Path B** fits comfortably (~12 h submit + ~14 h similar-photos spike + ~10 h video polish + buffer).
+
+| Date | Hours | Deliverable |
+|------|-------|---------------|
+| **Jun 1** | 3–4 | `make seed-demo`; set `DEMO_USER_ID`; confirm Atlas **`portfolio_vector`** index exists |
+| **Jun 2** | 3–4 | `demo-video-script-3min.md`; rehearse; upload **1 real photo** on prod demo user (embedding for spike) |
+| **Jun 3** | 3–4 | Record **video v1** (web + iPhone B-roll); unlisted YouTube/Vimeo |
+| **Jun 4** | 3–4 | Devpost draft + video URL; README judge path |
+| **Jun 5** | 3–4 | Buffer / P0 fixes only — **soft submit possible** if v1 good |
+| **Jun 6** | 10 | Similar photos: API wrapper + tests (`mentor_tools.vector_search_similar_photos`) |
+| **Jun 7** | 10 | My Work UI + deploy + QA — **code freeze 22:00** |
+| **Jun 8** | 3–4 | Re-record **video v2** (5–10 s similar-photos in My Work) |
+| **Jun 9** | 3–4 | Final Devpost pass; optional 30 s playground clip |
+| **Jun 10** | 3–4 | **Publish by 22:00 CET** — re-record only if P0 |
+
+**Skip Agent Engine** — see §13 below.
+
+---
+
+## 9b. Generic 11-day calendar (template)
 
 | Days | Focus |
 |------|--------|
@@ -231,6 +258,45 @@ Only ask what you need to choose between Path A/B/C (e.g. hours/week, TestFlight
 | 3 | TestFlight? | **Author decides** — `ios/README.md`: Xcode device build; no TestFlight requirement in repo |
 | 4 | Demo account? | **`make seed-demo`** exists (`scripts/seed-demo-data.py`); stable `DEMO_USER_ID=6577a1f2b3c4d5e6f7a8b9c0`; 16 Unsplash entries — re-run with `--reset` if needed |
 | 5 | Track? | **Author decides** — doc assumes **MongoDB partner** primary; grounding chip secondary if also Google track |
+
+---
+
+## 13. Dual track vs Agent Engine (FAQ)
+
+### What is “dual track”?
+
+The hackathon has a **main** Google Cloud Rapid Agent competition **plus optional partner tracks** (e.g. **MongoDB**). On Devpost you typically:
+
+1. Submit **one** project (one repo, one video, one URL).
+2. **Select the MongoDB partner track** (checkbox / track field) so you are eligible for **MongoDB-specific prizes** and judging that cares about Atlas + MCP.
+3. You may **also** be considered for **general** prizes (impact, design, implementation) — same submission, not two codebases.
+
+**“Dual track”** in earlier advice meant: optimizing copy for **MongoDB partner** *and* mentioning **Google** stack (Gemini, Agent Builder, ADK) — **not** building two products or deploying twice.
+
+**For Iris:** Submit **once**, select **MongoDB track**, lead narrative with **memory + embeddings + HITL**; mention Gemini + Agent Builder + Cloud Run in “Built with” and video.
+
+### Will skipping Agent Engine penalize you?
+
+**No — if you are honest and meet the written requirements.**
+
+Official **must-haves** (from `implementation-and-hackathon-mapping.md` §7.A) are:
+
+| Requirement | Iris |
+|-------------|------|
+| **Gemini** | Yes — Coach, Planner, Reflection, Mentor |
+| **Google Cloud Agent Builder** | Yes — Discovery Engine Data Store for principles (`grounding.py`) |
+| **Partner (MongoDB) integration** | Yes — Atlas, embeddings, MCP story, HITL |
+| **Web (± mobile)** | Yes — Firebase + iOS |
+
+**Agent Engine is not listed as a submission requirement.** It is an optional way to host ADK agents. Your production path is **Cloud Run FastAPI**, which is normal for this hackathon and documented in your Devpost draft as:
+
+*“Production API on Cloud Run; multi-agent ADK in playground; Agent Engine scaffold in-repo for future deploy.”*
+
+**Judging (§8)** weights implementation, design, impact, idea — not “did you deploy to Agent Engine.”
+
+**Do not** claim “hosted on Vertex AI Agent Engine” if judges open Cloud Run. **Do** claim ADK multi-agent architecture + Agent Builder grounding + Atlas memory.
+
+**Optional low-cost boost (no Agent Engine deploy):** 30 s screen recording of `make playground` showing orchestrator + tools — strengthens “agentic” without migrating prod.
 
 ---
 
