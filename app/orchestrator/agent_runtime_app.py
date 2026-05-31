@@ -29,6 +29,19 @@ from orchestrator.app_utils.typing import Feedback
 load_dotenv()
 
 
+class _LocalFeedbackLogger:
+    """Stdlib stand-in for Cloud Logging during INTEGRATION_TEST."""
+
+    def log_struct(self, data: dict[str, Any], severity: str = "INFO") -> None:
+        level = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+        }.get(severity.upper(), logging.INFO)
+        logging.getLogger(__name__).log(level, "feedback: %s", data)
+
+
 class AgentEngineApp(AdkApp):
     def set_up(self) -> None:
         """Initialize the agent engine app with logging and telemetry."""
@@ -36,8 +49,11 @@ class AgentEngineApp(AdkApp):
         setup_telemetry()
         super().set_up()
         logging.basicConfig(level=logging.INFO)
-        logging_client = google_cloud_logging.Client()
-        self.logger = logging_client.logger(__name__)
+        if os.environ.get("INTEGRATION_TEST") == "TRUE":
+            self.logger = _LocalFeedbackLogger()
+        else:
+            logging_client = google_cloud_logging.Client()
+            self.logger = logging_client.logger(__name__)
         if gemini_location:
             os.environ["GOOGLE_CLOUD_LOCATION"] = gemini_location
 

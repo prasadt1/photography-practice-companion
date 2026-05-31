@@ -20,6 +20,12 @@ export interface PortfolioListResponse {
   total: number;
 }
 
+export interface PortfolioStats {
+  total: number;
+  firstUpload: string | null;
+  strongest: PortfolioListItem | null;
+}
+
 export interface AestheticProfileSummary {
   photoCount: number;
   dominantTags: string[];

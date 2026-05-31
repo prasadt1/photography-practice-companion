@@ -51,14 +51,9 @@ export const BrandLogo: React.FC<Props> = ({
     <div className={`flex items-center gap-3 ${className}`}>
       <IrisMark size={px} />
       {showWordmark && (
-        <div className="min-w-0">
-          <p className={`${NAME_STYLES[size]} text-stone-100 leading-tight tracking-tight`}>
-            {BRAND.name}
-          </p>
-          <p className={`${TAGLINE_STYLES[size]} text-stone-400 leading-tight hidden sm:block`}>
-            {BRAND.taglineShort}
-          </p>
-        </div>
+        <p className={`${NAME_STYLES[size]} text-stone-100 leading-tight tracking-tight`}>
+          {BRAND.name}
+        </p>
       )}
     </div>
   );

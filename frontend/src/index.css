@@ -363,3 +363,8 @@ input:focus-visible,
   border-top: none;
   border-bottom-right-radius: 2px;
 }
+
+/* Sidebar logo zone — solid canvas, no blur/grain overlay */
+.sidebar-logo-zone {
+  background: var(--color-canvas);
+}

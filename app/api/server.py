@@ -37,7 +37,11 @@ from memory.assignments import (  # noqa: E402
     propose_assignment,
 )
 from api.mentor_suggestions import suggest_mentor_questions  # noqa: E402
-from memory.portfolio import compute_aesthetic_summary, list_portfolio_entries  # noqa: E402
+from memory.portfolio import (  # noqa: E402
+    compute_aesthetic_summary,
+    get_portfolio_stats,
+    list_portfolio_entries,
+)
 from memory.trends import compute_portfolio_trends  # noqa: E402
 from memory.pending_approvals import apply_decision, list_pending  # noqa: E402
 from memory.users import get_user_profile, set_persona  # noqa: E402
@@ -242,6 +246,14 @@ def portfolio_list(
             sort_order=sort_order,
             user_tag=user_tag,
         )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/portfolio/stats")
+def portfolio_stats(user_id: str | None = None) -> dict:
+    try:
+        return get_portfolio_stats(user_id=user_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

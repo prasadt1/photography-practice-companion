@@ -19,7 +19,16 @@ import { useAuth } from './auth/useAuth';
 import { setApiUserScope } from './lib/apiFetch';
 import { clearMentorSession } from './services/mentorClient';
 import { fetchActiveAssignment } from './services/practiceClient';
+import {
+  fetchAestheticProfile,
+  fetchPortfolio,
+  fetchPortfolioStats,
+  fetchPortfolioTrends,
+} from './services/memoryClient';
+import { fetchPendingApprovals } from './services/triageClient';
+import { fetchPrintPending } from './services/printSalesClient';
 import { fetchUserProfile, personaToUserMode, updatePersona } from './services/userClient';
+import type { SidebarPhoto } from './components/AppSidebar';
 import { OfflineBanner } from './components/OfflineBanner';
 import { FilmGrain } from './components/FilmGrain';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -57,6 +66,12 @@ function App() {
   // Onboarding tour
   const [showTour, setShowTour] = useState(false);
   const [onboardingBusy, setOnboardingBusy] = useState(false);
+  const [sidebarPhotoCount, setSidebarPhotoCount] = useState(0);
+  const [sidebarRecentPhotos, setSidebarRecentPhotos] = useState<SidebarPhoto[]>([]);
+  const [sidebarTrendDelta, setSidebarTrendDelta] = useState<number | null>(null);
+  const [sidebarMentorLine, setSidebarMentorLine] = useState<string | null>(null);
+  const [pendingOrganize, setPendingOrganize] = useState(0);
+  const [pendingPrintDrafts, setPendingPrintDrafts] = useState(0);
   const online = useOnlineStatus();
   const auth = useAuth();
 
@@ -112,6 +127,56 @@ function App() {
     }
   }, [activeTab, ready, refreshActiveAssignment]);
 
+  const refreshSidebarDashboard = useCallback(async () => {
+    try {
+      const [stats, recent, aesthetic, trends, triagePending, printPending] = await Promise.all([
+        fetchPortfolioStats(),
+        fetchPortfolio({ limit: 4, sortBy: 'date', sortOrder: 'desc' }),
+        fetchAestheticProfile().catch(() => null),
+        fetchPortfolioTrends(6).catch(() => null),
+        fetchPendingApprovals('triage').catch(() => ({ items: [], total: 0 })),
+        userMode === 'working_pro'
+          ? fetchPrintPending().catch(() => ({ items: [], total: 0 }))
+          : Promise.resolve({ items: [], total: 0 }),
+      ]);
+
+      setSidebarPhotoCount(stats.total);
+      setSidebarRecentPhotos(
+        recent.entries.map((e) => ({ id: e.id, imageUrl: e.imageUrl })),
+      );
+      setPendingOrganize(triagePending.total);
+
+      const bestTrend = trends?.dimensions?.find(
+        (d) => d.delta != null && d.delta > 0 && ['composition', 'lighting', 'overall'].includes(d.key),
+      );
+      setSidebarTrendDelta(bestTrend?.delta ?? null);
+
+      if (aesthetic && aesthetic.dominantTags.length > 0) {
+        const tags = aesthetic.dominantTags.slice(0, 2).join(' and ').replace(/_/g, ' ');
+        const delta = bestTrend?.delta;
+        const label = bestTrend?.label?.toLowerCase();
+        const trend =
+          delta != null && delta > 0 && label
+            ? ` — ${label} +${delta.toFixed(1)} this month`
+            : '';
+        setSidebarMentorLine(`Your ${tags} work is taking shape${trend}.`);
+      } else if (stats.total > 0) {
+        setSidebarMentorLine('Ready when you are — upload to grow your library.');
+      } else {
+        setSidebarMentorLine('Ready when you are — upload to begin.');
+      }
+
+      setPendingPrintDrafts(printPending.total);
+    } catch {
+      /* sidebar degrades gracefully */
+    }
+  }, [userMode]);
+
+  useEffect(() => {
+    if (!ready || auth.loading) return;
+    void refreshSidebarDashboard();
+  }, [ready, auth.loading, auth.userId, activeTab, refreshSidebarDashboard]);
+
   const handleOnboardingComplete = useCallback((mode: UserMode) => {
     setOnboardingComplete();
     setShowOnboarding(false);
@@ -151,13 +216,24 @@ function App() {
 
   return (
     <div className="min-h-screen bg-canvas text-stone-200 font-sans selection:bg-brand-500/30 flex relative">
-      <FilmGrain className="fixed inset-0 z-[1]" />
       <a href="#main-content" className="sr-only">
         Skip to main content
       </a>
-      <AppSidebar activeTab={activeTab} mode={userMode} onNavigate={navigate} />
+      <AppSidebar
+        activeTab={activeTab}
+        mode={userMode}
+        onNavigate={navigate}
+        photoCount={sidebarPhotoCount}
+        recentPhotos={sidebarRecentPhotos}
+        trendDelta={sidebarTrendDelta}
+        mentorOneLiner={sidebarMentorLine}
+        activeAssignment={activeAssignment}
+        pendingOrganize={pendingOrganize}
+        pendingPrintDrafts={pendingPrintDrafts}
+      />
 
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 pb-20 lg:pb-0">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 pb-20 lg:pb-0 relative">
+        <FilmGrain className="absolute inset-0 z-[1] pointer-events-none" />
         <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-3 py-2.5 border-b border-warm bg-canvas/95 backdrop-blur-sm">
           <button
             type="button"
@@ -202,7 +278,7 @@ function App() {
         <main
           id="main-content"
           key={activeTab}
-          className="flex-1 max-w-7xl w-full mx-auto px-3 py-4 md:py-6 animate-tabEnter"
+          className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-3 py-4 md:py-6 animate-tabEnter"
         >
           {!online && <OfflineBanner />}
           {personaError && activeTab === 'settings' && (
@@ -215,11 +291,13 @@ function App() {
             <HomeTab
               mode={userMode}
               activeAssignment={activeAssignment}
+              useDemoLibrary={!auth.userId}
               onNavigate={navigate}
               onOpenSettings={() => navigate('settings')}
               onAnalysisComplete={(result, imageUrl, filename) => {
                 setPendingAnalysis({ result, imageUrl, filename });
                 void refreshActiveAssignment();
+                void refreshSidebarDashboard();
                 navigate('work');
               }}
             />
@@ -290,11 +368,30 @@ function App() {
           )}
         </main>
 
-        <footer className="hidden lg:block border-t border-warm py-6 text-center text-xs text-muted px-4 mb-0 bg-canvas">
-          <div className="flex items-center justify-center gap-4">
-            <p>Iris — your photos stay in your private library.</p>
-            <span className="text-warm">•</span>
-            <ScoreExplainerTrigger onClick={() => setShowScoreExplainer(true)} />
+        <footer className="relative z-10 border-t border-warm py-6 px-4 md:px-8 bg-canvas mb-16 lg:mb-0">
+          <div className="max-w-4xl mx-auto text-center space-y-2">
+            <p className="text-sm text-stone-300">
+              Iris — your AI photography mentor that remembers every shot you upload.
+            </p>
+            <p className="text-xs text-stone-400">
+              Your photos stay in your private library. You approve every tag and listing.
+              <span className="mx-2 text-warm">·</span>
+              <ScoreExplainerTrigger onClick={() => setShowScoreExplainer(true)} />
+              <span className="mx-2 text-warm">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  resetTour();
+                  setShowTour(true);
+                }}
+                className="text-brand-400 hover:text-brand-300 hover:underline"
+              >
+                How it works
+              </button>
+            </p>
+            <p className="text-xs text-stone-500">
+              Built by a fellow photographer — for the work you do between workshops, critiques, and shoots.
+            </p>
           </div>
         </footer>
       </div>

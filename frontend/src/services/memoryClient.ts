@@ -5,6 +5,7 @@
 import type {
   AestheticProfileSummary,
   PortfolioListResponse,
+  PortfolioStats,
   PortfolioTrendsResponse,
 } from '../types/memory';
 import { apiFetch } from '../lib/apiFetch';
@@ -27,6 +28,10 @@ export interface FetchPortfolioOptions {
   sortOrder?: SortOrder;
   /** Filter by user-applied tag */
   userTag?: string;
+}
+
+export function fetchPortfolioStats(): Promise<PortfolioStats> {
+  return getJson('/api/v1/portfolio/stats');
 }
 
 export function fetchPortfolio(options: FetchPortfolioOptions = {}): Promise<PortfolioListResponse> {

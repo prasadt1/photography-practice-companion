@@ -86,6 +86,59 @@ def _serialize_entry(doc: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _portfolio_user_query(user_id: str | None = None) -> dict[str, Any]:
+    query: dict[str, Any] = {}
+    demo_user = os.environ.get("DEMO_USER_ID")
+    if user_id:
+        query["user_id"] = to_mongo_user_id(user_id)
+    elif demo_user:
+        query["user_id"] = ObjectId(demo_user)
+    return query
+
+
+def get_portfolio_stats(*, user_id: str | None = None) -> dict[str, Any]:
+    """Portfolio total, first upload month, and highest-scoring entry."""
+    query = _portfolio_user_query(user_id)
+    coll = get_db().portfolio_entries
+
+    total = coll.count_documents(query) if query else coll.estimated_document_count()
+
+    first_entry = coll.find_one(query, sort=[("created_at", 1)], projection={"created_at": 1})
+    first_upload = None
+    if first_entry and "created_at" in first_entry:
+        dt = first_entry["created_at"]
+        if isinstance(dt, datetime):
+            first_upload = dt.strftime("%b %Y")
+
+    pipeline = [
+        {"$match": query} if query else {"$match": {}},
+        {
+            "$addFields": {
+                "_avgScore": {
+                    "$avg": [
+                        "$scores.composition",
+                        "$scores.lighting",
+                        "$scores.technique",
+                        "$scores.creativity",
+                        "$scores.subject_impact",
+                    ]
+                }
+            }
+        },
+        {"$sort": {"_avgScore": -1}},
+        {"$limit": 1},
+        {"$project": {"embedding": 0, "_avgScore": 0}},
+    ]
+    strongest_docs = list(coll.aggregate(pipeline))
+    strongest = _serialize_entry(strongest_docs[0]) if strongest_docs else None
+
+    return {
+        "total": total,
+        "firstUpload": first_upload,
+        "strongest": strongest,
+    }
+
+
 # Valid sort fields and their MongoDB field mappings
 _SORT_FIELDS = {
     "date": "created_at",
@@ -115,12 +168,7 @@ def list_portfolio_entries(
         sort_order: Sort direction (asc, desc)
         user_tag: Filter by user-applied tag (exact match)
     """
-    query: dict[str, Any] = {}
-    demo_user = os.environ.get("DEMO_USER_ID")
-    if user_id:
-        query["user_id"] = to_mongo_user_id(user_id)
-    elif demo_user:
-        query["user_id"] = ObjectId(demo_user)
+    query = _portfolio_user_query(user_id)
 
     # Filter by user-applied tag if specified
     if user_tag:
@@ -167,7 +215,9 @@ def list_portfolio_entries(
         )
 
     entries = [_serialize_entry(doc) for doc in docs]
-    return {"entries": entries, "total": len(entries)}
+    coll = get_db().portfolio_entries
+    total_count = coll.count_documents(query) if query else coll.estimated_document_count()
+    return {"entries": entries, "total": total_count}
 
 
 def compute_aesthetic_summary(

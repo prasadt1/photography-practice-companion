@@ -45,20 +45,24 @@ async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
         events.append(event)
     assert len(events) > 0, "Expected at least one chunk in response"
 
-    # Check for valid content in the response
+    # Check for valid content in the response (text or tool calls from orchestrator)
     has_text_content = False
+    has_model_content = False
     for event in events:
         validated_event = Event.model_validate(event)
         content = validated_event.content
-        if (
-            content is not None
-            and content.parts
-            and any(part.text for part in content.parts)
-        ):
-            has_text_content = True
-            break
+        if content is not None and content.parts:
+            for part in content.parts:
+                if part.text:
+                    has_text_content = True
+                if getattr(part, "function_call", None) is not None:
+                    has_model_content = True
+            if has_text_content or has_model_content:
+                break
 
-    assert has_text_content, "Expected at least one event with text content"
+    assert has_text_content or has_model_content, (
+        "Expected at least one event with text or tool-call content"
+    )
 
 
 def test_agent_feedback(agent_app: AgentEngineApp) -> None:
