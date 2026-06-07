@@ -516,9 +516,9 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
         value={view}
         onChange={(v) => setView(v as MentorView)}
         options={[
-          { value: 'chat', label: 'Ask Mentor', icon: <MessageCircle className="w-4 h-4" /> },
+          { id: 'chat', label: 'Ask Mentor', icon: <MessageCircle className="w-4 h-4" /> },
           {
-            value: 'label',
+            id: 'label',
             label: 'Organize',
             icon: <Layers className="w-4 h-4" />,
             badge: pendingOrganizeCount > 0 ? pendingOrganizeCount : undefined,

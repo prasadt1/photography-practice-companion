@@ -21,23 +21,29 @@ const VARIANTS: Record<Variant, string> = {
  * The warm gallery container. `proposed`/`active` are the amber-edged HITL
  * states. Set `interactive` for a hover lift on clickable cards.
  */
-export const Card: React.FC<Props> = ({
-  variant = 'default',
-  padding = 'md',
-  interactive = false,
-  className = '',
-  children,
-  ...rest
-}) => (
-  <div
-    className={`rounded-xl ${PAD[padding]} ${VARIANTS[variant]} ${
-      interactive
-        ? 'cursor-pointer transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-500/40'
-        : ''
-    } ${className}`}
-    style={interactive ? { transitionTimingFunction: 'var(--ease-out-expo)' } : undefined}
-    {...rest}
-  >
-    {children}
-  </div>
-);
+export const Card = React.forwardRef<HTMLDivElement, Props>(function Card(
+  {
+    variant = 'default',
+    padding = 'md',
+    interactive = false,
+    className = '',
+    children,
+    ...rest
+  },
+  ref,
+) {
+  return (
+    <div
+      ref={ref}
+      className={`rounded-xl ${PAD[padding]} ${VARIANTS[variant]} ${
+        interactive
+          ? 'cursor-pointer transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-500/40'
+          : ''
+      } ${className}`}
+      style={interactive ? { transitionTimingFunction: 'var(--ease-out-expo)' } : undefined}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+});
