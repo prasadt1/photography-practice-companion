@@ -111,8 +111,11 @@ export const HomeTab: React.FC<Props> = ({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const auth = useAuth();
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [heroSrc, setHeroSrc] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const prevHeroIdRef = useRef<string | null>(null);
+  const heroSrcRef = useRef<string | null>(null);
+  heroSrcRef.current = heroSrc;
   const [uploading, setUploading] = useState(false);
   const [analyzingImageUrl, setAnalyzingImageUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -253,7 +256,8 @@ export const HomeTab: React.FC<Props> = ({
 
   const heroPhoto = isReturning ? bestPhoto! : null;
   const heroScore = heroPhoto?.overallAverage ?? EXAMPLE_PHOTO.overallAverage;
-  const animatedScore = useCountUp(heroScore, 900, imageLoaded);
+  const heroImageReady = heroSrc != null;
+  const animatedScore = useCountUp(heroScore, 900, heroImageReady);
 
   const bestTrend = trends?.dimensions?.find(
     (d) => d.delta != null && d.delta > 0 && ['composition', 'lighting', 'overall'].includes(d.key),
@@ -290,16 +294,55 @@ export const HomeTab: React.FC<Props> = ({
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   })();
 
+  // Preload hero image; keep the current frame visible when only the signed URL
+  // refreshes on a background refetch (auth scope stabilising, etc.).
   useEffect(() => {
-    setImageLoaded(false);
-    setImageError(false);
-  }, [heroPhoto?.imageUrl]);
+    const heroId = heroPhoto?.id ?? null;
+    const url = heroPhoto?.imageUrl?.trim() || null;
+
+    if (!heroId || !url) {
+      prevHeroIdRef.current = null;
+      setHeroSrc(null);
+      setImageError(false);
+      return;
+    }
+
+    if (heroId !== prevHeroIdRef.current) {
+      prevHeroIdRef.current = heroId;
+      setHeroSrc(null);
+      setImageError(false);
+    }
+
+    if (url === heroSrcRef.current) return;
+
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) {
+        setHeroSrc(url);
+        setImageError(false);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) {
+        setHeroSrc((prev) => {
+          if (!prev) setImageError(true);
+          return prev;
+        });
+      }
+    };
+    img.src = url;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [heroPhoto?.id, heroPhoto?.imageUrl]);
 
   useEffect(() => {
-    if (imageLoaded || imageError || !heroPhoto) return;
+    if (heroSrc || imageError || !heroPhoto?.imageUrl) return;
     const timeout = window.setTimeout(() => setImageError(true), 8000);
     return () => window.clearTimeout(timeout);
-  }, [heroPhoto?.imageUrl, imageLoaded, imageError, heroPhoto]);
+  }, [heroPhoto?.imageUrl, heroSrc, imageError, heroPhoto]);
 
   return (
     <>
@@ -378,7 +421,7 @@ export const HomeTab: React.FC<Props> = ({
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,1fr)] overflow-hidden bg-photo-black -mx-3 md:-mx-6 rounded-none md:rounded-2xl md:mx-0 border border-warm/40 md:border-warm/60">
             {/* Photo column — no overlays on desktop */}
             <div className="relative aspect-[5/4] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[440px]">
-              {imageError ? (
+              {imageError && !heroSrc ? (
                 <div className="absolute inset-0 bg-surface-2 flex flex-col items-center justify-center gap-3 px-6 text-center">
                   <ImageIcon className="w-12 h-12 text-stone-600" />
                   <p className="text-sm text-muted max-w-xs">
@@ -387,19 +430,14 @@ export const HomeTab: React.FC<Props> = ({
                 </div>
               ) : (
                 <>
-                  <img
-                    src={heroPhoto.imageUrl}
-                    alt={heroPhoto.sceneDescription || 'Your strongest work'}
-                    className={`absolute inset-0 w-full h-full object-cover object-[center_42%] transition-opacity duration-500 ${
-                      imageLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => setImageLoaded(true)}
-                    onError={() => {
-                      setImageError(true);
-                      setImageLoaded(true);
-                    }}
-                  />
-                  {!imageLoaded && (
+                  {heroSrc && (
+                    <img
+                      src={heroSrc}
+                      alt={heroPhoto.sceneDescription || 'Your strongest work'}
+                      className="absolute inset-0 w-full h-full object-cover object-[center_42%]"
+                    />
+                  )}
+                  {!heroSrc && (
                     <div className="absolute inset-0 bg-surface-2 animate-pulse flex items-center justify-center z-10">
                       <ImageIcon className="w-12 h-12 text-stone-600" />
                     </div>
@@ -407,7 +445,7 @@ export const HomeTab: React.FC<Props> = ({
                 </>
               )}
 
-              {!imageError && (
+              {heroImageReady && (
                 <div className="lg:hidden absolute top-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500 shadow-lg score-badge">
                   <span className="text-xl font-bold text-on-brand tabular-nums font-serif">
                     {animatedScore.toFixed(1)}
@@ -422,7 +460,7 @@ export const HomeTab: React.FC<Props> = ({
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <Eyebrow tone="faint" className="tracking-[0.2em]">Best in your library</Eyebrow>
-                  {!imageError && (
+                  {heroImageReady && (
                     <div className="hidden lg:flex items-baseline gap-1 shrink-0">
                       <span className="text-4xl font-bold text-brand-400 tabular-nums font-serif leading-none">
                         {animatedScore.toFixed(1)}
