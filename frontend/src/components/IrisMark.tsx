@@ -22,7 +22,7 @@ export function IrisMark({
       aria-hidden
       className={`shrink-0 ${className}`}
     >
-      <rect x="4" y="4" width="92" height="92" rx="22" fill="#2a2724" stroke="#44403c" strokeWidth={1.5} />
+      <rect x="4" y="4" width="92" height="92" rx="22" className="iris-mark-tile" strokeWidth={1.5} />
       <g stroke="#fbbf24" strokeWidth={4.5}>
         <path d="M20 50 C32 31,68 31,80 50 C68 69,32 69,20 50 Z" />
         <circle cx="50" cy="50" r="16" />

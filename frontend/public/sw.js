@@ -1,5 +1,12 @@
-/* Minimal PWA shell — offline navigation fallback (Pass 1 quick PWA foundation). */
-const CACHE = 'practice-companion-shell-v1';
+/* Minimal PWA shell — offline navigation fallback + runtime font cache. */
+const CACHE = 'practice-companion-shell-v2';
+
+function isSameOriginFont(url) {
+  return (
+    url.origin === self.location.origin &&
+    (url.pathname.endsWith('.woff2') || url.pathname.endsWith('.woff'))
+  );
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,6 +28,24 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  if (isSameOriginFont(url)) {
+    event.respondWith(
+      caches.open(CACHE).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.ok) {
+          void cache.put(event.request, response.clone());
+        }
+        return response;
+      }),
+    );
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() =>

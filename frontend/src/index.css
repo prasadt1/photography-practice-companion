@@ -369,6 +369,17 @@ input:focus-visible,
   background: var(--color-canvas);
 }
 
+/* Contained Badge mark — tile contrast per theme */
+.iris-mark-tile {
+  fill: #2a2724;
+  stroke: #44403c;
+}
+
+html[data-theme='light'] .iris-mark-tile {
+  fill: #d0c6b8;
+  stroke: #b8a99a;
+}
+
 /* Light mode (E6) — warm paper gallery */
 html[data-theme='light'] {
   --color-canvas: #f5f0ea;
