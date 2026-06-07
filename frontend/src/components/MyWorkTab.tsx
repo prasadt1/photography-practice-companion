@@ -227,14 +227,17 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   const handleConfirmDelete = useCallback(async () => {
     setDeleting(true);
     setError(null);
+    const removedIds = new Set<string>();
     try {
       if (deleteConfirm === 'single' && deleteTargetId) {
         await deletePortfolioEntry(deleteTargetId, { removeListing: deleteRemovesListing });
+        removedIds.add(deleteTargetId);
         if (expandedId === deleteTargetId) setExpandedId(null);
       } else if (deleteConfirm === 'bulk' && selectedIds.size > 0) {
         const result = await deletePortfolioEntries([...selectedIds], {
           removeListing: deleteRemovesListing,
         });
+        for (const id of result.deleted) removedIds.add(id);
         if (result.skipped.length > 0) {
           setError(
             `Deleted ${result.deletedCount}. Skipped ${result.skipped.length}: ${result.skipped[0]?.reason ?? ''}`,
@@ -243,6 +246,11 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
         exitSelectMode();
       }
       await loadGallery();
+      if (removedIds.size > 0) {
+        setSearchResults((prev) =>
+          prev !== null ? prev.filter((e) => !removedIds.has(e.id)) : null,
+        );
+      }
     } catch (e) {
       setError(friendlyErrorMessage(e));
     } finally {
