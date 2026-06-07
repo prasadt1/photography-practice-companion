@@ -131,7 +131,7 @@ struct FieldCaptureView: View {
             }
             .overlay(alignment: .bottom) {
                 liveCoachOverlay
-                    .allowsHitTesting(liveCoach.isCompositionLocked)
+                    .allowsHitTesting(false)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
             }
@@ -141,37 +141,7 @@ struct FieldCaptureView: View {
     @ViewBuilder
     private var liveCoachOverlay: some View {
         VStack(spacing: 8) {
-            if liveCoach.isCompositionLocked, liveCoach.isEnabled, !analyzing {
-                VStack(spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.green)
-                        Text("Ready to capture")
-                            .font(IrisFont.sans(13, weight: .semibold))
-                            .foregroundStyle(Color.irisTextPrimary)
-                    }
-                    if let hint = liveCoach.hint {
-                        Text(hint)
-                            .font(IrisFont.sans(13))
-                            .foregroundStyle(Color.irisTextPrimary.opacity(0.92))
-                            .multilineTextAlignment(.center)
-                    }
-                    Button("Keep adjusting") {
-                        liveCoach.unlockComposition(camera: camera)
-                    }
-                    .font(IrisFont.sans(12, weight: .semibold))
-                    .foregroundStyle(Color.irisBrandLight)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.78))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.green.opacity(0.65), lineWidth: 1.5)
-                )
-            } else if liveCoach.isFetching, liveCoach.isEnabled {
+            if liveCoach.isFetching, liveCoach.isEnabled {
                 HStack(spacing: 6) {
                     ProgressView()
                         .scaleEffect(0.75)
@@ -184,7 +154,7 @@ struct FieldCaptureView: View {
                 .padding(.vertical, 6)
                 .background(Color.black.opacity(0.55))
                 .clipShape(Capsule())
-            } else if let hint = liveCoach.hint, liveCoach.isEnabled, !analyzing {
+            } else if let hint = liveCoach.hint, liveCoach.isEnabled, !liveCoach.isCompositionLocked, !analyzing {
                 Text(hint)
                     .font(IrisFont.sans(14, weight: .medium))
                     .foregroundStyle(Color.irisTextPrimary)
@@ -305,6 +275,37 @@ struct FieldCaptureView: View {
                             .multilineTextAlignment(.trailing)
                     }
                 }
+            }
+
+            if liveCoach.isCompositionLocked, liveCoach.isEnabled, !analyzing {
+                VStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.green)
+                        Text("Ready to capture")
+                            .font(IrisFont.sans(13, weight: .semibold))
+                            .foregroundStyle(Color.irisTextPrimary)
+                    }
+                    if let hint = liveCoach.hint {
+                        Text(hint)
+                            .font(IrisFont.sans(13))
+                            .foregroundStyle(Color.irisTextPrimary.opacity(0.92))
+                            .multilineTextAlignment(.center)
+                    }
+                    Button("Keep adjusting") {
+                        liveCoach.unlockComposition(camera: camera)
+                    }
+                    .font(IrisFont.sans(12, weight: .semibold))
+                    .foregroundStyle(Color.irisBrandLight)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(14)
+                .background(Color.irisSurface2)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.green.opacity(0.55), lineWidth: 1.5)
+                )
             }
 
             Button {

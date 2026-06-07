@@ -381,7 +381,31 @@ def _reject_pending_for_entry(entry_id: str, uid: ObjectId) -> int:
     return rejected
 
 
-def delete_portfolio_entry(entry_id: str, *, user_id: str | None = None) -> dict[str, Any]:
+def _unlist_portfolio_entry(entry_id: str, uid: ObjectId) -> bool:
+    """Remove print-sales listing and tag so the photo can leave the library."""
+    now = datetime.now(timezone.utc)
+    db = get_db()
+    db.print_sales.update_many(
+        {
+            "user_id": uid,
+            "portfolio_entry_id": entry_id,
+            "status": "listed",
+        },
+        {"$set": {"status": "removed", "removed_at": now}},
+    )
+    result = db.portfolio_entries.update_one(
+        {"_id": ObjectId(entry_id), "user_id": uid},
+        {"$pull": {"user_tags": LISTED_FOR_SALE_TAG}},
+    )
+    return result.modified_count > 0
+
+
+def delete_portfolio_entry(
+    entry_id: str,
+    *,
+    user_id: str | None = None,
+    remove_listing: bool = False,
+) -> dict[str, Any]:
     """User-initiated delete (distinct from HITL delete_entry approval)."""
     uid = _resolve_portfolio_user_id(user_id)
     if not uid:
@@ -397,27 +421,36 @@ def delete_portfolio_entry(entry_id: str, *, user_id: str | None = None) -> dict
         raise ValueError("Portfolio entry not found")
 
     user_tags = doc.get("user_tags") or []
+    unlisted = False
     if LISTED_FOR_SALE_TAG in user_tags:
-        raise ValueError(
-            "This photo is listed for sale — remove the listing before deleting from your library"
-        )
+        if not remove_listing:
+            raise ValueError(
+                "This photo is listed for sale — remove the listing before deleting from your library"
+            )
+        unlisted = _unlist_portfolio_entry(entry_id, uid)
 
     get_db().portfolio_entries.delete_one({"_id": oid})
     cancelled = _reject_pending_for_entry(entry_id, uid)
-    return {"deleted": True, "id": entry_id, "cancelledPending": cancelled}
+    return {
+        "deleted": True,
+        "id": entry_id,
+        "cancelledPending": cancelled,
+        "unlisted": unlisted,
+    }
 
 
 def delete_portfolio_entries(
     entry_ids: list[str],
     *,
     user_id: str | None = None,
+    remove_listing: bool = False,
 ) -> dict[str, Any]:
     """Bulk delete — skips entries that fail validation."""
     deleted: list[str] = []
     skipped: list[dict[str, str]] = []
     for eid in entry_ids:
         try:
-            delete_portfolio_entry(eid, user_id=user_id)
+            delete_portfolio_entry(eid, user_id=user_id, remove_listing=remove_listing)
             deleted.append(eid)
         except ValueError as exc:
             skipped.append({"id": eid, "reason": str(exc)})

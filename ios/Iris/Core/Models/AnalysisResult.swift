@@ -91,7 +91,8 @@ struct AnalysisResult: Codable {
             scores: scores,
             overallAverage: scores.average,
             aestheticTags: aestheticTags,
-            glassBoxSummary: glassBox?.observations
+            glassBoxSummary: glassBox?.observations,
+            sceneDescription: nil
         )
     }
 }

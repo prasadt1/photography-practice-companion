@@ -5,6 +5,9 @@ struct HomeView: View {
     @EnvironmentObject private var auth: AuthViewModel
 
     @State private var entries: [PortfolioListItem] = []
+    @State private var heroPhoto: PortfolioListItem?
+    @State private var portfolioTotal = 0
+    @State private var memberSince: String?
     @State private var trends: PortfolioTrendsResponse?
     @State private var isFetching = false
     @State private var errorMessage: String?
@@ -75,6 +78,15 @@ struct HomeView: View {
                 if entries.isEmpty {
                     emptyFirstShotCard
                 } else {
+                    if let heroPhoto {
+                        HomeHeroCard(
+                            photo: heroPhoto,
+                            portfolioTotal: portfolioTotal,
+                            memberSince: memberSince
+                        ) {
+                            selectedEntry = heroPhoto
+                        }
+                    }
                     if trends != nil {
                         progressCard
                     }
@@ -300,12 +312,26 @@ struct HomeView: View {
 
         APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
         do {
-            let p = try await memory.fetchPortfolio(limit: 5)
+            async let recentTask = memory.fetchPortfolio(limit: 5)
+            async let statsTask = memory.fetchPortfolioStats()
+            async let topTask = memory.fetchPortfolio(limit: 12, sortBy: "score", sortOrder: "desc")
+
+            let p = try await recentTask
+            let stats = try? await statsTask
+            let topByScore = try? await topTask
+
             entries = PortfolioMerge.recentEntries(
                 fetched: p.entries,
                 pending: appState.pendingRecentPortfolioItem
             )
             appState.clearPendingRecentIfMatched(fetchedEntries: p.entries)
+
+            portfolioTotal = stats?.total ?? p.total
+            memberSince = stats?.firstUpload
+            heroPhoto = PickHomeHeroPhoto.pick(
+                strongest: stats?.strongest,
+                candidates: topByScore?.entries ?? p.entries
+            )
 
             Task {
                 if let t = try? await memory.fetchTrends(limit: 12) {

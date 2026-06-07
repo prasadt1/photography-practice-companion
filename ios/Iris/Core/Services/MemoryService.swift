@@ -7,11 +7,19 @@ final class MemoryService {
         self.client = client
     }
 
-    func fetchPortfolio(limit: Int = 5) async throws -> PortfolioListResponse {
+    func fetchPortfolio(
+        limit: Int = 5,
+        sortBy: String = "date",
+        sortOrder: String = "desc"
+    ) async throws -> PortfolioListResponse {
         try await client.getJSON(
             PortfolioListResponse.self,
-            path: "/api/v1/portfolio?limit=\(limit)&sort_by=date&sort_order=desc"
+            path: "/api/v1/portfolio?limit=\(limit)&sort_by=\(sortBy)&sort_order=\(sortOrder)"
         )
+    }
+
+    func fetchPortfolioStats() async throws -> PortfolioStatsResponse {
+        try await client.getJSON(PortfolioStatsResponse.self, path: "/api/v1/portfolio/stats")
     }
 
     func fetchTrends(limit: Int = 12) async throws -> PortfolioTrendsResponse {

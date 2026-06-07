@@ -39,6 +39,9 @@ final class FieldCoachService {
         persona: String,
         assignmentBrief: String? = nil
     ) async throws -> FieldCaptureCueResponse {
+        guard imageData.count >= 512 else {
+            throw APIClientError.httpStatus(400, "Frame too small — point at the scene.")
+        }
         var fields: [String: String] = [
             "sessionId": sessionId,
             "persona": persona,

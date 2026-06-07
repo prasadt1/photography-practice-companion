@@ -19,10 +19,38 @@ export function apiUrl(path: string): string {
   return `${API_BASE}${normalized}`;
 }
 
+const API_TIMEOUT_MS = 45_000;
+
 export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);
   if (scopeUserId) {
     headers.set('X-User-Id', scopeUserId);
   }
-  return fetch(apiUrl(path), { ...init, headers });
+
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(() => timeoutController.abort(), API_TIMEOUT_MS);
+
+  const callerSignal = init?.signal;
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      timeoutController.abort();
+    } else {
+      callerSignal.addEventListener('abort', () => timeoutController.abort(), { once: true });
+    }
+  }
+
+  try {
+    return await fetch(apiUrl(path), {
+      ...init,
+      headers,
+      signal: timeoutController.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out — the API may be waking up. Try again in a moment.');
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }

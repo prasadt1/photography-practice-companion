@@ -5,9 +5,8 @@ import FirebaseCore
 #endif
 
 enum FirebaseBootstrap {
-    /// Returns whether `GoogleService-Info.plist` is present and Firebase was configured.
-    @discardableResult
-    static func configureIfPossible() -> Bool {
+    /// Eager configure at module load (before Auth / Google Sign-In).
+    private static let bootstrapped: Bool = {
         guard Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil else {
             return false
         }
@@ -15,10 +14,16 @@ enum FirebaseBootstrap {
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
-        return true
+        return FirebaseApp.app() != nil
         #else
         return false
         #endif
+    }()
+
+    @discardableResult
+    static func configureIfPossible() -> Bool {
+        _ = bootstrapped
+        return isConfigured
     }
 
     static var isConfigured: Bool {

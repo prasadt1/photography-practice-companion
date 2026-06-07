@@ -144,14 +144,24 @@ struct MentorView: View {
     }
 
     private func messageBubble(_ msg: MentorChatMessage) -> some View {
-        HStack {
+        HStack(alignment: .top) {
             if msg.isUser { Spacer(minLength: 40) }
-            Text(msg.content)
-                .font(IrisFont.sans(14))
-                .foregroundStyle(msg.isUser ? Color.irisOnBrand : Color.irisTextPrimary)
-                .padding(12)
-                .background(msg.isUser ? Color.irisBrand : Color.irisSurface2)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Group {
+                if msg.isUser {
+                    Text(msg.content)
+                } else {
+                    IrisMarkdownText(
+                        markdown: msg.content,
+                        font: IrisFont.sans(14),
+                        foreground: Color.irisTextPrimary
+                    )
+                }
+            }
+            .font(IrisFont.sans(14))
+            .foregroundStyle(msg.isUser ? Color.irisOnBrand : Color.irisTextPrimary)
+            .padding(12)
+            .background(msg.isUser ? Color.irisBrand : Color.irisSurface2)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             if !msg.isUser { Spacer(minLength: 40) }
         }
     }

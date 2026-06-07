@@ -1,5 +1,6 @@
 import UIKit
 
+@objc(AppDelegate)
 final class AppDelegate: NSObject, UIApplicationDelegate {
     override init() {
         super.init()

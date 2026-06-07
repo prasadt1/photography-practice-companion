@@ -10,10 +10,18 @@ struct PortfolioListItem: Codable, Identifiable {
     let overallAverage: Double
     let aestheticTags: [String]?
     let glassBoxSummary: [String]?
+    let sceneDescription: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, userId, shootId, imageUrl, createdAt, scores, overallAverage, aestheticTags, glassBoxSummary
+        case id, userId, shootId, imageUrl, createdAt, scores, overallAverage
+        case aestheticTags, glassBoxSummary, sceneDescription
     }
+}
+
+struct PortfolioStatsResponse: Codable {
+    let total: Int
+    let firstUpload: String?
+    let strongest: PortfolioListItem?
 }
 
 struct PortfolioListResponse: Codable {

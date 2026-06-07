@@ -21,8 +21,11 @@ final class AuthViewModel: ObservableObject {
     @Published var phase: AuthPhase = .loading
     @Published var userId: String {
         didSet {
-            APIClient.shared.userId = userId.isEmpty ? nil : userId
-            if !userId.isEmpty {
+            if userId.isEmpty {
+                APIClient.shared.userId = nil
+                UserDefaults.standard.removeObject(forKey: AppConfig.demoUserIdKey)
+            } else {
+                APIClient.shared.userId = userId
                 UserDefaults.standard.set(userId, forKey: AppConfig.demoUserIdKey)
             }
         }
@@ -43,8 +46,13 @@ final class AuthViewModel: ObservableObject {
 
     init() {
         let stored = UserDefaults.standard.string(forKey: AppConfig.demoUserIdKey) ?? ""
-        userId = stored
-        APIClient.shared.userId = stored.isEmpty ? nil : stored
+        if stored.hasPrefix("demo-ios-") {
+            userId = ""
+            UserDefaults.standard.removeObject(forKey: AppConfig.demoUserIdKey)
+        } else {
+            userId = stored
+        }
+        APIClient.shared.userId = userId.isEmpty ? nil : userId
         applyCachedPhase()
     }
 
@@ -161,18 +169,14 @@ final class AuthViewModel: ObservableObject {
         UserDefaults.standard.removeObject(forKey: AppConfig.demoUserIdKey)
     }
 
-    /// Stable scope for demo API calls (capture sessions, analyze, coach).
+    /// Demo mode omits X-User-Id so the API uses server DEMO_USER_ID (same library as web demo).
     func ensureDemoUserId() {
-        guard userId.isEmpty else {
-            APIClient.shared.userId = userId
+        guard isDemoMode else {
+            if !userId.isEmpty { APIClient.shared.userId = userId }
             return
         }
-        if let stored = UserDefaults.standard.string(forKey: AppConfig.demoUserIdKey), !stored.isEmpty {
-            userId = stored
-            return
-        }
-        let generated = "demo-ios-\(UUID().uuidString.lowercased())"
-        userId = generated
+        userId = ""
+        APIClient.shared.userId = nil
     }
 
     func applyFirebaseUser(_ uid: String, email: String?) {
