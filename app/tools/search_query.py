@@ -10,6 +10,8 @@ from functools import lru_cache
 from google import genai
 from google.genai import types
 
+from core.safety import SAFETY_SETTINGS
+
 
 def _gemini_client() -> genai.Client:
     return genai.Client(
@@ -88,6 +90,7 @@ def expand_library_search_terms(query: str) -> tuple[str, ...]:
             config=types.GenerateContentConfig(
                 temperature=0.2,
                 response_mime_type="application/json",
+                safety_settings=SAFETY_SETTINGS,
             ),
         )
         text = (response.text or "").strip()

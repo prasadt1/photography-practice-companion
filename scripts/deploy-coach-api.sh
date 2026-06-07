@@ -76,6 +76,7 @@ RUN_DEPLOY=(gcloud run deploy "${SERVICE}"
   --timeout=300
   --min-instances=0
   --max-instances=3
+  --set-secrets="MONGODB_URI=mongodb-uri:latest"
   --env-vars-file="${ENV_FILE}")
 
 deploy_source() {

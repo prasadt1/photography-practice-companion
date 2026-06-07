@@ -14,6 +14,7 @@ from google.genai import types
 
 from memory.db import get_db
 from memory.schema import BoundingBoxPct, CoachAnalysisOutput, GroundingCitation, SpatialAnnotation
+from core.safety import SAFETY_SETTINGS
 from tools.embeddings import embed_image_bytes, embed_text, portfolio_search_text
 from tools.gcs import upload_portfolio_image
 from tools.grounding import detect_scene_type_hint, ground_principles
@@ -79,6 +80,7 @@ def _run_coach_model(
             temperature=0.4,
             response_mime_type="application/json",
             response_schema=CoachAnalysisOutput.model_json_schema(),
+            safety_settings=SAFETY_SETTINGS,
         ),
     )
 

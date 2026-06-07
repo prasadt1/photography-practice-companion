@@ -13,6 +13,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 from sub_agents._common import _append_concise_format
+from core.safety import SAFETY_SETTINGS
 from memory.assignment_schema import SkillDelta
 from memory.db import get_db
 
@@ -156,6 +157,7 @@ def reflect_assignment(assignment_id: str) -> dict[str, Any]:
                     temperature=0.3,
                     response_mime_type="application/json",
                     response_schema=ReflectionModelOutput.model_json_schema(),
+                    safety_settings=SAFETY_SETTINGS,
                 ),
             )
             if response.text:

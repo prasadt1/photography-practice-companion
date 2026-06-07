@@ -36,12 +36,13 @@ If you previously ran `gcloud auth activate-service-account --key-file=gcp-servi
 
   CLI (Owner only): `firebase projects:addfirebase practice-companion-hackathon`
 - Secrets in `.env` (same as local dev). Deploy loads `.env` with **Python dotenv** (not `source`), so Atlas passwords with **`&`** work; quoting `MONGODB_URI='...'` in `.env` is still recommended.
-- **Secret Manager** (optional): store `MONGODB_URI` in GCP and use `--set-secrets` instead of the generated env file for production.
+- **Secret Manager** (production): `MONGODB_URI` is stored in GCP Secret Manager (`mongodb-uri` secret) and injected at deploy via `--set-secrets`. The deploy script no longer includes it in the env-vars-file.
 
 Cloud Run service account needs roles:
 - `roles/aiplatform.user`
 - `roles/storage.objectAdmin` (portfolio bucket)
 - `roles/discoveryengine.editor` or viewer (Data Store search)
+- `roles/secretmanager.secretAccessor` (mongodb-uri secret)
 
 ## Phase 2 — Mentor chat on Cloud Run
 

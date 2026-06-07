@@ -35,8 +35,7 @@ def main() -> None:
 
     mongodb_uri = os.getenv("MONGODB_URI", "").strip()
     if not mongodb_uri:
-        print("ERROR: MONGODB_URI not set in .env", file=sys.stderr)
-        sys.exit(1)
+        print("WARNING: MONGODB_URI not in .env — will come from Secret Manager on Cloud Run", file=sys.stderr)
 
     mcp_url = os.getenv("MONGODB_MCP_HTTP_URL", "").strip()
     mcp_key = os.getenv("MONGODB_MCP_API_KEY", "").strip()
@@ -71,7 +70,6 @@ def main() -> None:
             os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview"),
         ),
         "CORS_ORIGINS": cors_full,
-        "MONGODB_URI": mongodb_uri,
         "ORCHESTRATOR_USE_MCP": os.getenv("ORCHESTRATOR_USE_MCP", "true"),
         "MONGODB_MCP_ALLOW_PYMONGO_FALLBACK": mcp_fallback or "false",
         "MONGODB_MCP_USE_GCP_IDENTITY": os.getenv("MONGODB_MCP_USE_GCP_IDENTITY", "true"),

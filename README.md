@@ -115,8 +115,10 @@ flowchart TB
 **Key design decisions:**
 - Images stored in GCS (URLs in MongoDB, not blobs)
 - MCP Server for agent reads, PyMongo for writes
-- Persona-based tool filtering (VI users get haptics, not visual overlays)
+- Persona-based tool filtering (architectural, not prompt-only)
 - Human-in-the-loop for all portfolio mutations
+- `MONGODB_URI` in GCP Secret Manager (not env vars)
+- Explicit Gemini safety settings on all model calls
 
 **Production paths:** Web photo critique (`POST /api/v1/analyze-photo`) runs the **Coach pipeline** (Gemini + grounding + GCS + MongoDB). Mentor chat (`POST /api/v1/agent/chat`) runs the **ADK orchestrator** with persona-filtered sub-agents. Triage and Print Sales scans use dedicated REST handlers that invoke their agent logic and HITL queues.
 
@@ -148,14 +150,14 @@ See [`docs/architecture.md`](docs/architecture.md) for detailed component docume
 | **HITL Approval** | Nothing goes live without your explicit approval |
 | **User Tags** | Filter portfolio by your labels ("portfolio picks", "client work") |
 
-### Vision Impairment (Roadmap)
+### Vision Impairment (Agent-layer; iOS UI roadmap)
 
 | Feature | Description |
 |---------|-------------|
-| **Voice-First Field** | Scene narration while you frame |
-| **Haptic Patterns** | Vibration feedback for composition hints |
-| **Audio Critique** | Spoken Glass Box summaries |
-| **HITL Voice Confirm** | "Save to portfolio?" — voice response |
+| **Voice-First Field** | Scene narration while you frame (Visual Describer agent) |
+| **Haptic Patterns** | Vibration feedback for composition hints (planned iOS build) |
+| **Audio Critique** | Spoken Glass Box summaries via voiceover buttons |
+| **HITL Voice Confirm** | "Save to portfolio?" — voice response (planned) |
 
 ---
 
@@ -236,7 +238,7 @@ sequenceDiagram
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | **Frontend** | React 19, Vite, Tailwind CSS | Web application with photography-inspired UI motifs |
-| **iOS** | SwiftUI, AVFoundation | Native camera + live coaching (in development) |
+| **iOS** | SwiftUI, AVFoundation | Native camera + live coaching |
 | **API** | FastAPI, Python 3.11 | REST endpoints |
 | **Agents** | Google ADK, Vertex AI | Agent orchestration |
 | **LLM** | Gemini 3.1 Pro (Vertex AI) | Multimodal reasoning |
@@ -244,8 +246,10 @@ sequenceDiagram
 | **Database** | MongoDB Atlas (Flex) | Portfolio, users, assignments |
 | **Images** | Google Cloud Storage | Photo storage |
 | **Auth** | Firebase Authentication (optional) | Google sign-in when `VITE_FIREBASE_*` is set; otherwise demo `X-User-Id` scope |
+| **Secrets** | GCP Secret Manager | `MONGODB_URI` stored securely; injected at deploy via `--set-secrets` |
 | **Hosting** | Firebase Hosting | Web app CDN |
 | **API Hosting** | Cloud Run | Serverless API |
+| **Safety** | Gemini Safety Settings | `BLOCK_MEDIUM_AND_ABOVE` on hate/dangerous/harassment; `BLOCK_ONLY_HIGH` on sexually explicit (fine art photography) |
 
 ---
 
@@ -321,7 +325,7 @@ See [`docs/deploy.md`](docs/deploy.md) for detailed deployment instructions.
 | **Agent writes** | PyMongo (not MCP) | Richer update operations | Two access patterns |
 | **Region** | europe-west3 (MongoDB) | Atlas Flex availability | Latency from US |
 | **Live coaching** | Periodic frames, not 30 FPS | Cost, latency, battery | Not true real-time |
-| **VI features** | Roadmap (iOS-first) | Native haptics required | Web VI limited |
+| **VI features** | Roadmap (API-layer agent exists) | Native haptics require iOS build | Web VI limited |
 | **Persona tools** | Server-side filtering | Security, consistency | Can't dynamically add tools |
 
 ---
@@ -341,13 +345,13 @@ See [`docs/deploy.md`](docs/deploy.md) for detailed deployment instructions.
 ### In Progress
 
 - [x] **iOS Phase 0** — Tab shell, API client, Practice list, Field placeholder ([`ios/README.md`](ios/README.md))
-- [ ] **iOS Phase 1** — AVFoundation capture → `POST /api/v1/analyze-photo` (web Field parity)
+- [x] **iOS Phase 1** — AVFoundation capture → `POST /api/v1/analyze-photo`
+- [x] **iOS Phase 2** — Backend `field_capture` + `capture_sessions`
+- [x] **iOS Phase 3** — Live Field Coach (timer-based frames + graduation)
 
 ### Planned
 
-- [ ] **iOS Phase 2** — Backend `field_capture` + `capture_sessions`
-- [ ] **iOS Phase 3** — Live Field Coach (SSE / periodic frames)
-- [ ] **iOS Phase 4** — Vision impairment: voice + haptics
+- [ ] **iOS Phase 4** — Vision impairment: voice + haptics (agent exists; iOS UI roadmap)
 - [ ] **Offline mode** — Queue uploads, coaching paused UX
 - [ ] **Apple Watch** — Assignment notifications
 
@@ -384,7 +388,7 @@ iris-photography-mentor/
 │   │   ├── services/      # API clients
 │   │   └── types/         # TypeScript types
 │   └── public/            # Static assets
-├── ios/                   # SwiftUI iOS app (in development)
+├── ios/                   # SwiftUI iOS app
 │   ├── Iris/
 │   │   ├── App/          # App entry, navigation
 │   │   ├── Core/         # Auth, networking, models

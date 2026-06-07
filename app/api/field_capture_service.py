@@ -14,6 +14,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 from memory.capture_sessions import assert_active_session, record_frame
+from core.safety import SAFETY_SETTINGS
 from sub_agents.tools import field_coach_tools
 
 logger = logging.getLogger(__name__)
@@ -165,15 +166,10 @@ def analyze_field_frame(
         config=types.GenerateContentConfig(
             temperature=0.2,
             response_mime_type="application/json",
-            # Pass the Pydantic class (not its json_schema dict) so the SDK enforces
-            # structured output and populates response.parsed — otherwise Flash returns
-            # prose ("Here is the JSON…") and every cue falls back to the default.
             response_schema=FieldCaptureCueOutput,
-            # gemini-2.5-flash is a thinking model: with thinking on, reasoning tokens
-            # consume the whole output budget and the JSON comes back empty ('' / '{').
-            # Disable thinking for these tiny composition cues — faster AND reliable.
             thinking_config=types.ThinkingConfig(thinking_budget=0),
             max_output_tokens=512,
+            safety_settings=SAFETY_SETTINGS,
         ),
     )
 

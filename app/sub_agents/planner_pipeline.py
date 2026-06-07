@@ -13,6 +13,7 @@ from google import genai
 from google.genai import types
 
 from sub_agents._common import _append_concise_format
+from core.safety import SAFETY_SETTINGS
 from memory.assignment_schema import PlannerAssignmentOutput
 from memory.db import get_db
 
@@ -169,6 +170,7 @@ def generate_assignment(
             temperature=0.5,
             response_mime_type="application/json",
             response_schema=PlannerAssignmentOutput.model_json_schema(),
+            safety_settings=SAFETY_SETTINGS,
         ),
     )
 
