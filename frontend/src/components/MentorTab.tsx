@@ -33,6 +33,7 @@ import {
   runTriageScan,
 } from '../services/triageClient';
 import { HitlHistoryPanel } from './HitlHistoryPanel';
+import { Button, Card, Eyebrow, IconButton, SegmentedControl } from './primitives';
 import { fetchPortfolio, fetchPortfolioStats } from '../services/memoryClient';
 import type { UserMode } from '../types/practice';
 import type { PendingApproval } from '../types/triage';
@@ -231,13 +232,9 @@ function OrganizeFeedbackBanner({
         </button>
       </div>
       {onGoToWork && (
-        <button
-          type="button"
-          onClick={onGoToWork}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400"
-        >
+        <Button onClick={onGoToWork} fullWidth className="sm:w-auto">
           View in My Work
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -515,42 +512,19 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
   return (
     <div className="animate-fadeIn max-w-3xl mx-auto space-y-6">
       {/* View Toggle */}
-      <div className="flex items-center gap-1 p-1 rounded-full bg-surface-1 border border-warm w-fit">
-        <button
-          type="button"
-          onClick={() => setView('chat')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            view === 'chat'
-              ? 'bg-brand-500 text-on-brand'
-              : 'text-muted hover:text-white'
-          }`}
-        >
-          <MessageCircle className="w-4 h-4" />
-          Ask Mentor
-        </button>
-        <button
-          type="button"
-          onClick={() => setView('label')}
-          className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            view === 'label'
-              ? 'bg-brand-500 text-on-brand'
-              : 'text-muted hover:text-white'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          Organize
-          {pendingOrganizeCount > 0 && (
-            <span
-              className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                view === 'label' ? 'bg-white text-brand-600' : 'bg-brand-500 text-on-brand'
-              }`}
-              aria-label={`${pendingOrganizeCount} pending proposals`}
-            >
-              {pendingOrganizeCount}
-            </span>
-          )}
-        </button>
-      </div>
+      <SegmentedControl
+        value={view}
+        onChange={(v) => setView(v as MentorView)}
+        options={[
+          { value: 'chat', label: 'Ask Mentor', icon: <MessageCircle className="w-4 h-4" /> },
+          {
+            value: 'label',
+            label: 'Organize',
+            icon: <Layers className="w-4 h-4" />,
+            badge: pendingOrganizeCount > 0 ? pendingOrganizeCount : undefined,
+          },
+        ]}
+      />
 
       {/* Chat View */}
       {view === 'chat' && (
@@ -626,7 +600,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
             )}
 
             <div className="px-3 py-2 border-t border-warm/80 bg-canvas-elevated/30">
-              <p className="text-[10px] text-muted uppercase tracking-wide mb-2">Quick actions</p>
+              <Eyebrow className="mb-2">Quick actions</Eyebrow>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -660,9 +634,7 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
             </div>
 
             <div className="px-3 py-2 border-t border-warm/80 bg-canvas-elevated/40">
-              <p className="text-[10px] text-muted uppercase tracking-wide mb-2">
-                Suggested questions
-              </p>
+              <Eyebrow className="mb-2">Suggested questions</Eyebrow>
               <div className="flex flex-wrap gap-2">
                 {starters.map((s) => (
                   <button
@@ -693,14 +665,12 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                 disabled={loading}
                 className="flex-1 rounded-lg bg-canvas-elevated border border-warm px-4 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
-              <button
+              <IconButton
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="p-2 rounded-lg bg-brand-500 text-on-brand disabled:opacity-40 hover:bg-brand-400 transition-colors"
-                aria-label="Send message"
-              >
-                <Send className="w-5 h-5" />
-              </button>
+                icon={<Send className="w-5 h-5" />}
+                label="Send message"
+              />
             </form>
           </div>
 
@@ -758,29 +728,26 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
             </div>
           </div>
 
-          <button
-            type="button"
+          <Button
+            icon={scanning ? undefined : <Layers className="w-4 h-4" />}
+            disabled={scanning || backlogRunning}
             onClick={() => void handleScan()}
-            disabled={scanning || backlogRunning}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 text-on-brand font-semibold hover:bg-brand-400 disabled:opacity-50 flex items-center justify-center gap-2"
+            fullWidth
+            className="sm:w-auto"
           >
-            {!scanning && <Layers className="w-4 h-4" />}
             {scanning ? 'Scanning…' : 'Scan my library'}
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            onClick={() => void handleBacklogTriage()}
+          <Button
+            variant="secondary"
+            icon={backlogRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             disabled={scanning || backlogRunning}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-warm text-stone-200 font-semibold hover:bg-surface-2 disabled:opacity-50 flex items-center justify-center gap-2"
+            onClick={() => void handleBacklogTriage()}
+            fullWidth
+            className="sm:w-auto"
           >
-            {backlogRunning ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
             {backlogRunning ? 'Agent triage…' : 'Backlog triage (agent)'}
-          </button>
+          </Button>
 
           <HitlHistoryPanel agentName="triage" className="mt-4" />
 
@@ -836,20 +803,14 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
                 </p>
               </div>
               {libraryCount === 0 && onGoToWork && (
-                <button
-                  type="button"
-                  onClick={onGoToWork}
-                  className="text-sm text-brand-400 hover:text-brand-300 font-medium"
-                >
+                <Button variant="subtle" size="sm" onClick={onGoToWork}>
                   Upload in My Work →
-                </button>
+                </Button>
               )}
             </div>
           )}
 
-          {labelItems.length > 0 && (
-            <p className="text-xs text-muted uppercase tracking-wide">Waiting for your decision</p>
-          )}
+          {labelItems.length > 0 && <Eyebrow>Waiting for your decision</Eyebrow>}
 
           <ul className="space-y-4">
             {labelItems.map((item) => {
@@ -857,40 +818,42 @@ export const MentorTab: React.FC<Props> = ({ mode, onGoToWork }) => {
               const deleteTarget =
                 item.proposedAction.type === 'delete_entry' ? affectedIds[0] : undefined;
               return (
-                <li
-                  key={item.id}
-                  className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3"
-                >
-                  <ProposalThumbnails
-                    entryIds={affectedIds}
-                    previews={previews}
-                    highlightDeleteId={deleteTarget}
-                  />
-                  <p className="text-sm text-white leading-relaxed">{describeProposal(item)}</p>
-                  <HitlReasoningCallout reasoning={item.agentReasoning} />
-                  {item.proposedAction.type === 'delete_entry' && (
-                    <p className="text-xs text-red-300/80 flex items-center gap-1">
-                      <Trash2 className="w-3 h-3" /> Permanent delete if you approve
-                    </p>
-                  )}
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={acting === item.id}
-                      onClick={() => void handleDecision(item.id, 'approve')}
-                      className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-brand-600/90 text-white text-sm font-medium hover:bg-brand-500 disabled:opacity-50"
-                    >
-                      <Check className="w-4 h-4" /> Yes, do this
-                    </button>
-                    <button
-                      type="button"
-                      disabled={acting === item.id}
-                      onClick={() => void handleDecision(item.id, 'reject')}
-                      className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-3 disabled:opacity-50"
-                    >
-                      <X className="w-4 h-4" /> No thanks
-                    </button>
-                  </div>
+                <li key={item.id}>
+                  <Card padding="sm" className="space-y-3">
+                    <ProposalThumbnails
+                      entryIds={affectedIds}
+                      previews={previews}
+                      highlightDeleteId={deleteTarget}
+                    />
+                    <p className="text-sm text-white leading-relaxed">{describeProposal(item)}</p>
+                    <HitlReasoningCallout reasoning={item.agentReasoning} />
+                    {item.proposedAction.type === 'delete_entry' && (
+                      <p className="text-xs text-red-300/80 flex items-center gap-1">
+                        <Trash2 className="w-3 h-3" /> Permanent delete if you approve
+                      </p>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        icon={<Check className="w-4 h-4" />}
+                        disabled={acting === item.id}
+                        onClick={() => void handleDecision(item.id, 'approve')}
+                        fullWidth
+                      >
+                        Yes, do this
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<X className="w-4 h-4" />}
+                        disabled={acting === item.id}
+                        onClick={() => void handleDecision(item.id, 'reject')}
+                        fullWidth
+                      >
+                        No thanks
+                      </Button>
+                    </div>
+                  </Card>
                 </li>
               );
             })}
