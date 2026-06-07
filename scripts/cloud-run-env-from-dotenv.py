@@ -26,8 +26,12 @@ def main() -> None:
 
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "practice-companion-hackathon")
     fb_cors = f"https://{project}.web.app,https://{project}.firebaseapp.com"
+    # Multi-site Firebase Hosting (Iris primary URL + legacy alias)
+    iris_cors = (
+        "https://iris-photo-mentor.web.app,https://iris-photo-mentor.firebaseapp.com"
+    )
     cors = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174")
-    cors_full = f"{cors},{fb_cors}"
+    cors_full = f"{cors},{fb_cors},{iris_cors}"
 
     mongodb_uri = os.getenv("MONGODB_URI", "").strip()
     if not mongodb_uri:
