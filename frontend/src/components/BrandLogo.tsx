@@ -15,7 +15,9 @@ export function BrandLogo({
   const markColor = isLight ? '#b45309' : '#f5a623';
   const markRim = isLight ? '#b45309' : '#fbbf24';
   const markSize = Math.round(size * 0.64);
-  const textColor = isLight ? '#292524' : '#f5f5f4';
+  // Warm paper tone on dark canvas — pure white fights the amber mark
+  const textColor = isLight ? '#292524' : '#e8e0d6';
+  const markBottom = size * 0.84;
 
   return (
     <span
@@ -34,7 +36,7 @@ export function BrandLogo({
             position: 'absolute',
             left: '50%',
             transform: 'translateX(-50%)',
-            bottom: `${size * 0.72}px`,
+            bottom: `${markBottom}px`,
           }}
         >
           <IrisMark
