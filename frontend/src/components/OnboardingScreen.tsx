@@ -46,7 +46,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, onPersist }) => 
       <FilmGrain />
       <div className="max-w-3xl w-full space-y-8 relative z-10">
         <div className="flex flex-col items-center text-center space-y-4">
-          <BrandLogo variant="tittle" size={48} animate={logoAnimate} className="justify-center mx-auto" />
+          <BrandLogo variant="horizontal" direction="simplified" size={40} animate={logoAnimate} className="justify-center mx-auto" />
           <p className="font-serif text-xl md:text-2xl text-stone-100 max-w-lg leading-relaxed">
             {BRAND.tagline} — I remember every frame you upload and coach you like a mentor in the
             darkroom, not a generic chatbot.
