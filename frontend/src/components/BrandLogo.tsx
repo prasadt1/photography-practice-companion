@@ -1,18 +1,18 @@
 import { IrisMark } from './IrisMark';
 import { useThemeMode } from '../lib/ThemeContext';
 
-/** Mark cap height ≈ 1.4× wordmark size for horizontal lockups. */
-const MARK_SCALE = 1.4;
+/** Mark diameter ≈ 1.75× wordmark em-size (reads larger than cap height). */
+const MARK_SCALE = 1.75;
 
 export type LogoDirection = 'current' | 'simplified' | 'typography-led';
 
 const HORIZONTAL_PRESETS: Record<
   LogoDirection,
-  { size: number; markSize?: number; fontWeight: number; gap: string; letterSpacing: string }
+  { size: number; markSize?: number; fontWeight: number; gap: string; letterSpacing: string; extraBold: boolean }
 > = {
-  current: { size: 24, fontWeight: 600, gap: '0.38em', letterSpacing: '-0.01em' },
-  simplified: { size: 22, fontWeight: 600, gap: '0.44em', letterSpacing: '0.01em' },
-  'typography-led': { size: 27, markSize: 20, fontWeight: 500, gap: '0.52em', letterSpacing: '0.05em' },
+  current: { size: 20, markSize: 34, fontWeight: 600, gap: '0.4em', letterSpacing: '-0.01em', extraBold: true },
+  simplified: { size: 18, markSize: 32, fontWeight: 600, gap: '0.42em', letterSpacing: '0.02em', extraBold: true },
+  'typography-led': { size: 24, markSize: 20, fontWeight: 500, gap: '0.52em', letterSpacing: '0.05em', extraBold: false },
 };
 
 export function BrandLogo({
@@ -44,7 +44,6 @@ export function BrandLogo({
   const markProps = {
     color: markColor,
     pupilRim: markRim,
-    extraBold,
     animate,
   };
 
@@ -99,13 +98,14 @@ export function BrandLogo({
   const resolvedSize = size ?? preset.size;
   const resolvedMarkSize =
     markSize ?? preset.markSize ?? Math.round(resolvedSize * markScale);
+  const useExtraBold = extraBold || preset.extraBold;
 
   return (
     <span
       className={`inline-flex items-center leading-none ${className}`}
       style={{ gap: preset.gap }}
     >
-      <IrisMark size={resolvedMarkSize} {...markProps} />
+      <IrisMark size={resolvedMarkSize} extraBold={useExtraBold} {...markProps} />
       <span
         style={{
           fontFamily: "'Newsreader', Georgia, serif",
