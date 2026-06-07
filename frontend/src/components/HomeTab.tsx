@@ -16,14 +16,17 @@ import { AnalyzingOverlay } from './AnalyzingOverlay';
 import { InlineAlertBanner } from './InlineAlertBanner';
 import { LibraryBackdrop } from './LibraryBackdrop';
 import { PhotoMat } from './PhotoMat';
+import { Button, Card, Tag, Eyebrow, StatCard } from './primitives';
 import { useCountUp } from '../hooks/useCountUp';
 import { formatSkillLabel } from '../lib/formatSkillLabel';
+import { pickHomeHeroPhoto } from '../lib/pickHomeHeroPhoto';
 import {
   fetchAestheticProfile,
   fetchPortfolio,
   fetchPortfolioStats,
   fetchPortfolioTrends,
 } from '../services/memoryClient';
+import { useAuth } from '../auth/useAuth';
 import { analyzePhoto } from '../services/agentClient';
 import { fetchAssignments } from '../services/practiceClient';
 import type { AppTab } from '../config/navConfig';
@@ -106,6 +109,8 @@ export const HomeTab: React.FC<Props> = ({
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
   const [portfolioTotal, setPortfolioTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const auth = useAuth();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -118,14 +123,21 @@ export const HomeTab: React.FC<Props> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exampleGlassBoxRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const initialLoadDone = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // Show skeleton only on the very first load; subsequent calls (e.g. auth
+    // userId stabilising after Firebase init) refresh silently so the hero
+    // doesn't flash away.
+    const isInitial = !initialLoadDone.current;
+    if (isInitial) setLoading(true);
+    setLoadError(null);
     try {
-      const [portfolioStats, recentPhotos, oldestPortfolio, aesthetic, trendData, assignments] =
+      const [portfolioStats, recentPhotos, topByScore, oldestPortfolio, aesthetic, trendData, assignments] =
         await Promise.all([
         fetchPortfolioStats(),
         fetchPortfolio({ limit: 10, sortBy: 'date', sortOrder: 'desc' }),
+        fetchPortfolio({ limit: 24, sortBy: 'score', sortOrder: 'desc' }),
         fetchPortfolio({ limit: 5, sortOrder: 'asc' }).catch(() => ({ entries: [], total: 0 })),
         fetchAestheticProfile().catch(() => null),
         fetchPortfolioTrends(6).catch(() => null),
@@ -133,7 +145,8 @@ export const HomeTab: React.FC<Props> = ({
       ]);
 
       setStats(portfolioStats);
-      setBestPhoto(portfolioStats.strongest);
+      const hero = pickHomeHeroPhoto(portfolioStats.strongest, topByScore.entries);
+      setBestPhoto(hero);
       setPortfolioTotal(portfolioStats.total);
       setContactSheet(recentPhotos.entries);
       setProfile(aesthetic);
@@ -161,16 +174,22 @@ export const HomeTab: React.FC<Props> = ({
         (e) => e.imageUrl && e.overallAverage > 0,
       );
       setEarliestPhoto(validOldest ?? null);
-    } catch {
-      /* shell remains */
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : 'Could not load your library. Check your connection and try again.',
+      );
     } finally {
+      initialLoadDone.current = true;
       setLoading(false);
     }
-  }, []);
+  }, [auth.userId, useDemoLibrary]);
 
   useEffect(() => {
+    if (auth.loading) return;
     void load();
-  }, [load]);
+  }, [auth.loading, load]);
 
   useEffect(() => {
     if (!uploading) {
@@ -229,8 +248,8 @@ export const HomeTab: React.FC<Props> = ({
     }
   };
 
-  const isFirstVisit = !loading && portfolioTotal === 0;
-  const isReturning = !loading && portfolioTotal > 0 && bestPhoto != null;
+  const isFirstVisit = !loading && !loadError && portfolioTotal === 0;
+  const isReturning = !loading && !loadError && portfolioTotal > 0 && bestPhoto != null;
 
   const heroPhoto = isReturning ? bestPhoto! : null;
   const heroScore = heroPhoto?.overallAverage ?? EXAMPLE_PHOTO.overallAverage;
@@ -305,6 +324,27 @@ export const HomeTab: React.FC<Props> = ({
           <InlineAlertBanner message={uploadError} onDismiss={() => setUploadError(null)} />
         )}
 
+        {loadError && (
+          <div className="max-w-4xl mx-auto space-y-3">
+            <InlineAlertBanner message={loadError} variant="error" />
+            <Button onClick={() => void load()}>Retry loading library</Button>
+          </div>
+        )}
+
+        {loading && (
+          <div className="max-w-4xl mx-auto space-y-5 animate-pulse" aria-busy="true" aria-label="Loading your library">
+            <div className="h-[min(50vh,520px)] min-h-[280px] rounded-2xl bg-surface-2 border border-warm" />
+            <div className="grid sm:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-24 rounded-xl bg-surface-2 border border-warm" />
+              ))}
+            </div>
+            <p className="text-center text-sm text-stone-500">
+              Loading portfolio from MongoDB… this can take a few seconds on cold start.
+            </p>
+          </div>
+        )}
+
         {/* First visit: pitch hero */}
         {isFirstVisit && (
           <div className="bg-gradient-to-b from-surface-2 to-canvas rounded-2xl p-8 md:p-12 border border-warm">
@@ -318,36 +358,26 @@ export const HomeTab: React.FC<Props> = ({
               practice assignments, and mentor chat.
             </p>
             <div className="flex flex-wrap gap-4">
-              <button
-                type="button"
+              <Button
+                size="lg"
+                icon={<Upload className="w-5 h-5" />}
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-500 text-on-brand font-semibold hover:bg-brand-400 transition-colors disabled:opacity-50"
               >
-                <Upload className="w-5 h-5" />
                 Upload your first photo
-              </button>
-              <button
-                type="button"
-                onClick={scrollToDemoCritique}
-                className="flex items-center gap-2 px-6 py-3 rounded-lg border border-brand-500 text-brand-400 font-medium hover:bg-brand-500/10 transition-colors"
-              >
+              </Button>
+              <Button variant="ghost" size="lg" onClick={scrollToDemoCritique}>
                 See demo critique
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Returning: full-bleed personal hero */}
+        {/* Returning: split hero — clean photo + editorial panel (magazine layout) */}
         {isReturning && heroPhoto && (
-          <div className="relative overflow-hidden bg-photo-black -mx-3 md:-mx-6 rounded-none md:rounded-2xl md:mx-0">
-            <div
-              className={`relative ${
-                imageError
-                  ? 'h-[min(36vh,400px)] min-h-[240px]'
-                  : 'h-[min(50vh,520px)] min-h-[280px] md:min-h-[320px]'
-              }`}
-            >
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,1fr)] overflow-hidden bg-photo-black -mx-3 md:-mx-6 rounded-none md:rounded-2xl md:mx-0 border border-warm/40 md:border-warm/60">
+            {/* Photo column — no overlays on desktop */}
+            <div className="relative aspect-[5/4] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[440px]">
               {imageError ? (
                 <div className="absolute inset-0 bg-surface-2 flex flex-col items-center justify-center gap-3 px-6 text-center">
                   <ImageIcon className="w-12 h-12 text-stone-600" />
@@ -360,7 +390,7 @@ export const HomeTab: React.FC<Props> = ({
                   <img
                     src={heroPhoto.imageUrl}
                     alt={heroPhoto.sceneDescription || 'Your strongest work'}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${
+                    className={`absolute inset-0 w-full h-full object-cover object-[center_42%] transition-opacity duration-500 ${
                       imageLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
                     onLoad={() => setImageLoaded(true)}
@@ -376,60 +406,73 @@ export const HomeTab: React.FC<Props> = ({
                   )}
                 </>
               )}
-              <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-canvas via-canvas/60 to-transparent pointer-events-none" />
 
-              <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-8 md:right-auto md:max-w-md">
-                <div className="bg-canvas/90 border border-warm/60 p-4 md:p-5 rounded-xl">
-                  <p className="text-xs uppercase tracking-widest text-stone-400 mb-2">
-                    Best in your library
-                  </p>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500 shadow-lg score-badge">
-                      <span className="text-2xl font-bold text-on-brand tabular-nums font-serif">
+              {!imageError && (
+                <div className="lg:hidden absolute top-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500 shadow-lg score-badge">
+                  <span className="text-xl font-bold text-on-brand tabular-nums font-serif">
+                    {animatedScore.toFixed(1)}
+                  </span>
+                  <span className="text-[10px] font-semibold text-on-brand/70">/ 10</span>
+                </div>
+              )}
+            </div>
+
+            {/* Editorial panel */}
+            <div className="flex flex-col gap-5 p-5 md:p-6 lg:p-8 bg-surface-1 border-t lg:border-t-0 lg:border-l border-warm/50">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <Eyebrow tone="faint" className="tracking-[0.2em]">Best in your library</Eyebrow>
+                  {!imageError && (
+                    <div className="hidden lg:flex items-baseline gap-1 shrink-0">
+                      <span className="text-4xl font-bold text-brand-400 tabular-nums font-serif leading-none">
                         {animatedScore.toFixed(1)}
                       </span>
-                      <span className="text-xs font-semibold text-on-brand/70">/ 10</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-stone-300 mb-2 line-clamp-2">
-                    {heroPhoto.sceneDescription || 'Your photograph'}
-                  </p>
-                  <p className="text-xs text-stone-400 mb-4">
-                    {portfolioTotal} photo{portfolioTotal === 1 ? '' : 's'}
-                    {stats?.firstUpload ? ` · Member since ${stats.firstUpload}` : ''}
-                  </p>
-                  {heroPhoto.aestheticTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {heroPhoto.aestheticTags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-surface-2 text-stone-300 rounded-md text-xs"
-                        >
-                          {tag.replace(/_/g, ' ')}
-                        </span>
-                      ))}
+                      <span className="text-sm text-stone-500">/ 10</span>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-500 text-on-brand font-semibold hover:bg-brand-400 transition-colors disabled:opacity-50"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload photo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('practice')}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-warm text-stone-200 font-medium hover:bg-surface-2 transition-colors"
-                    >
-                      Continue practice
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
+
+                <p className="font-serif text-lg md:text-xl text-white leading-snug line-clamp-4">
+                  {heroPhoto.sceneDescription || 'Your photograph'}
+                </p>
+
+                {heroPhoto.glassBoxSummary.length > 0 && (
+                  <p className="text-sm text-stone-400 leading-relaxed line-clamp-2 border-l-2 border-brand-500/40 pl-3">
+                    {heroPhoto.glassBoxSummary[0]}
+                  </p>
+                )}
+
+                <p className="text-xs text-stone-500">
+                  {portfolioTotal} photo{portfolioTotal === 1 ? '' : 's'}
+                  {stats?.firstUpload ? ` · Member since ${stats.firstUpload}` : ''}
+                </p>
+              </div>
+
+              {heroPhoto.aestheticTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {heroPhoto.aestheticTags.slice(0, 4).map((tag) => (
+                    <Tag key={tag} variant="outline">{tag.replace(/_/g, ' ')}</Tag>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 mt-auto pt-2">
+                <Button
+                  icon={<Upload className="w-4 h-4" />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  fullWidth
+                >
+                  Upload photo
+                </Button>
+                <Button
+                  variant="secondary"
+                  iconRight={<ArrowRight className="w-4 h-4" />}
+                  onClick={() => onNavigate('practice')}
+                  fullWidth
+                >
+                  Continue practice
+                </Button>
               </div>
             </div>
           </div>
@@ -437,12 +480,13 @@ export const HomeTab: React.FC<Props> = ({
 
         {/* First visit: example Glass Box */}
         {isFirstVisit && (
-          <div
+          <Card
             ref={exampleGlassBoxRef}
             tabIndex={-1}
-            className="bg-surface-1 rounded-xl p-6 border border-warm focus:outline-none focus:ring-2 focus:ring-brand-400 max-w-4xl mx-auto"
+            padding="lg"
+            className="max-w-4xl mx-auto focus:outline-none focus:ring-2 focus:ring-brand-400"
           >
-            <p className="text-xs uppercase tracking-widest text-stone-400 mb-4">Example Critique</p>
+            <Eyebrow className="mb-4">Example Critique</Eyebrow>
             <div className="flex flex-col md:flex-row gap-6">
               <img
                 src={EXAMPLE_PHOTO.url}
@@ -454,16 +498,12 @@ export const HomeTab: React.FC<Props> = ({
                   {EXAMPLE_PHOTO.glassBoxSummary}
                 </p>
                 <div className="flex gap-2">
-                  <span className="px-3 py-1 bg-brand-500/20 text-brand-400 rounded text-sm tabular-nums">
-                    Composition 8.2
-                  </span>
-                  <span className="px-3 py-1 bg-brand-500/10 text-brand-400 rounded text-sm tabular-nums">
-                    Lighting 7.8
-                  </span>
+                  <Tag variant="brand" className="tabular-nums">Composition 8.2</Tag>
+                  <Tag variant="brand" className="tabular-nums">Lighting 7.8</Tag>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* First visit: capabilities grid */}
@@ -472,10 +512,10 @@ export const HomeTab: React.FC<Props> = ({
             <h2 className="font-serif text-2xl text-white mb-6">What Iris can do</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               {CAPABILITIES.map((cap) => (
-                <div key={cap.title} className="bg-surface-1 rounded-xl p-5 border border-warm">
+                <Card key={cap.title}>
                   <h3 className="text-white text-sm font-medium mb-1">{cap.title}</h3>
                   <p className="text-stone-400 text-xs">{cap.desc}</p>
-                </div>
+                </Card>
               ))}
             </div>
           </section>
@@ -484,105 +524,74 @@ export const HomeTab: React.FC<Props> = ({
         {/* At a glance (returning) — above the fold after hero */}
         {isReturning && !loading && (
           <div className="max-w-4xl mx-auto px-1 space-y-2">
-            <p className="text-xs uppercase tracking-widest text-stone-400">At a glance</p>
+            <Eyebrow>At a glance</Eyebrow>
             <div className="grid sm:grid-cols-3 gap-4">
-              <div className="rounded-xl border border-warm bg-surface-1/80 p-4 flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-surface-2 shrink-0 mt-0.5">
-                  <BarChart3 className="w-5 h-5 text-brand-400" aria-hidden />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-1">
-                    Avg score
-                  </p>
-                  {avgLibraryScore != null ? (
-                    <>
-                      <p className="text-sm font-serif text-white tabular-nums">
-                        {avgLibraryScore.toFixed(1)}
-                        <span className="text-stone-400 text-xs font-sans"> / 10</span>
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5">Across your recent library</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-serif text-white">—</p>
-                      <p className="text-xs text-stone-400 mt-0.5">Upload more to see averages</p>
-                    </>
-                  )}
-                </div>
-              </div>
+              <StatCard
+                icon={<BarChart3 className="w-5 h-5" />}
+                label="Avg score"
+                value={avgLibraryScore != null ? avgLibraryScore.toFixed(1) : '—'}
+                unit={avgLibraryScore != null ? '/ 10' : undefined}
+                note={avgLibraryScore != null ? 'Across your recent library' : 'Upload more to see averages'}
+              />
 
-              <div className="rounded-xl border border-warm bg-surface-1/80 p-4 flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-surface-2 shrink-0 mt-0.5">
-                  <TrendingUp className="w-5 h-5 text-brand-400" aria-hidden />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-1">
-                    Recent trend
-                  </p>
-                  {trendDelta != null && trendLabel ? (
-                    <>
-                      <p className="text-sm font-serif text-white">
-                        {trendLabel} up +{trendDelta.toFixed(1)} pts
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5">
-                        Out of 10 · vs your earlier uploads
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-serif text-white">
-                        {portfolioTotal} photos in your library
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5">Upload a few more to see score trends</p>
-                    </>
-                  )}
-                  {trends && trends.points.length >= 2 && !trends.insufficientData && (
-                    <div className="mt-2">
-                      <div className="h-8">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={trends.points}>
-                            <Line
-                              type="monotone"
-                              dataKey="overall"
-                              stroke="#f59e0b"
-                              strokeWidth={2}
-                              dot={false}
-                              isAnimationActive={false}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
+              <Card padding="sm" className="bg-surface-1/80">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 mt-0.5 p-2 rounded-md bg-surface-2 text-brand-400 inline-flex">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Eyebrow tone="faint" className="mb-1">Recent trend</Eyebrow>
+                    {trendDelta != null && trendLabel ? (
+                      <>
+                        <p className="text-sm font-serif text-white">
+                          {trendLabel} up +{trendDelta.toFixed(1)} pts
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          Out of 10 · vs your earlier uploads
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-serif text-white">
+                          {portfolioTotal} photos in your library
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5">Upload a few more to see score trends</p>
+                      </>
+                    )}
+                    {trends && trends.points.length >= 2 && !trends.insufficientData && (
+                      <div className="mt-2">
+                        <div className="h-8">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={trends.points}>
+                              <Line
+                                type="monotone"
+                                dataKey="overall"
+                                stroke="#f59e0b"
+                                strokeWidth={2}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="text-[10px] text-stone-500 mt-1">Overall score · recent uploads</p>
                       </div>
-                      <p className="text-[10px] text-stone-500 mt-1">Overall score · recent uploads</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Card>
 
-              <div className="rounded-xl border border-warm bg-surface-1/80 p-4 flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-surface-2 shrink-0 mt-0.5">
-                  <Award className="w-5 h-5 text-brand-400" aria-hidden />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-1">
-                    Assignments done
-                  </p>
-                  <p className="text-sm font-serif text-white tabular-nums">
-                    {completedAssignmentCount}
-                  </p>
-                  <p className="text-xs text-stone-400 mt-0.5">
-                    {completedAssignmentCount === 0
-                      ? 'Accept a challenge in Practice'
-                      : 'Completed practice briefs'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('practice')}
-                  className="text-xs text-brand-400 hover:text-brand-300 font-medium shrink-0 self-center"
-                >
-                  Practice →
-                </button>
-              </div>
+              <StatCard
+                icon={<Award className="w-5 h-5" />}
+                label="Assignments done"
+                value={completedAssignmentCount}
+                note={completedAssignmentCount === 0 ? 'Accept a challenge in Practice' : 'Completed practice briefs'}
+                action={
+                  <Button variant="subtle" size="sm" onClick={() => onNavigate('practice')}>
+                    Practice →
+                  </Button>
+                }
+              />
             </div>
           </div>
         )}
@@ -596,22 +605,17 @@ export const HomeTab: React.FC<Props> = ({
                 <p className="text-stone-400 text-xs md:text-sm mt-0.5">Recent frames from your library</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  icon={<Upload className="w-4 h-4" />}
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400 transition-colors disabled:opacity-50"
                 >
-                  <Upload className="w-4 h-4" />
                   Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('work')}
-                  className="text-sm text-brand-400 hover:text-brand-300 font-medium"
-                >
+                </Button>
+                <Button variant="subtle" size="sm" onClick={() => onNavigate('work')}>
                   Library →
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -655,26 +659,25 @@ export const HomeTab: React.FC<Props> = ({
         )}
 
         {isReturning && showMentorCard && profile && (
-          <section className="rounded-xl border border-warm bg-surface-1 p-4 max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
+          <Card padding="sm" className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-1">From your mentor</p>
+              <Eyebrow tone="faint" className="mb-1">From your mentor</Eyebrow>
               <p className="text-stone-300 text-sm leading-relaxed font-serif line-clamp-2">
                 {mentorInsightText(profile, trendDelta, trendLabel)}
               </p>
             </div>
-            <button
-              type="button"
+            <Button
+              size="sm"
+              iconRight={<ArrowRight className="w-4 h-4" />}
               onClick={() => onNavigate('mentor')}
-              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400"
             >
               Ask mentor
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </section>
+            </Button>
+          </Card>
         )}
 
         {isReturning && latestPracticeWin?.skillDelta && (
-          <section className="rounded-xl border border-warm bg-surface-1 p-4 max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
+          <Card padding="sm" className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
             {practiceWinPhoto?.imageUrl ? (
               <PhotoMat variant="contact" aspect="aspect-square" className="w-20 shrink-0">
                 <img
@@ -692,7 +695,7 @@ export const HomeTab: React.FC<Props> = ({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-brand-400 mb-1">Practice win</p>
+              <Eyebrow tone="brand" className="mb-1">Practice win</Eyebrow>
               <p className="text-sm font-serif text-white">
                 {formatSkillLabel(latestPracticeWin.targetSkill)} +{latestPracticeWin.skillDelta.delta.toFixed(1)} pts
               </p>
@@ -703,14 +706,10 @@ export const HomeTab: React.FC<Props> = ({
                 </p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => onNavigate('practice')}
-              className="text-sm font-semibold text-brand-400 hover:text-brand-300 shrink-0"
-            >
+            <Button variant="subtle" size="sm" onClick={() => onNavigate('practice')}>
               Practice →
-            </button>
-          </section>
+            </Button>
+          </Card>
         )}
 
         {/* Growth comparison — below library strip; large comparison last */}
@@ -724,7 +723,7 @@ export const HomeTab: React.FC<Props> = ({
             </div>
             <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-8">
               <div className="flex-1">
-                <p className="text-xs uppercase tracking-widest text-stone-400 mb-3">Then</p>
+                <Eyebrow tone="faint" className="mb-3">Then</Eyebrow>
                 <PhotoMat variant="contact" aspect="aspect-[4/3]">
                   <img
                     src={earliestPhoto!.imageUrl}
@@ -744,7 +743,7 @@ export const HomeTab: React.FC<Props> = ({
                 <ArrowRight className="w-8 h-8" />
               </div>
               <div className="flex-1">
-                <p className="text-xs uppercase tracking-widest text-brand-400/80 mb-3">Now</p>
+                <Eyebrow tone="brand" className="mb-3">Now</Eyebrow>
                 <PhotoMat variant="contact" aspect="aspect-[4/3]">
                   <img
                     src={bestPhoto!.imageUrl}
