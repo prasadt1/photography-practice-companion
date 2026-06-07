@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth';
 import { firebaseAuthEnabled } from '../auth/firebaseConfig';
 import { ModeToggle } from './ModeToggle';
 import { ThemeToggle } from './ThemeToggle';
+import { Button, Card, Eyebrow } from './primitives';
 import { clearOnboardingComplete } from '../lib/onboarding';
 import { applyTheme, type ThemeMode } from '../lib/theme';
 import { isLocalDevHost } from '../lib/apiHelp';
@@ -36,10 +37,10 @@ export const SettingsTab: React.FC<Props> = ({
   return (
     <div className="animate-fadeIn max-w-lg space-y-8">
       <div>
-        <div className="flex items-center gap-2 text-brand-400 mb-2">
+        <Eyebrow tone="brand" className="flex items-center gap-2 mb-2">
           <Settings className="w-5 h-5" />
-          <span className="text-xs font-bold uppercase tracking-wide">Settings</span>
-        </div>
+          Settings
+        </Eyebrow>
         <h1 className="font-serif text-2xl md:text-3xl text-white">Your profile</h1>
         <p className="text-muted text-sm mt-2">
           Switch between hobbyist and working pro. I&apos;ll adjust listings, suggestions, and how
@@ -47,41 +48,40 @@ export const SettingsTab: React.FC<Props> = ({
         </p>
       </div>
 
-      <section className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-white">Account</h2>
+      <Card>
+        <h2 className="text-sm font-semibold text-white mb-3">Account</h2>
         {firebaseAuthEnabled ? (
           auth.userId ? (
-            <>
+            <div className="space-y-3">
               <p className="text-sm text-muted">
                 Signed in as <span className="text-stone-200">{auth.email ?? auth.userId}</span>.
                 Your library is scoped to this account.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<LogOut className="w-4 h-4" />}
                 onClick={() => void auth.signOut()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-warm text-sm text-stone-200 hover:bg-surface-2"
               >
-                <LogOut className="w-4 h-4" aria-hidden />
                 Sign out
-              </button>
-            </>
+              </Button>
+            </div>
           ) : (
-            <>
+            <div className="space-y-3">
               <p className="text-sm text-muted leading-relaxed">
                 Sign in with Google to keep your portfolio and critiques on your own MongoDB user
                 (multi-tenant demo). Without sign-in, the hosted API uses the shared judge demo
                 profile.
               </p>
-              <button
-                type="button"
-                onClick={() => void auth.signInWithGoogle()}
+              <Button
+                size="sm"
+                icon={<LogIn className="w-4 h-4" />}
                 disabled={auth.loading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold disabled:opacity-50"
+                onClick={() => void auth.signInWithGoogle()}
               >
-                <LogIn className="w-4 h-4" aria-hidden />
                 Sign in with Google
-              </button>
-            </>
+              </Button>
+            </div>
           )
         ) : (
           <p className="text-sm text-muted leading-relaxed">
@@ -89,73 +89,69 @@ export const SettingsTab: React.FC<Props> = ({
             Add <code className="text-brand-400 text-xs">VITE_FIREBASE_*</code> for sign-in.
           </p>
         )}
-      </section>
+      </Card>
 
-      <section className="rounded-xl border border-warm bg-surface-1 p-4">
+      <Card>
         <ThemeToggle
           theme={theme}
-          onChange={(mode) => {
-            applyTheme(mode);
-            onThemeChange(mode);
+          onChange={(m) => {
+            applyTheme(m);
+            onThemeChange(m);
           }}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-xl border border-warm bg-surface-1 p-4">
+      <Card>
         <ModeToggle
           mode={mode}
           onModeChange={onModeChange}
           onPersistPersona={onPersistPersona}
           onPersistError={onPersistError}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-white">What I remember</h2>
+      <Card>
+        <h2 className="text-sm font-semibold text-white mb-3">What I remember</h2>
         <p className="text-sm text-muted leading-relaxed">
           Your uploads, scores, Glass Box reasoning, tags, practice assignments, and approval
           history live in your private MongoDB library — tied to this demo profile in your browser.
           I do not publish listings or change labels until you approve each suggestion.
         </p>
-      </section>
+      </Card>
 
-      <section className="rounded-xl border border-warm bg-surface-1 p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-white">Privacy</h2>
+      <Card>
+        <h2 className="text-sm font-semibold text-white mb-3">Privacy</h2>
         <p className="text-sm text-muted leading-relaxed">
           Your photos and critiques stay in your private library. Listing and label changes only
           happen when you approve them.
         </p>
-      </section>
+      </Card>
 
       {isLocal && (
-        <section className="rounded-xl border border-warm/80 bg-canvas-elevated p-4 space-y-2">
-          <h2 className="text-sm font-semibold text-muted">Developer (local only)</h2>
+        <Card className="bg-canvas-elevated border-warm/80">
+          <h2 className="text-sm font-semibold text-muted mb-2">Developer (local only)</h2>
           <p className="text-xs text-muted">
             API: run <code className="text-brand-400">make api-dev</code> on port 8081 before using
             Mentor or approvals.
           </p>
-        </section>
+        </Card>
       )}
 
       <div className="flex flex-wrap gap-4">
-        <button
-          type="button"
+        <Button
+          variant="subtle"
+          size="sm"
           onClick={() => {
             clearOnboardingComplete();
             onRestartOnboarding();
           }}
-          className="text-sm text-muted hover:text-brand-400 underline"
         >
           Show welcome screen again
-        </button>
+        </Button>
         {onRestartTour && (
-          <button
-            type="button"
-            onClick={onRestartTour}
-            className="text-sm text-muted hover:text-brand-400 underline"
-          >
+          <Button variant="subtle" size="sm" onClick={onRestartTour}>
             Take a feature tour
-          </button>
+          </Button>
         )}
       </div>
     </div>

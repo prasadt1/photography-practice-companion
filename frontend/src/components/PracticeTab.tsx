@@ -24,7 +24,7 @@ import { PracticeInlineShootBanner } from './PracticeInlineShootBanner';
 import { PracticeCardsSkeleton } from './SkeletonBlocks';
 import { EmptyState } from './EmptyState';
 import { useToast } from './ToastHost';
-import { Button, Card, Eyebrow, IconButton } from './primitives';
+import { Button, Card, Eyebrow } from './primitives';
 import type { Assignment, ReflectionResult, UserMode } from '../types/practice';
 
 interface Props {
