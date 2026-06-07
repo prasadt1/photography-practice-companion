@@ -10,10 +10,40 @@ enum APIClientError: LocalizedError {
         case .invalidURL:
             return "Invalid API URL"
         case let .httpStatus(code, body):
+            if let detail = Self.parseDetail(from: body) {
+                return Self.friendlyDetail(detail, code: code)
+            }
             return body.isEmpty ? "Request failed (\(code))" : body
         case let .decoding(error):
             return "Could not read server response: \(error.localizedDescription)"
         }
+    }
+
+    private static func parseDetail(from body: String) -> String? {
+        guard let data = body.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let detail = json["detail"] as? String,
+              !detail.isEmpty
+        else {
+            return nil
+        }
+        return detail
+    }
+
+    private static func friendlyDetail(_ detail: String, code: Int) -> String {
+        if detail.contains("Expecting value") {
+            return "Coach couldn't read the frame — try again in a moment."
+        }
+        if detail.contains("Rate limited") {
+            return detail
+        }
+        if detail.contains("Capture session") {
+            return detail
+        }
+        if code >= 500 {
+            return "Coach temporarily unavailable — grid still works."
+        }
+        return detail
     }
 }
 
@@ -26,7 +56,13 @@ final class APIClient {
     private let decoder: JSONDecoder
 
     var userId: String? {
-        didSet { UserDefaults.standard.set(userId, forKey: AppConfig.demoUserIdKey) }
+        didSet {
+            if let userId, !userId.isEmpty {
+                UserDefaults.standard.set(userId, forKey: AppConfig.demoUserIdKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: AppConfig.demoUserIdKey)
+            }
+        }
     }
 
     init(baseURL: URL = AppConfig.apiBaseURL, session: URLSession? = nil) {
@@ -35,13 +71,19 @@ final class APIClient {
             self.session = session
         } else {
             let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 30
-            config.timeoutIntervalForResource = 60
+            config.timeoutIntervalForRequest = 45
+            config.timeoutIntervalForResource = 90
             config.waitsForConnectivity = false
             self.session = URLSession(configuration: config)
         }
         self.decoder = JSONDecoder()
-        self.userId = UserDefaults.standard.string(forKey: AppConfig.demoUserIdKey)
+        let stored = UserDefaults.standard.string(forKey: AppConfig.demoUserIdKey) ?? ""
+        if stored.hasPrefix("demo-ios-") {
+            UserDefaults.standard.removeObject(forKey: AppConfig.demoUserIdKey)
+            self.userId = nil
+        } else {
+            self.userId = stored.isEmpty ? nil : stored
+        }
     }
 
     func url(path: String) throws -> URL {

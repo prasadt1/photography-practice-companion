@@ -16,6 +16,7 @@
 		37178E579F3DDC5B452D0E6A /* MemoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31761FB8177A033A047BDE36 /* MemoryService.swift */; };
 		394218F468A739CDD70FBD04 /* HorizonLevelOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA980BFD6FAA3EEC3EC158AC /* HorizonLevelOverlay.swift */; };
 		3E5CCDF55370B02AF7113B29 /* LiveFieldCoachModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D6445A5756A12FABB3A3946 /* LiveFieldCoachModel.swift */; };
+		400103550CC4D00744FF8F0D /* PickHomeHeroPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104459985D7314D904F0B1C /* PickHomeHeroPhoto.swift */; };
 		42491E4D297A441CD5A54FD0 /* FieldCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6663E698D0A2E99422D8730C /* FieldCaptureView.swift */; };
 		43A5EC2F4B6D76569C082D3A /* CameraSessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502F7A261E8175ED43CEF5F6 /* CameraSessionModel.swift */; };
 		558AC6E84C2EF5C8B2F13F77 /* MentorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79CF9E83DCDE9BEBF595B5F7 /* MentorService.swift */; };
@@ -27,8 +28,10 @@
 		65AD90A700001E6BC3A85E45 /* MentorChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F807858AE7567BAB8A95E2 /* MentorChatStore.swift */; };
 		65B081BF4BA1FCE63523A695 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FA2FAC55E1836ABC6564DF /* HomeView.swift */; };
 		65BDA932544C990EC36C65D5 /* IrisColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46786EC98C5222D393B8510A /* IrisColors.swift */; };
+		68A7DB5E3ACC26599FD52D8D /* IrisMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED87613FE529D61C0200AE35 /* IrisMarkdownText.swift */; };
 		6C16F17BCB30750D9F584C3B /* FieldCoachModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D50D0185E8020DE25D42A3 /* FieldCoachModels.swift */; };
 		6F19D01785B4D5A21939CB84 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 359F683A9B9F0031F9766BE8 /* Assets.xcassets */; };
+		6F2F5C029F2755681EB7F699 /* HomeHeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326FE644CEADBA95DE471450 /* HomeHeroCard.swift */; };
 		702799E78C3A1C6B81257CBD /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84837EA0541DD318C54BE65 /* SettingsView.swift */; };
 		7500B969E0DA1E6C8ADD1292 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78064009F91AA2C860BDC041 /* AppTab.swift */; };
 		77A00F7236CB0544A918C3E1 /* ShootFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7588D8022D96534B1AABDDA6 /* ShootFlowView.swift */; };
@@ -80,6 +83,7 @@
 		1E94AD0804D6FB31BD9295C8 /* IrisTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisTheme.swift; sourceTree = "<group>"; };
 		21FBB204CA2582C957F9081A /* ReflectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionSheet.swift; sourceTree = "<group>"; };
 		31761FB8177A033A047BDE36 /* MemoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryService.swift; sourceTree = "<group>"; };
+		326FE644CEADBA95DE471450 /* HomeHeroCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroCard.swift; sourceTree = "<group>"; };
 		32D9387487E03711A3209DAE /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		35499B61A3CB17EEE301CD2A /* CritiqueResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CritiqueResultsView.swift; sourceTree = "<group>"; };
 		359F683A9B9F0031F9766BE8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -87,6 +91,7 @@
 		46786EC98C5222D393B8510A /* IrisColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisColors.swift; sourceTree = "<group>"; };
 		4FBACC575C642B309B7064ED /* PracticeShootBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeShootBanner.swift; sourceTree = "<group>"; };
 		502F7A261E8175ED43CEF5F6 /* CameraSessionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSessionModel.swift; sourceTree = "<group>"; };
+		5104459985D7314D904F0B1C /* PickHomeHeroPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickHomeHeroPhoto.swift; sourceTree = "<group>"; };
 		5D0477A665FCC232BBF5BFB5 /* ImageUploadPrep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUploadPrep.swift; sourceTree = "<group>"; };
 		5FE4258BE705D95C1E1EE30B /* PracticeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeView.swift; sourceTree = "<group>"; };
 		6663E698D0A2E99422D8730C /* FieldCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldCaptureView.swift; sourceTree = "<group>"; };
@@ -123,6 +128,7 @@
 		E518635186F9D628771F231B /* IrisApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisApp.swift; sourceTree = "<group>"; };
 		E84837EA0541DD318C54BE65 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E9D50D0185E8020DE25D42A3 /* FieldCoachModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldCoachModels.swift; sourceTree = "<group>"; };
+		ED87613FE529D61C0200AE35 /* IrisMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisMarkdownText.swift; sourceTree = "<group>"; };
 		ED96A7F428A0944200C0855E /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		F129DA1C94A4DEE0F9B75853 /* IrisPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisPlatform.swift; sourceTree = "<group>"; };
 		F836D46C148CA762113BF18C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -228,6 +234,7 @@
 				5D0477A665FCC232BBF5BFB5 /* ImageUploadPrep.swift */,
 				F129DA1C94A4DEE0F9B75853 /* IrisPlatform.swift */,
 				ED96A7F428A0944200C0855E /* NetworkMonitor.swift */,
+				5104459985D7314D904F0B1C /* PickHomeHeroPhoto.swift */,
 				C56DA34B6677D1DC14F7C345 /* PortfolioMerge.swift */,
 			);
 			path = Utilities;
@@ -312,6 +319,7 @@
 				46786EC98C5222D393B8510A /* IrisColors.swift */,
 				8074B51BE20014321A90346C /* IrisComponents.swift */,
 				BB29DFA434834756CB5154A8 /* IrisFAB.swift */,
+				ED87613FE529D61C0200AE35 /* IrisMarkdownText.swift */,
 				1E94AD0804D6FB31BD9295C8 /* IrisTheme.swift */,
 			);
 			path = Design;
@@ -346,6 +354,7 @@
 		D260A4F37319FF632419D545 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				326FE644CEADBA95DE471450 /* HomeHeroCard.swift */,
 				72B4DC790877B6CB41E8C363 /* HomePhotoDetailSheet.swift */,
 				07FA2FAC55E1836ABC6564DF /* HomeView.swift */,
 			);
@@ -497,6 +506,7 @@
 				6C16F17BCB30750D9F584C3B /* FieldCoachModels.swift in Sources */,
 				06E08659C9AB70AA08D1A449 /* FieldCoachService.swift in Sources */,
 				B6B501DF5F42EFE0A1FDCFDD /* FirebaseBootstrap.swift in Sources */,
+				6F2F5C029F2755681EB7F699 /* HomeHeroCard.swift in Sources */,
 				C18695211C89B2152C89D844 /* HomePhotoDetailSheet.swift in Sources */,
 				65B081BF4BA1FCE63523A695 /* HomeView.swift in Sources */,
 				394218F468A739CDD70FBD04 /* HorizonLevelOverlay.swift in Sources */,
@@ -505,6 +515,7 @@
 				65BDA932544C990EC36C65D5 /* IrisColors.swift in Sources */,
 				7B95877D4364BCB8E47F411B /* IrisComponents.swift in Sources */,
 				827720A8E63D6986BD7EFE79 /* IrisFAB.swift in Sources */,
+				68A7DB5E3ACC26599FD52D8D /* IrisMarkdownText.swift in Sources */,
 				114B0F3C2BA13CD2CE0AEDA2 /* IrisPlatform.swift in Sources */,
 				5E38C05F56495BC17DA4EBD1 /* IrisTheme.swift in Sources */,
 				3E5CCDF55370B02AF7113B29 /* LiveFieldCoachModel.swift in Sources */,
@@ -515,6 +526,7 @@
 				971181E12A8E6954029C2622 /* MentorView.swift in Sources */,
 				C28DB5DFD721A9B02D5664C3 /* NetworkMonitor.swift in Sources */,
 				AECCA66F2DE5EED7500CFBB6 /* PersonaOnboardingView.swift in Sources */,
+				400103550CC4D00744FF8F0D /* PickHomeHeroPhoto.swift in Sources */,
 				639015AD5AB82E4A715E62CA /* PortfolioMerge.swift in Sources */,
 				87F2E5DE69937B514699154A /* PracticeService.swift in Sources */,
 				14011EEC1A7067C2C5C5A30C /* PracticeShootBanner.swift in Sources */,

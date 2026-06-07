@@ -21,12 +21,11 @@ final class LiveFieldCoachModel: ObservableObject {
     private var lastCueAt: Date?
     private var lastSubmitAt: Date?
     private var submitGeneration = 0
-    private var samplingTask: Task<Void, Never>?
     private var lockReleaseTask: Task<Void, Never>?
     private weak var boundCamera: CameraSessionModel?
 
-    private let minSubmitInterval: TimeInterval = 3.2
-    private let samplingInterval: TimeInterval = 5
+    private let minSubmitInterval: TimeInterval = 4.5
+    private let samplingInterval: TimeInterval = 6
     private let lockAutoReleaseSeconds: TimeInterval = 45
 
     init() {
@@ -102,19 +101,21 @@ final class LiveFieldCoachModel: ObservableObject {
             lastSubmitAt = nil
             lastError = nil
             isCompositionLocked = false
-            statusMessage = "Live coach on — first cue in ~5s."
+            statusMessage = "Live coach on — first cue in ~6s."
             beginSampling(on: camera)
         } catch {
             let msg = error.localizedDescription
             statusMessage = "Coach unavailable — \(msg)"
             lastError = msg
             isSessionActive = false
+            // Keep session id so re-toggle can retry without orphan sessions piling up.
         }
     }
 
     func stop(camera: CameraSessionModel) async {
         submitGeneration += 1
         haltSamplingAndSpeech()
+        camera.disableFrameSampling()
         if let sessionId {
             try? await service.endSession(sessionId: sessionId)
         }
@@ -164,14 +165,12 @@ final class LiveFieldCoachModel: ObservableObject {
         isFetching = true
         defer { if !inFlight { isFetching = false } }
 
-        do {
-            let data = try await camera.captureCoachSnapshot()
-            await submitFrame(data, force: true)
-        } catch {
-            let msg = error.localizedDescription
-            statusMessage = "Couldn’t capture frame — \(msg)"
-            lastError = msg
+        guard let data = await camera.captureSampleFrameNow() else {
+            statusMessage = "Couldn’t grab a frame — try again."
+            lastError = statusMessage
+            return
         }
+        await submitFrame(data, force: true)
     }
 
     private func haltSamplingAndSpeech() {
@@ -180,8 +179,7 @@ final class LiveFieldCoachModel: ObservableObject {
         isCompositionLocked = false
         hint = nil
         speaker.stop()
-        samplingTask?.cancel()
-        samplingTask = nil
+        boundCamera?.disableFrameSampling()
         lockReleaseTask?.cancel()
         lockReleaseTask = nil
     }
@@ -189,30 +187,9 @@ final class LiveFieldCoachModel: ObservableObject {
     private func beginSampling(on camera: CameraSessionModel) {
         guard camera.isRunning, !isCompositionLocked else { return }
         boundCamera = camera
-        samplingTask?.cancel()
-        samplingTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            while !Task.isCancelled {
-                guard let self else { return }
-                if !self.isEnabled || !self.isSessionActive || self.inFlight || self.isCompositionLocked {
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                    continue
-                }
-                if let lastSubmitAt = self.lastSubmitAt,
-                   Date().timeIntervalSince(lastSubmitAt) < self.minSubmitInterval {
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                    continue
-                }
-                guard let camera = self.boundCamera else { return }
-                do {
-                    let data = try await camera.captureCoachSnapshot()
-                    await self.handleSampledFrame(data)
-                } catch {
-                    await MainActor.run {
-                        self.lastError = error.localizedDescription
-                    }
-                }
-                try? await Task.sleep(nanoseconds: UInt64(self.samplingInterval * 1_000_000_000))
+        camera.enableFrameSampling(interval: samplingInterval) { [weak self] data in
+            Task { @MainActor [weak self] in
+                await self?.handleSampledFrame(data)
             }
         }
     }
@@ -262,6 +239,9 @@ final class LiveFieldCoachModel: ObservableObject {
             if case let .httpStatus(code, _) = error, code == 429 {
                 statusMessage = "Coach pacing — hold steady."
                 lastSubmitAt = Date()
+            } else if msg.contains("couldn't read the frame") || msg.contains("temporarily unavailable") {
+                statusMessage = msg + " Retrying…"
+                lastSubmitAt = Date()
             } else {
                 statusMessage = msg
             }
@@ -303,8 +283,7 @@ final class LiveFieldCoachModel: ObservableObject {
 
     private func enterCompositionLock(cue: FieldCaptureCueResponse, text: String) {
         isCompositionLocked = true
-        samplingTask?.cancel()
-        samplingTask = nil
+        boundCamera?.disableFrameSampling()
         lastCueText = text
         lastCueAt = Date()
         hint = text

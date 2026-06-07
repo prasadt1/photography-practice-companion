@@ -63,17 +63,24 @@ export function fetchPortfolioByShoots(shootIds: string[]): Promise<PortfolioLis
   return getJson(`/api/v1/portfolio/by-shoots?${params}`);
 }
 
-export function deletePortfolioEntry(entryId: string): Promise<{ deleted: boolean; id: string }> {
-  return apiFetch(`/api/v1/portfolio/${entryId}`, { method: 'DELETE' }).then(async (res) => {
+export function deletePortfolioEntry(
+  entryId: string,
+  options: { removeListing?: boolean } = {},
+): Promise<{ deleted: boolean; id: string; unlisted?: boolean }> {
+  const params = options.removeListing ? '?removeListing=true' : '';
+  return apiFetch(`/api/v1/portfolio/${entryId}${params}`, { method: 'DELETE' }).then(async (res) => {
     if (!res.ok) {
       const detail = await res.text();
       throw new Error(detail || `Delete failed: ${res.status}`);
     }
-    return res.json() as Promise<{ deleted: boolean; id: string }>;
+    return res.json() as Promise<{ deleted: boolean; id: string; unlisted?: boolean }>;
   });
 }
 
-export function deletePortfolioEntries(entryIds: string[]): Promise<{
+export function deletePortfolioEntries(
+  entryIds: string[],
+  options: { removeListing?: boolean } = {},
+): Promise<{
   deleted: string[];
   skipped: { id: string; reason: string }[];
   deletedCount: number;
@@ -81,7 +88,7 @@ export function deletePortfolioEntries(entryIds: string[]): Promise<{
   return apiFetch('/api/v1/portfolio/delete-batch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entryIds }),
+    body: JSON.stringify({ entryIds, removeListing: options.removeListing ?? false }),
   }).then(async (res) => {
     if (!res.ok) {
       const detail = await res.text();

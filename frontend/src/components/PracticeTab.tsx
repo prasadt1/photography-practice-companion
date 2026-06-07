@@ -22,6 +22,9 @@ import { HitlReasoningCallout } from './HitlReasoningCallout';
 import { AssignmentDetailView } from './AssignmentDetailView';
 import { PracticeInlineShootBanner } from './PracticeInlineShootBanner';
 import { PracticeCardsSkeleton } from './SkeletonBlocks';
+import { EmptyState } from './EmptyState';
+import { useToast } from './ToastHost';
+import { Button, Card, Eyebrow } from './primitives';
 import type { Assignment, ReflectionResult, UserMode } from '../types/practice';
 
 interface Props {
@@ -50,6 +53,7 @@ export const PracticeTab: React.FC<Props> = ({
   onOpenAssignmentDetail,
   onCloseAssignmentDetail,
 }) => {
+  const toast = useToast();
   const [proposed, setProposed] = useState<Assignment[]>([]);
   const [active, setActive] = useState<Assignment[]>([]);
   const [completed, setCompleted] = useState<Assignment[]>([]);
@@ -107,6 +111,12 @@ export const PracticeTab: React.FC<Props> = ({
       const accepted = await acceptAssignment(id);
       await load();
       onAssignmentsChange?.();
+      toast({
+        variant: 'success',
+        icon: <Target className="w-[18px] h-[18px]" />,
+        title: 'Assignment added',
+        message: "It's in your practice queue.",
+      });
       setShootBanner(accepted);
     } catch (e) {
       setError(friendlyErrorMessage(e));
@@ -189,27 +199,28 @@ export const PracticeTab: React.FC<Props> = ({
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw className="w-4 h-4" />}
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-2"
           >
-            <RefreshCw className="w-4 h-4" />
             Refresh
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="sm"
             disabled={acting !== null || proposed.length > 0}
+            icon={
+              acting === 'propose' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )
+            }
             onClick={() => void handlePropose()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold disabled:opacity-50"
           >
-            {acting === 'propose' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
             Suggest practice
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -231,16 +242,14 @@ export const PracticeTab: React.FC<Props> = ({
         ))}
 
       {focus !== 'proposed' && lastReflection && (
-        <div className="rounded-2xl border border-brand-500/40 bg-brand-500/10 p-5 text-sm text-stone-200">
-          <p className="text-[10px] font-bold text-brand-400 uppercase tracking-wider mb-2">
-            Reflection complete
-          </p>
+        <Card variant="active" className="bg-brand-500/10 text-sm text-stone-200">
+          <Eyebrow tone="brand" className="mb-2">Reflection complete</Eyebrow>
           <p className="leading-relaxed mb-2">{lastReflection.summary}</p>
           <p className="text-brand-400 text-xs">
             {formatSkillApplicationDelta(lastReflection.skillDelta.delta)} · applied brief:{' '}
             {lastReflection.appliedBrief ? 'yes' : 'not yet'}
           </p>
-        </div>
+        </Card>
       )}
 
       {focus === 'active' &&
@@ -259,29 +268,30 @@ export const PracticeTab: React.FC<Props> = ({
         ))}
 
       {focus === 'idle' && (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-warm">
-          <Target className="w-10 h-10 text-stone-600 mx-auto mb-3" />
-          <p className="text-muted">No active practice yet.</p>
-          <p className="text-sm text-muted mt-1">
-            Upload a few photos in Studio, then tap Suggest practice.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Target className="w-6 h-6" />}
+          title="No active practice yet"
+          description="Upload a few photos in Studio, then tap Suggest practice."
+          action={
+            <Button
+              disabled={acting !== null}
+              icon={<Sparkles className="w-4 h-4" />}
+              onClick={() => void handlePropose()}
+            >
+              Suggest practice
+            </Button>
+          }
+        />
       )}
 
       {completed.length > 0 && focus !== 'proposed' && (
         <section>
           <div className="flex items-center justify-between gap-2 mb-3">
-            <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
-              Completed
-            </h3>
+            <Eyebrow>Completed</Eyebrow>
             {focus === 'active' && (
-              <button
-                type="button"
-                onClick={() => setShowHistory((v) => !v)}
-                className="text-xs text-brand-400 hover:text-brand-300"
-              >
+              <Button variant="subtle" size="sm" onClick={() => setShowHistory((v) => !v)}>
                 {showHistory ? 'Hide history' : 'Show history'}
-              </button>
+              </Button>
             )}
           </div>
           {(focus === 'idle' || showHistory) && (
@@ -380,10 +390,8 @@ function ProposedCard({
   onDecline: () => void;
 }) {
   return (
-    <section className="rounded-2xl border-2 border-amber-500/40 bg-surface-1 p-6">
-      <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
-        Proposed — your approval required
-      </p>
+    <Card variant="proposed" padding="lg">
+      <Eyebrow tone="brand" className="mb-2 text-amber-400">Proposed — your approval required</Eyebrow>
       <p className="text-xs text-brand-400 mb-3 capitalize">
         Focus: {assignment.targetSkill.replace(/_/g, ' ')}
       </p>
@@ -394,26 +402,23 @@ function ProposedCard({
         </div>
       ) : null}
       <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
+        <Button
           disabled={busy}
+          icon={busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           onClick={onAccept}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 text-on-brand font-semibold text-sm disabled:opacity-50"
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Accept
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           disabled={busy}
+          icon={<XCircle className="w-4 h-4" />}
           onClick={onDecline}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-warm text-stone-300 font-semibold text-sm hover:bg-surface-2 disabled:opacity-50"
         >
-          <XCircle className="w-4 h-4" />
           Decline
-        </button>
+        </Button>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -440,12 +445,12 @@ function ActiveCard({
   }
 
   return (
-    <section className="rounded-2xl border border-brand-500/50 bg-surface-1 p-6">
+    <Card variant="active" padding="lg">
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-400 uppercase tracking-wider">
+        <Eyebrow tone="brand" className="inline-flex items-center gap-1">
           <Target className="w-3 h-3" aria-hidden />
           Active practice
-        </span>
+        </Eyebrow>
         <span className="text-[10px] text-muted">{when}</span>
       </div>
       <p className="text-xs text-muted mb-3 capitalize">
@@ -456,47 +461,34 @@ function ActiveCard({
         <HitlReasoningCallout reasoning={assignment.rationale} />
       ) : null}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
+        <Button
+          size="sm"
+          icon={<Camera className="w-4 h-4" />}
           onClick={onGoToField}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-on-brand font-semibold text-sm hover:shadow-lg hover:shadow-brand-500/25 transition-shadow"
         >
-          <Camera className="w-4 h-4" />
           Field (camera)
-        </button>
-        <button
-          type="button"
-          onClick={onGoToStudio}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-warm text-stone-200 font-semibold text-sm hover:bg-surface-2"
-        >
+        </Button>
+        <Button variant="secondary" size="sm" onClick={onGoToStudio}>
           Studio upload
-        </button>
-        <button
-          type="button"
-          onClick={onComplete}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={completing}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-500/50 text-brand-400 font-semibold text-sm hover:bg-brand-500/10 disabled:opacity-50"
+          icon={completing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          onClick={onComplete}
         >
-          {completing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4" />
-          )}
           Mark complete
-        </button>
+        </Button>
         <p className="text-xs text-muted w-full">
           Shoot in Field or upload in Studio — then Mark complete for Reflection.
         </p>
         {onViewDetails && (
-          <button
-            type="button"
-            onClick={onViewDetails}
-            className="text-xs text-brand-400 hover:text-brand-300 underline"
-          >
+          <Button variant="subtle" size="sm" onClick={onViewDetails}>
             View challenge details
-          </button>
+          </Button>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

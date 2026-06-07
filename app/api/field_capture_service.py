@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -10,15 +11,34 @@ from typing import Any, Literal
 
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from memory.capture_sessions import assert_active_session, record_frame
 from sub_agents.tools import field_coach_tools
+
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Per-session rate limit: max 1 inference / 3s (in-process; single Cloud Run instance).
 _last_frame_at: dict[str, float] = {}
 MIN_FRAME_INTERVAL_SEC = 3.0
+
+_DEFAULT_CUE = {
+    "spokenCue": "Hold steady — align your subject on a third line.",
+    "onScreenHint": "Use the grid — place your subject off-center.",
+    "confidence": 0.5,
+    "readyToCapture": False,
+}
+
+
+class FieldCaptureCueOutput(BaseModel):
+    spoken_cue: str = Field(default="", alias="spokenCue")
+    on_screen_hint: str = Field(default="", alias="onScreenHint")
+    confidence: float = Field(default=0.6, ge=0.0, le=1.0)
+    ready_to_capture: bool = Field(default=False, alias="readyToCapture")
+
+    model_config = {"populate_by_name": True}
 
 
 def _gemini_client() -> genai.Client:
@@ -41,22 +61,53 @@ def _field_capture_model() -> str:
 
 def _parse_cue_payload(raw: str) -> dict[str, Any]:
     text = raw.strip()
+    if not text:
+        logger.warning("field_capture: empty model text — using default cue")
+        return dict(_DEFAULT_CUE)
+
     if text.startswith("```"):
         text = text.strip("`").removeprefix("json").strip()
-    data = json.loads(text)
+
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        logger.warning("field_capture: invalid JSON (%r) — using default cue", text[:120])
+        return dict(_DEFAULT_CUE)
+
     spoken = str(data.get("spoken_cue") or data.get("spokenCue") or "").strip()
     hint = str(data.get("on_screen_hint") or data.get("onScreenHint") or spoken).strip()
     confidence = float(data.get("confidence", 0.7))
     confidence = max(0.0, min(1.0, confidence))
     ready = bool(data.get("ready_to_capture") or data.get("readyToCapture", False))
     if not spoken and not hint:
-        raise ValueError("Empty field capture cue")
+        logger.warning("field_capture: empty cue fields — using default cue")
+        return dict(_DEFAULT_CUE)
     return {
         "spokenCue": spoken or hint,
         "onScreenHint": hint or spoken,
         "confidence": confidence,
         "readyToCapture": ready,
     }
+
+
+def _cue_from_structured(response: Any) -> dict[str, Any]:
+    """Prefer validated schema output; fall back to text JSON parse."""
+    if getattr(response, "parsed", None) is not None:
+        try:
+            model = FieldCaptureCueOutput.model_validate(response.parsed)
+            spoken = (model.spoken_cue or model.on_screen_hint).strip()
+            hint = (model.on_screen_hint or model.spoken_cue).strip()
+            if spoken or hint:
+                return {
+                    "spokenCue": spoken or hint,
+                    "onScreenHint": hint or spoken,
+                    "confidence": model.confidence,
+                    "readyToCapture": model.ready_to_capture,
+                }
+        except Exception as exc:
+            logger.warning("field_capture: structured parse failed: %s", exc)
+    raw = (getattr(response, "text", None) or "").strip()
+    return _parse_cue_payload(raw)
 
 
 def analyze_field_frame(
@@ -68,6 +119,9 @@ def analyze_field_frame(
     persona: Literal["hobbyist", "working_pro", "vision_impairment"] = "hobbyist",
     assignment_brief: str | None = None,
 ) -> dict[str, Any]:
+    if len(image_bytes) < 512:
+        raise ValueError("Frame too small — point at the scene and try again")
+
     assert_active_session(session_id, user_id=user_id)
 
     now = time.monotonic()
@@ -98,12 +152,12 @@ def analyze_field_frame(
         config=types.GenerateContentConfig(
             temperature=0.35,
             response_mime_type="application/json",
+            response_schema=FieldCaptureCueOutput.model_json_schema(),
             max_output_tokens=256,
         ),
     )
 
-    raw = (response.text or "").strip()
-    cue = _parse_cue_payload(raw)
+    cue = _cue_from_structured(response)
 
     field_coach_tools.update_session_state(
         session_id,

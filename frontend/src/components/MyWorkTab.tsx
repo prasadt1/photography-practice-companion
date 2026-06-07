@@ -11,11 +11,13 @@ import { createPortal } from 'react-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowUpDown,
+  BookmarkCheck,
   CheckSquare,
   ChevronDown,
   ChevronLeft,
   Database,
   ImageIcon,
+  Images,
   Plus,
   RefreshCw,
   Search,
@@ -24,6 +26,7 @@ import {
   Tag,
   Trash2,
   TrendingUp,
+  Upload,
   X,
 } from 'lucide-react';
 import { SimilarPhotosRow } from './SimilarPhotosRow';
@@ -33,7 +36,10 @@ import { SubViewBack } from './SubViewBack';
 import { FilmGrain } from './FilmGrain';
 import { FocusAreas } from './FocusAreas';
 import { InlineAlertBanner } from './InlineAlertBanner';
-import { TabEmptyState } from './TabEmptyState';
+import { EmptyState } from './EmptyState';
+import { DimensionBar } from './DimensionBar';
+import { useToast } from './ToastHost';
+import { Button, Card, Tag as TagPrimitive, Eyebrow, IconButton } from './primitives';
 import { getScoreContext } from '../lib/scoreContext';
 import { apiUnreachableMessage } from '../lib/apiHelp';
 import { friendlyErrorMessage } from '../lib/friendlyError';
@@ -92,6 +98,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   pendingAnalysis,
   onClearPendingAnalysis,
 }) => {
+  const toast = useToast();
   // Gallery state
   const [entries, setEntries] = useState<PortfolioListItem[]>([]);
   const [profile, setProfile] = useState<AestheticProfileSummary | null>(null);
@@ -115,6 +122,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<'single' | 'bulk' | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteRemovesListing, setDeleteRemovesListing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Upload/analysis state
@@ -221,10 +229,12 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     setError(null);
     try {
       if (deleteConfirm === 'single' && deleteTargetId) {
-        await deletePortfolioEntry(deleteTargetId);
+        await deletePortfolioEntry(deleteTargetId, { removeListing: deleteRemovesListing });
         if (expandedId === deleteTargetId) setExpandedId(null);
       } else if (deleteConfirm === 'bulk' && selectedIds.size > 0) {
-        const result = await deletePortfolioEntries([...selectedIds]);
+        const result = await deletePortfolioEntries([...selectedIds], {
+          removeListing: deleteRemovesListing,
+        });
         if (result.skipped.length > 0) {
           setError(
             `Deleted ${result.deletedCount}. Skipped ${result.skipped.length}: ${result.skipped[0]?.reason ?? ''}`,
@@ -239,8 +249,17 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       setDeleting(false);
       setDeleteConfirm(null);
       setDeleteTargetId(null);
+      setDeleteRemovesListing(false);
     }
-  }, [deleteConfirm, deleteTargetId, selectedIds, expandedId, exitSelectMode, loadGallery]);
+  }, [
+    deleteConfirm,
+    deleteTargetId,
+    deleteRemovesListing,
+    selectedIds,
+    expandedId,
+    exitSelectMode,
+    loadGallery,
+  ]);
 
   useEffect(() => {
     if (!deleteConfirm) return;
@@ -248,6 +267,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       if (e.key === 'Escape' && !deleting) {
         setDeleteConfirm(null);
         setDeleteTargetId(null);
+        setDeleteRemovesListing(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -296,6 +316,12 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
       });
       setResult(analysisResult);
       setViewMode('result');
+      toast({
+        variant: 'success',
+        icon: <BookmarkCheck className="w-[18px] h-[18px]" />,
+        title: 'Saved to your portfolio',
+        message: "I'll remember this frame.",
+      });
       onAssignmentComplete?.();
     } catch (err) {
       console.error('Analysis failed:', err);
@@ -393,18 +419,13 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   // Error state
   if (error) {
     return (
-      <div className="max-w-lg mx-auto p-8 rounded-2xl bg-surface-1 border border-rose-500/40 text-center">
+      <Card padding="lg" className="max-w-lg mx-auto text-center border-rose-500/40">
         <p className="text-rose-400 text-sm mb-4">{error}</p>
         <p className="text-muted text-xs mb-4">{apiUnreachableMessage()}</p>
-        <button
-          type="button"
-          onClick={() => void loadGallery()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold"
-        >
-          <RefreshCw className="w-4 h-4" />
+        <Button icon={<RefreshCw className="w-4 h-4" />} onClick={() => void loadGallery()}>
           Retry
-        </button>
-      </div>
+        </Button>
+      </Card>
     );
   }
 
@@ -421,6 +442,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           if (!deleting) {
             setDeleteConfirm(null);
             setDeleteTargetId(null);
+            setDeleteRemovesListing(false);
           }
         }}
       >
@@ -433,28 +455,33 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           </h3>
           <p className="text-sm text-muted leading-relaxed">
             {deleteConfirm === 'bulk'
-              ? `Remove ${selectedIds.size} photo${selectedIds.size === 1 ? '' : 's'} permanently. Listed-for-sale items are skipped.`
-              : 'This removes the photo and its critique from your library. Pending organize suggestions for this photo will be cancelled.'}
+              ? deleteRemovesListing
+                ? `Remove ${selectedIds.size} photo${selectedIds.size === 1 ? '' : 's'} permanently. Print Sales listings on selected photos will be removed too.`
+                : `Remove ${selectedIds.size} photo${selectedIds.size === 1 ? '' : 's'} permanently. Pending organize suggestions will be cancelled.`
+              : deleteRemovesListing
+                ? 'This photo is listed on Print Sales. Deleting removes the listing and its critique from your library.'
+                : 'This removes the photo and its critique from your library. Pending organize suggestions for this photo will be cancelled.'}
           </p>
           <div className="flex gap-3 justify-end">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={deleting}
               onClick={() => {
                 setDeleteConfirm(null);
                 setDeleteTargetId(null);
+                setDeleteRemovesListing(false);
               }}
-              className="px-4 py-2 rounded-lg border border-warm text-sm text-stone-300 hover:bg-surface-2"
             >
               Cancel
-            </button>
+            </Button>
             <button
               type="button"
               disabled={deleting}
               onClick={() => void handleConfirmDelete()}
               className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500 disabled:opacity-50"
             >
-              {deleting ? 'Deleting…' : 'Delete'}
+              {deleting ? 'Deleting…' : deleteRemovesListing ? 'Remove listing & delete' : 'Delete'}
             </button>
           </div>
         </div>
@@ -503,21 +530,13 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             aria-label="Search portfolio by meaning or keywords"
           />
         </div>
-        <button
-          type="submit"
-          disabled={searchLoading || !librarySearch.trim()}
-          className="px-4 py-2.5 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={searchLoading || !librarySearch.trim()}>
           {searchLoading ? 'Searching…' : 'Search'}
-        </button>
+        </Button>
         {searchResults !== null && (
-          <button
-            type="button"
-            onClick={clearLibrarySearch}
-            className="px-4 py-2.5 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-2"
-          >
+          <Button variant="secondary" onClick={clearLibrarySearch}>
             Clear
-          </button>
+          </Button>
         )}
       </form>
       {searchResults !== null && (
@@ -594,14 +613,13 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
           </div>
-          <button
-            type="button"
+          <IconButton
+            icon={<RefreshCw className="w-4 h-4" />}
+            label="Refresh gallery"
+            variant="ghost"
+            size="sm"
             onClick={() => void loadGallery()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-warm text-stone-300 text-sm hover:bg-surface-2"
-            aria-label="Refresh gallery"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          />
           {(searchResults !== null ? searchResults : entries).length > 0 && (
             <button
               type="button"
@@ -622,41 +640,42 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
           {selectMode && selectedIds.size > 0 && (
             <button
               type="button"
-              onClick={() => setDeleteConfirm('bulk')}
+              onClick={() => {
+                const pool = searchResults ?? entries;
+                const removesListing = [...selectedIds].some((id) => {
+                  const entry = pool.find((e) => e.id === id);
+                  return entry != null && isListedForSale(entry.userTags);
+                });
+                setDeleteRemovesListing(removesListing);
+                setDeleteConfirm('bulk');
+              }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-rose-500/50 text-rose-400 text-sm hover:bg-rose-500/10"
             >
               <Trash2 className="w-4 h-4" />
               Delete ({selectedIds.size})
             </button>
           )}
-          <button
-            type="button"
+          <Button
+            icon={<Plus className="w-4 h-4" />}
             onClick={() => setViewMode('upload')}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400 transition-colors shadow-lg shadow-brand-500/20"
+            className="rounded-full shadow-lg shadow-brand-500/20"
           >
-            <Plus className="w-4 h-4" />
             Upload
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Active assignment banner */}
       {activeAssignment && (
-        <div className="rounded-xl border border-brand-500/30 bg-brand-500/10 p-4 flex items-center justify-between gap-4">
+        <Card variant="active" padding="sm" className="flex items-center justify-between gap-4 bg-brand-500/10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand-400 mb-1">
-              Active Challenge
-            </p>
+            <Eyebrow tone="brand" className="mb-1">Active Challenge</Eyebrow>
             <p className="text-sm text-white">{activeAssignment.brief}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setViewMode('upload')}
-            className="shrink-0 px-4 py-2 rounded-lg bg-brand-500 text-on-brand text-sm font-semibold hover:bg-brand-400"
-          >
+          <Button size="sm" onClick={() => setViewMode('upload')}>
             Upload for this
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Compact stats summary (collapsible) */}
@@ -706,15 +725,10 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             {/* Tags */}
             {profile.dominantTags.length > 0 && (
               <div>
-                <p className="text-[10px] text-muted uppercase mb-2">Your style</p>
+                <Eyebrow className="mb-2">Your style</Eyebrow>
                 <div className="flex flex-wrap gap-1.5">
                   {profile.dominantTags.slice(0, 6).map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-2 py-0.5 rounded-full bg-canvas-elevated text-stone-300 border border-warm"
-                    >
-                      {tag.replace(/_/g, ' ')}
-                    </span>
+                    <TagPrimitive key={tag} variant="outline">{tag.replace(/_/g, ' ')}</TagPrimitive>
                   ))}
                 </div>
               </div>
@@ -763,18 +777,24 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             {/* Trends */}
             {trends && !trends.insufficientData && trends.dimensions.length > 0 && (
               <div>
-                <p className="text-[10px] text-muted uppercase mb-2">Recent progress</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <Eyebrow className="mb-3">Recent progress</Eyebrow>
+                <div className="space-y-3">
                   {trends.dimensions
                     .filter((d) => (TREND_DISPLAY_KEYS as readonly string[]).includes(d.key))
-                    .map((d) => (
-                      <div key={d.key} className="rounded-lg bg-canvas-elevated/60 p-2 text-center">
-                        <p className="text-[9px] text-muted uppercase">{d.label}</p>
-                        <p className="text-sm font-semibold text-stone-200">{d.latest?.toFixed(1) ?? '—'}</p>
+                    .map((d, i) => (
+                      <div key={d.key} className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <DimensionBar label={d.label} value={d.latest ?? 0} index={i} />
+                        </div>
                         {d.delta != null && (
-                          <p className={`text-[10px] ${d.delta >= 0 ? 'text-brand-400' : 'text-rose-400'}`}>
-                            {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(1)}
-                          </p>
+                          <span
+                            className={`text-[10px] shrink-0 tabular-nums ${
+                              d.delta >= 0 ? 'text-brand-400' : 'text-rose-400'
+                            }`}
+                          >
+                            {d.delta >= 0 ? '+' : ''}
+                            {d.delta.toFixed(1)}
+                          </span>
                         )}
                       </div>
                     ))}
@@ -793,22 +813,35 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
 
       {/* Photo gallery or empty state */}
       {(searchResults !== null ? searchResults : entries).length === 0 ? (
-        <TabEmptyState
-          icon={ImageIcon}
-          title="Your library is empty"
-          description="Upload your first photo to get Glass Box critique with scores, tags, and reasoning."
-          steps={[
-            'Click Upload above',
-            'Drop a photo or browse your files',
-            'Get detailed critique saved here',
-          ]}
-          action={{ label: 'Upload your first photo', onClick: () => setViewMode('upload') }}
-          examplePhoto={{
-            url: 'https://picsum.photos/seed/iris-gallery-example/1200/800',
-            sceneDescription: 'A photographer captures the golden hour light streaming through a forest canopy.',
-            overallAverage: 7.8,
-            glassBoxSummary: 'Strong use of natural light creates depth and atmosphere. The composition leads the eye through layers of foliage toward the light source.',
-          }}
+        <EmptyState
+          icon={
+            searchResults !== null ? (
+              <Search className="w-6 h-6" />
+            ) : (
+              <Images className="w-6 h-6" />
+            )
+          }
+          title={
+            searchResults !== null
+              ? 'No photos matched that search'
+              : 'No frames in your Library yet'
+          }
+          description={
+            searchResults !== null
+              ? 'Try a different word or phrase — I search by meaning, not just keywords.'
+              : "Upload your first photo and I'll critique it on five dimensions — then remember it."
+          }
+          action={
+            searchResults !== null ? (
+              <Button variant="secondary" onClick={clearLibrarySearch}>
+                Clear search
+              </Button>
+            ) : (
+              <Button icon={<Upload className="w-4 h-4" />} onClick={() => setViewMode('upload')}>
+                Upload photo
+              </Button>
+            )
+          }
         />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -976,18 +1009,21 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                       )}
                   </div>
                 </button>
-                {expanded && !selectMode && !isListedForSale(entry.userTags) && (
+                {expanded && !selectMode && (
                   <div className="px-4 pb-3 flex justify-end">
                     <button
                       type="button"
                       onClick={() => {
                         setDeleteTargetId(entry.id);
+                        setDeleteRemovesListing(isListedForSale(entry.userTags));
                         setDeleteConfirm('single');
                       }}
                       className="inline-flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Delete from library
+                      {isListedForSale(entry.userTags)
+                        ? 'Remove listing & delete'
+                        : 'Delete from library'}
                     </button>
                   </div>
                 )}

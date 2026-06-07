@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message
 from typing import Literal
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
@@ -103,6 +103,7 @@ class ApprovalDecision(BaseModel):
 class PortfolioBatchDelete(BaseModel):
     entry_ids: list[str] = Field(alias="entryIds")
     user_id: str | None = Field(default=None, alias="userId")
+    remove_listing: bool = Field(default=False, alias="removeListing")
 
     model_config = {"populate_by_name": True}
 
@@ -343,7 +344,11 @@ def portfolio_by_shoots(
 @app.post("/api/v1/portfolio/delete-batch")
 def portfolio_delete_batch(body: PortfolioBatchDelete) -> dict:
     try:
-        return delete_portfolio_entries(body.entry_ids, user_id=body.user_id)
+        return delete_portfolio_entries(
+            body.entry_ids,
+            user_id=body.user_id,
+            remove_listing=body.remove_listing,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -367,9 +372,17 @@ def portfolio_trends(user_id: str | None = None, limit: int = 12) -> dict:
 
 
 @app.delete("/api/v1/portfolio/{entry_id}")
-def portfolio_delete(entry_id: str, user_id: str | None = None) -> dict:
+def portfolio_delete(
+    entry_id: str,
+    user_id: str | None = None,
+    remove_listing: bool = Query(False, alias="removeListing"),
+) -> dict:
     try:
-        return delete_portfolio_entry(entry_id, user_id=user_id)
+        return delete_portfolio_entry(
+            entry_id,
+            user_id=user_id,
+            remove_listing=remove_listing,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Settings, Store } from 'lucide-react';
+import { Camera, CheckCircle2, Settings, Store, Target } from 'lucide-react';
 import { AppSidebar } from './components/AppSidebar';
 import { BottomNav } from './components/BottomNav';
 import { BrandLogo } from './components/BrandLogo';
@@ -32,6 +32,8 @@ import { fetchUserProfile, personaToUserMode, updatePersona } from './services/u
 import type { SidebarPhoto } from './components/AppSidebar';
 import { OfflineBanner } from './components/OfflineBanner';
 import { FilmGrain } from './components/FilmGrain';
+import { Tabs } from './components/Tabs';
+import { useToast } from './components/ToastHost';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import {
   isOnboardingComplete,
@@ -77,6 +79,7 @@ function App() {
   const [pendingPrintDrafts, setPendingPrintDrafts] = useState(0);
   const online = useOnlineStatus();
   const auth = useAuth();
+  const toast = useToast();
 
   const navigate = useCallback((tab: AppTab) => {
     setActiveTab(tab);
@@ -299,6 +302,12 @@ function App() {
               onNavigate={navigate}
               onOpenSettings={() => navigate('settings')}
               onAnalysisComplete={(result, imageUrl, filename) => {
+                toast({
+                  variant: 'brand',
+                  icon: <CheckCircle2 className="w-[18px] h-[18px]" />,
+                  title: 'Critique ready',
+                  message: "I've scored your frame on five dimensions.",
+                });
                 setPendingAnalysis({ result, imageUrl, filename });
                 void refreshActiveAssignment();
                 void refreshSidebarDashboard();
@@ -324,25 +333,34 @@ function App() {
           )}
 
           {activeTab === 'practice' && (
-            practiceView === 'field' ? (
-              <FieldTab
-                assignment={activeAssignment}
-                onCaptureAnalyzed={refreshActiveAssignment}
-                onGoToPractice={() => setPracticeView('list')}
-              />
-            ) : (
-              <PracticeTab
-                mode={userMode}
-                focusSkill={practiceFocusSkill}
-                onClearFocusSkill={() => setPracticeFocusSkill(null)}
-                onGoToStudio={() => navigate('work')}
-                onGoToField={() => setPracticeView('field')}
-                onAssignmentsChange={refreshActiveAssignment}
-                detailAssignmentId={practiceDetailId}
-                onOpenAssignmentDetail={setPracticeDetailId}
-                onCloseAssignmentDetail={() => setPracticeDetailId(null)}
-              />
-            )
+            <Tabs
+              value={practiceView}
+              onChange={(v) => setPracticeView(v as 'list' | 'field')}
+              tabs={[
+                { id: 'list', label: 'Assignments', icon: <Target className="w-[15px] h-[15px]" /> },
+                { id: 'field', label: 'Field', icon: <Camera className="w-[15px] h-[15px]" /> },
+              ]}
+            >
+              {practiceView === 'list' ? (
+                <PracticeTab
+                  mode={userMode}
+                  focusSkill={practiceFocusSkill}
+                  onClearFocusSkill={() => setPracticeFocusSkill(null)}
+                  onGoToStudio={() => navigate('work')}
+                  onGoToField={() => setPracticeView('field')}
+                  onAssignmentsChange={refreshActiveAssignment}
+                  detailAssignmentId={practiceDetailId}
+                  onOpenAssignmentDetail={setPracticeDetailId}
+                  onCloseAssignmentDetail={() => setPracticeDetailId(null)}
+                />
+              ) : (
+                <FieldTab
+                  assignment={activeAssignment}
+                  onCaptureAnalyzed={refreshActiveAssignment}
+                  onGoToPractice={() => setPracticeView('list')}
+                />
+              )}
+            </Tabs>
           )}
 
           {activeTab === 'mentor' && (
