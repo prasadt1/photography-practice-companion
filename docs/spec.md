@@ -1181,8 +1181,10 @@ test $AGENT_TOOL_COUNT -ge 7 || exit 1
 
 **Persona availability in fallback mode:**
 
-- Hobbyist session: 5 sub-agents + orchestrator = **6 agents** (was 7)
-- Working Pro session: 6 sub-agents + orchestrator = **7 agents** (was 8)
+**Status (June 2026):** §8.0 fallback was **not activated**. Production ships all **9 LlmAgents** (§3.2). Session counts below are the obsolete fallback plan only; live counts match §3.2 and `docs/compliance-proof/evidence/agent-graph.json`.
+
+- Hobbyist session: 5 sub-agents + orchestrator = **6 agents** (fallback plan; production: 6 + orchestrator = **7**, §3.2)
+- Working Pro session: 7 sub-agents + orchestrator = **8 agents available in this session** (production, §3.2; fallback plan without Triage would be 6 + orchestrator = 7)
 - Vision Impairment session: 6 sub-agents + orchestrator = **7 agents** (**unchanged** — Triage was never in this persona's toolset)
 
 **Floor rule:** The 8-agent fallback is itself a target. Once activated, no further reduction is permitted by the AI coding tool. Any further degradation (to 7 or fewer) must be explicitly authorized by Prasad in a fresh authorization message.

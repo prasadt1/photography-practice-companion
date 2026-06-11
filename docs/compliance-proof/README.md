@@ -12,6 +12,7 @@ Iris is a **live production stack**, not a mockup. This folder holds **committed
 | **Latest verification report** | [latest-report.md](latest-report.md) |
 | **Annotated proof images** | [../devpost-public/proof-01-mcp-read.png](../devpost-public/proof-01-mcp-read.png) … `proof-05-agent-graph.png` |
 | **Nine-agent graph (live ADK import)** | [evidence/agent-graph.txt](evidence/agent-graph.txt) · [evidence/agent-graph.json](evidence/agent-graph.json) · `proof-05-agent-graph.png` |
+| **ADK playground capture (Tier 2)** | [../runtime-proof/README.md](../runtime-proof/README.md) — roster + delegation screenshots from `make playground` |
 | **Architecture compliance map** | [../hackathon-compliance.md](../hackathon-compliance.md) |
 
 ## What gets proven (backend-only — no browser)
