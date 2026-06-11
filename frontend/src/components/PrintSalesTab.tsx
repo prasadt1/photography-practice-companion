@@ -6,7 +6,7 @@ import { TabEmptyState } from './TabEmptyState';
 import { printScanStage } from '../lib/scanLoadingStages';
 import { HitlReasoningCallout } from './HitlReasoningCallout';
 import { friendlyErrorMessage } from '../lib/friendlyError';
-import { dedupePrintProposals, filterAlreadyListedProposals } from '../lib/dedupePrintProposals';
+import { dedupePrintProposals, filterAlreadyListedProposals, sortPrintProposalsByScore } from '../lib/dedupePrintProposals';
 import { listingFromApproval } from '../lib/printListingPayload';
 import { fetchPortfolio } from '../services/memoryClient';
 import {
@@ -140,9 +140,12 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onGoToWork,
         fetchPrintRejected(),
         loadPreviews(),
       ]);
-      const deduped = filterAlreadyListedProposals(
-        dedupePrintProposals(pending.items, previewMap),
-        saved.items,
+      const deduped = sortPrintProposalsByScore(
+        filterAlreadyListedProposals(
+          dedupePrintProposals(pending.items, previewMap),
+          saved.items,
+          previewMap,
+        ),
         previewMap,
       );
       setItems(deduped);
@@ -183,9 +186,12 @@ export const PrintSalesTab: React.FC<Props> = ({ mode, onGoToMentor, onGoToWork,
       setFeedback({ kind: 'scan', created, superseded: cleared });
       const [saved, previewMap] = await Promise.all([fetchSavedPrintListings(), loadPreviews()]);
       setSavedListings(saved.items);
-      const deduped = filterAlreadyListedProposals(
-        dedupePrintProposals(result.pending?.items ?? [], previewMap),
-        saved.items,
+      const deduped = sortPrintProposalsByScore(
+        filterAlreadyListedProposals(
+          dedupePrintProposals(result.pending?.items ?? [], previewMap),
+          saved.items,
+          previewMap,
+        ),
         previewMap,
       );
       setItems(deduped);

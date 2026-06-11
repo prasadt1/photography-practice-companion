@@ -348,6 +348,7 @@ function App() {
             <MyWorkTab
               activeAssignment={activeAssignment}
               onAssignmentComplete={refreshActiveAssignment}
+              onPortfolioChanged={refreshSidebarDashboard}
               onGoHome={() => navigate('home')}
               onGoToPractice={(focusDimension) => {
                 if (focusDimension) {

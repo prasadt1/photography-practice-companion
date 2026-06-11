@@ -5,13 +5,15 @@ interface Props {
   label: string;
   value: React.ReactNode;
   unit?: string;
+  /** One-line topic between the figure and the note (e.g. recent assignment brief). */
+  detail?: string;
   note?: string;
   action?: React.ReactNode;
   className?: string;
 }
 
 /** An "at a glance" metric tile — amber icon well, serif figure, one-line note. */
-export const StatCard: React.FC<Props> = ({ icon, label, value, unit, note, action, className = '' }) => (
+export const StatCard: React.FC<Props> = ({ icon, label, value, unit, detail, note, action, className = '' }) => (
   <div className={`flex items-start gap-4 bg-surface-1 border border-warm rounded-lg p-4 ${className}`}>
     {icon && (
       <div className="shrink-0 mt-0.5 p-2 rounded-md bg-surface-2 text-brand-400 inline-flex">{icon}</div>
@@ -22,6 +24,9 @@ export const StatCard: React.FC<Props> = ({ icon, label, value, unit, note, acti
         {value}
         {unit && <span className="text-xs font-sans text-muted"> {unit}</span>}
       </p>
+      {detail && (
+        <p className="m-0 mt-1 text-sm font-serif text-white line-clamp-2 leading-snug">{detail}</p>
+      )}
       {note && <p className="m-0 mt-0.5 text-xs text-muted">{note}</p>}
     </div>
     {action && <div className="shrink-0 self-center">{action}</div>}

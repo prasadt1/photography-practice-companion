@@ -57,6 +57,14 @@ export const SettingsTab: React.FC<Props> = ({
                 Signed in as <span className="text-stone-200">{auth.email ?? auth.userId}</span>.
                 Your library is scoped to this account.
               </p>
+              <p className="text-xs text-muted font-mono break-all">
+                User id: {auth.userId}
+              </p>
+              <p className="text-xs text-muted leading-relaxed">
+                Must match the User id shown in the iPhone app Settings (same Google account).
+                Without sign-in, the site shows the shared judge demo library — not your field
+                captures.
+              </p>
               <Button
                 variant="secondary"
                 size="sm"

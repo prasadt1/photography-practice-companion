@@ -62,6 +62,24 @@ function pickLatestPracticeWin(completed: Assignment[]): Assignment | null {
   return null;
 }
 
+function pickMostRecentCompleted(completed: Assignment[]): Assignment | null {
+  return (
+    [...completed]
+      .filter((a) => a.completedAt)
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime(),
+      )[0] ?? null
+  );
+}
+
+/** First clause of a practice brief — fits the At a glance card. */
+function shortAssignmentBrief(brief: string, maxLen = 58): string {
+  const first = brief.split(/[:•]/)[0].trim();
+  if (first.length <= maxLen) return first;
+  return `${first.slice(0, maxLen - 1).trimEnd()}…`;
+}
+
 const EXAMPLE_PHOTO = {
   url: 'https://picsum.photos/seed/iris-home-hero/1200/800',
   sceneDescription: 'Golden hour light on rocky foreground with long shadows across the frame.',
@@ -122,6 +140,7 @@ export const HomeTab: React.FC<Props> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [analyzeWaitSec, setAnalyzeWaitSec] = useState(0);
   const [latestPracticeWin, setLatestPracticeWin] = useState<Assignment | null>(null);
+  const [recentCompletedAssignment, setRecentCompletedAssignment] = useState<Assignment | null>(null);
   const [practiceWinPhoto, setPracticeWinPhoto] = useState<PortfolioListItem | null>(null);
   const [completedAssignmentCount, setCompletedAssignmentCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -157,6 +176,7 @@ export const HomeTab: React.FC<Props> = ({
       setTrends(trendData);
       const win = pickLatestPracticeWin(assignments.completed);
       setLatestPracticeWin(win);
+      setRecentCompletedAssignment(pickMostRecentCompleted(assignments.completed));
       setCompletedAssignmentCount(assignments.completed.length);
 
       if (win?.completionShootIds?.length) {
@@ -624,7 +644,18 @@ export const HomeTab: React.FC<Props> = ({
                 icon={<Award className="w-5 h-5" />}
                 label="Assignments done"
                 value={completedAssignmentCount}
-                note={completedAssignmentCount === 0 ? 'Accept a challenge in Practice' : 'Completed practice briefs'}
+                detail={
+                  (activeAssignment ?? recentCompletedAssignment)
+                    ? shortAssignmentBrief((activeAssignment ?? recentCompletedAssignment)!.brief)
+                    : undefined
+                }
+                note={
+                  activeAssignment
+                    ? 'Active practice brief'
+                    : completedAssignmentCount === 0
+                      ? 'Accept a challenge in Practice'
+                      : 'Completed practice briefs'
+                }
                 action={
                   <Button variant="subtle" size="sm" onClick={() => onNavigate('practice')}>
                     Practice →

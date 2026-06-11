@@ -39,6 +39,18 @@ export function dedupePrintProposals(
   return Array.from(best.values());
 }
 
+/** Highest portfolio score first — matches scan ranking for demo readability. */
+export function sortPrintProposalsByScore(
+  items: PendingApproval[],
+  previews: Map<string, PortfolioListItem>,
+): PendingApproval[] {
+  return [...items].sort((a, b) => {
+    const scoreA = previews.get(listingFromApproval(a).portfolioEntryId)?.overallAverage ?? 0;
+    const scoreB = previews.get(listingFromApproval(b).portfolioEntryId)?.overallAverage ?? 0;
+    return scoreB - scoreA;
+  });
+}
+
 /** Hide pending drafts for shoots that already have an approved listing. */
 export function filterAlreadyListedProposals(
   items: PendingApproval[],

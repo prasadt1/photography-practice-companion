@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { firebaseAuthEnabled, firebaseConfig } from './firebaseConfig';
+import { setApiUserScope } from '../lib/apiFetch';
 
 export interface AuthState {
   userId: string | null;
@@ -45,6 +46,10 @@ export const FirebaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
       const { onAuthStateChanged } = await import('firebase/auth');
       unsub = onAuthStateChanged(auth, (u) => {
+        // Set the API scope BEFORE any component re-render fetches data —
+        // child effects (e.g. My Work gallery) run before App's effects,
+        // so setting it there raced and could load the demo library.
+        setApiUserScope(u?.uid ?? null);
         setUser(u);
         setLoading(false);
       });

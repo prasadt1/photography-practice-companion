@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { SimilarPhotosRow } from './SimilarPhotosRow';
 import { LazyPortfolioImage } from './LazyPortfolioImage';
+import { ImageLightbox } from './ImageLightbox';
 import { searchModeLabel, searchPortfolioLibrary } from '../services/portfolioInsightsClient';
 import { SubViewBack } from './SubViewBack';
 import { FilmGrain } from './FilmGrain';
@@ -59,6 +60,7 @@ import type {
   PortfolioTrendsResponse,
 } from '../types/memory';
 import type { Assignment } from '../types/practice';
+import { useAuth } from '../auth/useAuth';
 
 const TREND_DISPLAY_KEYS = ['composition', 'lighting', 'technique', 'overall'] as const;
 
@@ -86,6 +88,8 @@ interface MyWorkTabProps {
   /** Analysis result from Home upload to show immediately */
   pendingAnalysis?: PendingAnalysis | null;
   onClearPendingAnalysis?: () => void;
+  /** Sidebar + home stats — call after delete or new upload */
+  onPortfolioChanged?: () => void;
 }
 
 type ViewMode = 'gallery' | 'upload' | 'analyzing' | 'result';
@@ -97,14 +101,17 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   onGoToPractice,
   pendingAnalysis,
   onClearPendingAnalysis,
+  onPortfolioChanged,
 }) => {
   const toast = useToast();
+  const auth = useAuth();
   // Gallery state
   const [entries, setEntries] = useState<PortfolioListItem[]>([]);
   const [profile, setProfile] = useState<AestheticProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [lightboxEntry, setLightboxEntry] = useState<PortfolioListItem | null>(null);
   const [trends, setTrends] = useState<PortfolioTrendsResponse | null>(null);
 
   // Sort and filter state
@@ -190,6 +197,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   }, []);
 
   const loadGallery = useCallback(async () => {
+    if (auth.loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -222,7 +230,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [sortBy, sortOrder, userTagFilter]);
+  }, [sortBy, sortOrder, userTagFilter, auth.loading, auth.userId]);
 
   const handleConfirmDelete = useCallback(async () => {
     setDeleting(true);
@@ -250,6 +258,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
         setSearchResults((prev) =>
           prev !== null ? prev.filter((e) => !removedIds.has(e.id)) : null,
         );
+        onPortfolioChanged?.();
       }
     } catch (e) {
       setError(friendlyErrorMessage(e));
@@ -267,6 +276,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     expandedId,
     exitSelectMode,
     loadGallery,
+    onPortfolioChanged,
   ]);
 
   useEffect(() => {
@@ -283,8 +293,9 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
   }, [deleteConfirm, deleting]);
 
   useEffect(() => {
+    if (auth.loading) return;
     void loadGallery();
-  }, [loadGallery]);
+  }, [loadGallery, auth.loading, auth.userId]);
 
   useEffect(() => {
     if (viewMode !== 'analyzing') {
@@ -357,6 +368,7 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
     onClearPendingAnalysis?.();
     // Refresh gallery to show new photo
     void loadGallery();
+    onPortfolioChanged?.();
   };
 
   // Upload/Analysis view
@@ -883,6 +895,51 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                   )}
                 <button
                   type="button"
+                  className="text-left w-full cursor-zoom-in"
+                  aria-label={`View full-size photo, score ${entry.overallAverage} out of 10`}
+                  onClick={() => {
+                    if (selectMode) {
+                      toggleSelected(entry.id);
+                      return;
+                    }
+                    if (entry.imageUrl) setLightboxEntry(entry);
+                  }}
+                >
+                  <div className="p-3 bg-photo-black border-b border-warm/40">
+                    <div className="aspect-[4/3] bg-photo-black relative rounded-md overflow-hidden ring-1 ring-warm/60 shadow-inner">
+                      {isListedForSale(entry.userTags) && (
+                        <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-stone-900 border border-brand-500/50 text-brand-400 text-[10px] font-bold uppercase tracking-wide shadow-md whitespace-nowrap">
+                          Listed
+                        </span>
+                      )}
+                      {entry.glassBoxSummary.length > 0 && (
+                        <span
+                          className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-900 border border-brand-500/40 text-brand-300 text-[10px] font-semibold whitespace-nowrap"
+                          title="Critique grounded in your library — Glass Box reasoning and cited photography principles are stored with this photo"
+                        >
+                          <Database className="w-3 h-3" aria-hidden />
+                          Grounded
+                        </span>
+                      )}
+                      {entry.imageUrl ? (
+                        <LazyPortfolioImage
+                          src={entry.imageUrl}
+                          alt={entry.sceneDescription?.slice(0, 120) || 'Portfolio photo'}
+                          imgClassName="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-stone-600">
+                          <ImageIcon className="w-10 h-10" aria-hidden />
+                        </div>
+                      )}
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-500 text-on-brand text-xs font-bold shadow-md tabular-nums">
+                        {entry.overallAverage}/10
+                      </span>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
                   className="text-left flex flex-col flex-1"
                   aria-label={`View photo details, score ${entry.overallAverage} out of 10${
                     entry.sceneDescription
@@ -898,34 +955,6 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
                     setExpandedId(expanded ? null : entry.id);
                   }}
                 >
-                  <div className="p-3 bg-photo-black border-b border-warm/40">
-                    <div className="aspect-[4/3] bg-photo-black relative rounded-md overflow-hidden ring-1 ring-warm/60 shadow-inner">
-                      {isListedForSale(entry.userTags) && (
-                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface-1/90 border border-brand-500/50 text-brand-400 text-[10px] font-bold uppercase tracking-wide shadow-md">
-                          Listed
-                        </span>
-                      )}
-                      {entry.glassBoxSummary.length > 0 && (
-                        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[10px] font-semibold">
-                          <Database className="w-3 h-3" aria-hidden />
-                          Grounded
-                        </span>
-                      )}
-                      {entry.imageUrl ? (
-                        <LazyPortfolioImage
-                          src={entry.imageUrl}
-                          alt={entry.sceneDescription?.slice(0, 120) || 'Portfolio photo'}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-stone-600">
-                          <ImageIcon className="w-10 h-10" aria-hidden />
-                        </div>
-                      )}
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-500 text-on-brand text-xs font-bold shadow-md tabular-nums">
-                        {entry.overallAverage}/10
-                      </span>
-                    </div>
-                  </div>
                   <div className="p-4 flex-1">
                     {entry.sceneDescription && (
                       <p
@@ -1040,6 +1069,15 @@ export const MyWorkTab: React.FC<MyWorkTabProps> = ({
             );
           })}
         </div>
+      )}
+      {lightboxEntry && lightboxEntry.imageUrl && (
+        <ImageLightbox
+          src={lightboxEntry.imageUrl}
+          alt={lightboxEntry.sceneDescription?.slice(0, 120) || 'Portfolio photo'}
+          caption={lightboxEntry.sceneDescription || undefined}
+          score={lightboxEntry.overallAverage}
+          onClose={() => setLightboxEntry(null)}
+        />
       )}
     </div>
   );

@@ -4,7 +4,7 @@ const TIE_EPSILON = 0.4;
 
 /**
  * Pick a home hero frame from the user's library.
- * Score is primary; composition heuristics break ties only (within TIE_EPSILON).
+ * Highest score wins; heuristics only break near-ties (within TIE_EPSILON).
  */
 export function pickHomeHeroPhoto(
   strongest: PortfolioListItem | null,
