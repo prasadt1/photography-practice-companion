@@ -48,6 +48,56 @@ def _read_json(path: Path) -> dict:
     return {}
 
 
+_AGENT_ORDER = [
+    "coach",
+    "mentor",
+    "planner",
+    "reflection",
+    "field_coach",
+    "triage",
+    "print_sales",
+    "visual_describer",
+]
+
+
+def _agent_panel_lines(graph: dict) -> tuple[list[str], list[str]]:
+    """Left (roster) + right (persona delegation) lines from agent-graph.json."""
+    sub = graph.get("sub_agents", {})
+    personas = graph.get("personas", {})
+    orch_model = graph.get("orchestrator_model", "gemini-3.1-pro-preview")
+
+    left = [
+        f"orchestrator (root LlmAgent) · {orch_model}",
+        "delegates via AgentTool(skip_summarization):",
+        "",
+    ]
+    if sub:
+        idx = 1
+        for name in _AGENT_ORDER:
+            if name not in sub:
+                continue
+            n_tools = len(sub[name].get("tools", []))
+            extra = " (→ coach, mentor)" if name == "field_coach" else ""
+            left.append(f"{idx}. {name} · {n_tools} tools{extra}")
+            idx += 1
+    else:
+        left.append("(run scripts/dump-agent-graph.py)")
+
+    right: list[str] = []
+    for persona in ("hobbyist", "working_pro", "vision_impairment"):
+        delegated = (personas.get(persona) or {}).get("delegated_agents", [])
+        right.append(f"{persona} →")
+        right.append("  " + (", ".join(delegated) or "(none)"))
+        right.append("")
+    right += [
+        "Gating in build_persona_filtered_tool_list():",
+        "  triage = hobbyist | working_pro",
+        "  print_sales = working_pro",
+        "  visual_describer = vision_impairment",
+    ]
+    return left, right
+
+
 def _draw_panel(
     title: str,
     tag: str,
@@ -123,6 +173,9 @@ def main() -> None:
     mentor_excerpt = _read(EVIDENCE / "mentor-reply-excerpt.txt")
     portfolio = _read_json(EVIDENCE / "portfolio-sample.json")
     n_entries = len(portfolio.get("entries", []))
+
+    agent_graph = _read_json(EVIDENCE / "agent-graph.json")
+    agent_left, agent_right = _agent_panel_lines(agent_graph)
 
     panels = [
         (
@@ -217,6 +270,17 @@ def main() -> None:
                 "Evidence: docs/compliance-proof/",
             ],
             "Hosted on Cloud Run + Firebase + Atlas — see docs/compliance-proof/README.md",
+        ),
+        (
+            "proof-05-agent-graph.png",
+            "Nine ADK Agents",
+            "PROOF 05 · AGENT GRAPH",
+            "Roster (imported from app/agent.py)",
+            agent_left,
+            "Persona-filtered delegation (§4.3)",
+            agent_right,
+            "Enumerated from the constructed ADK graph — not a diagram. "
+            "Reproduce: scripts/dump-agent-graph.py",
         ),
     ]
 

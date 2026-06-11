@@ -74,7 +74,7 @@ Iris adapts to **who you are** and **remembers what you have made**. Three perso
 
 - **Gemini 3.1 Pro** — Coach multimodal critique (structured JSON), Planner, Reflection, Mentor orchestration, query expansion for library search
 - **Gemini 2.5 Flash** — live field coaching frames (sub-2s cues on iPhone)
-- **Nine `LlmAgent` instances** — orchestrator plus Coach, Mentor, Planner, Reflection, Field Coach, Triage, Print Sales, Visual Describer; verified with `scripts/phase0-verify.sh`
+- **Nine `LlmAgent` instances** — orchestrator plus Coach, Mentor, Planner, Reflection, Field Coach, Triage, Print Sales, Visual Describer; enumerated straight from the constructed ADK graph by `scripts/dump-agent-graph.py` (see `proof-05-agent-graph.png` and `docs/compliance-proof/evidence/agent-graph.txt`)
 - **Persona-filtered `AgentTool` lists** — hobbyist cannot invoke Print Sales; vision-impairment swaps Visual Describer for Triage at the tool level, not prompt-only
 
 **Production host:** FastAPI on **Cloud Run** (judge-facing URL). An Agent Engine scaffold exists in-repo for a future cutover; it is not what the live demo uses today.

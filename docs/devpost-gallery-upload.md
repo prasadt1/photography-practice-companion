@@ -33,7 +33,7 @@
 | 11 | `diagram-user-journey-hobbyist.png` | Hobbyist journey | Assignment → field coach → critique → reflection → library memory loop. |
 | 12 | `diagram-user-journey-pro.png` | Working pro journey | Memory, Organize HITL, and Print Sales on the same Atlas corpus. |
 
-### Tier 3 — Backend compliance proof (4) · “not a mockup”
+### Tier 3 — Backend compliance proof (5) · “not a mockup”
 
 | Order | File | Gallery title | Caption |
 |-------|------|---------------|---------|
@@ -41,6 +41,7 @@
 | 14 | `proof-02-orchestrator.png` | ADK orchestrator — live reply | `POST /api/v1/agent/chat` on Cloud Run (same graph as local playground). |
 | 15 | `proof-03-agent-builder.png` | Agent Builder grounding | Discovery Engine Data Store + Coach Glass Box principle citations. |
 | 16 | `proof-04-stack-health.png` | Live stack flags | `/health` — Gemini models, MCP URL, Data Store configured. |
+| 17 | `proof-05-agent-graph.png` | Nine ADK agents (live import) | Orchestrator + 8 sub-agents enumerated from the constructed ADK graph; persona-filtered delegation. |
 
 ### Tier 4 — Annotated UI + tech splits (optional if slots remain)
 
@@ -48,10 +49,10 @@ One frame = screenshot + verified stack. Prefer **gallery only** (article stays 
 
 | Order | File | Gallery title | Caption |
 |-------|------|---------------|---------|
-| 17 | `annotated-05-organize.png` | Organize — UI + HITL stack | Triage agent → `pending_approvals` — no autonomous writes. |
-| 18 | `annotated-06-my-work.png` | My Work — UI + Atlas stack | NL search + vector similar photos on one MongoDB corpus. |
-| 19 | `annotated-04-mentor.png` | Mentor — UI + orchestration stack | Orchestrator → Mentor; MCP read path to Atlas. |
-| 20 | `annotated-02-glass-box.png` | Glass Box — UI + Coach stack | Gemini 3.1 Pro + Agent Builder + PyMongo write. |
+| 18 | `annotated-05-organize.png` | Organize — UI + HITL stack | Triage agent → `pending_approvals` — no autonomous writes. |
+| 19 | `annotated-06-my-work.png` | My Work — UI + Atlas stack | NL search + vector similar photos on one MongoDB corpus. |
+| 20 | `annotated-04-mentor.png` | Mentor — UI + orchestration stack | Orchestrator → Mentor; MCP read path to Atlas. |
+| 21 | `annotated-02-glass-box.png` | Glass Box — UI + Coach stack | Gemini 3.1 Pro + Agent Builder + PyMongo write. |
 
 ### Tier 5 — Optional extras
 
@@ -74,7 +75,7 @@ One frame = screenshot + verified stack. Prefer **gallery only** (article stays 
 
 ## Article vs gallery (one line)
 
-| Article inline (4) | Gallery (16–20) |
+| Article inline (4) | Gallery (17–21) |
 |------------------|-----------------|
 | 1 UI wow + 2 diagrams + 1 backend proof | All UI standalones, remaining diagrams, all proof panels, annotated splits |
 
@@ -86,6 +87,7 @@ One frame = screenshot + verified stack. Prefer **gallery only** (article stays 
 python3 scripts/build-devpost-collages.py --standalone-only
 bash scripts/export-devpost-diagrams.sh
 python3 scripts/build-annotated-screens.py
+(cd app && uv run python ../scripts/dump-agent-graph.py)   # proof-05 agent graph
 ./scripts/verify-hackathon-stack.sh && python3 scripts/build-compliance-proof-images.py
 ```
 

@@ -10,7 +10,8 @@ Iris is a **live production stack**, not a mockup. This folder holds **committed
 | **API health (models + MCP URL)** | https://practice-companion-api-l6kusl5xcq-uc.a.run.app/health |
 | **Agent Builder probe (no upload)** | https://practice-companion-api-l6kusl5xcq-uc.a.run.app/health/grounding-probe |
 | **Latest verification report** | [latest-report.md](latest-report.md) |
-| **Annotated proof images** | [../devpost-public/proof-01-mcp-read.png](../devpost-public/proof-01-mcp-read.png) … `proof-04-stack-health.png` |
+| **Annotated proof images** | [../devpost-public/proof-01-mcp-read.png](../devpost-public/proof-01-mcp-read.png) … `proof-05-agent-graph.png` |
+| **Nine-agent graph (live ADK import)** | [evidence/agent-graph.txt](evidence/agent-graph.txt) · [evidence/agent-graph.json](evidence/agent-graph.json) · `proof-05-agent-graph.png` |
 | **Architecture compliance map** | [../hackathon-compliance.md](../hackathon-compliance.md) |
 
 ## What gets proven (backend-only — no browser)
@@ -32,6 +33,9 @@ After running the verify script, JSON and log excerpts land in [`evidence/`](evi
 - `mentor-chat-sample.json` — orchestrator + Gemini reply
 - `cloud-log-mcp-read-ok.txt` — Cloud Logging lines: `mcp_read_ok tool=find …`
 - `cloud-log-grounding-ok.txt` — Agent Builder: `grounding_ok source=discovery_engine …`
+- `agent-graph.json` / `agent-graph.txt` — the **9 ADK agents** enumerated from the
+  constructed orchestrator graph (`scripts/dump-agent-graph.py`), with each
+  sub-agent's tools and the persona-filtered delegation
 
 ## Reproduce (optional)
 
@@ -47,6 +51,7 @@ With Google Cloud project access (same project as deploy):
 
 ```bash
 RUN_COACH=1 ./scripts/verify-hackathon-stack.sh   # ~90s — includes Coach + Agent Builder
+cd app && uv run python ../scripts/dump-agent-graph.py   # enumerate the 9 ADK agents
 python3 scripts/build-compliance-proof-images.py
 ```
 

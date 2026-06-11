@@ -1,0 +1,333 @@
+{
+  "framework": "Google ADK (google.adk.agents.Agent / AgentTool)",
+  "entrypoint": "app/agent.py:build_orchestrator_agent",
+  "agent_count": 9,
+  "roster": [
+    "orchestrator",
+    "coach",
+    "field_coach",
+    "mentor",
+    "planner",
+    "print_sales",
+    "reflection",
+    "triage",
+    "visual_describer"
+  ],
+  "orchestrator_model": "gemini-3.1-pro-preview",
+  "sub_agents": {
+    "coach": {
+      "name": "coach",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Multimodal photo critique, Glass Box reasoning, portfolio writes.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "analyze_image_multimodal"
+        },
+        {
+          "kind": "function",
+          "name": "ground_in_data_store_principles"
+        },
+        {
+          "kind": "function",
+          "name": "generate_multimodal_embedding"
+        },
+        {
+          "kind": "function",
+          "name": "write_portfolio_entry_note"
+        }
+      ]
+    },
+    "mentor": {
+      "name": "mentor",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Multi-turn mentor; portfolio search and aesthetic synthesis.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "atlas_search_glass_box"
+        },
+        {
+          "kind": "function",
+          "name": "vector_search_similar_photos"
+        },
+        {
+          "kind": "function",
+          "name": "get_recent_portfolio_aggregates_by_time"
+        },
+        {
+          "kind": "function",
+          "name": "get_aesthetic_profile_summary_tool"
+        },
+        {
+          "kind": "function",
+          "name": "ground_in_data_store_principles"
+        }
+      ]
+    },
+    "planner": {
+      "name": "planner",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Generates persona-aware practice assignments with HITL propose flow.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "get_portfolio_aggregates_by_skill"
+        },
+        {
+          "kind": "function",
+          "name": "get_active_assignment"
+        },
+        {
+          "kind": "function",
+          "name": "write_practice_assignment"
+        },
+        {
+          "kind": "function",
+          "name": "query_data_store_principles_for_assignment"
+        },
+        {
+          "kind": "function",
+          "name": "query_client_outcomes"
+        }
+      ]
+    },
+    "reflection": {
+      "name": "reflection",
+      "model": "gemini-3.1-pro-preview",
+      "description": "ISAR-style assignment reflection and skill delta.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "get_shoot_photos_with_scores"
+        },
+        {
+          "kind": "function",
+          "name": "compare_multimodal_embeddings"
+        },
+        {
+          "kind": "function",
+          "name": "write_skill_delta_to_assignment"
+        },
+        {
+          "kind": "function",
+          "name": "get_aesthetic_profile_summary_tool"
+        },
+        {
+          "kind": "function",
+          "name": "get_active_assignment"
+        }
+      ]
+    },
+    "field_coach": {
+      "name": "field_coach",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Field session orchestration; delegates to Coach/Mentor/Visual Describer.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "get_session_state"
+        },
+        {
+          "kind": "function",
+          "name": "update_session_state"
+        },
+        {
+          "kind": "function",
+          "name": "start_capture_session"
+        },
+        {
+          "kind": "agent",
+          "name": "coach",
+          "tools": [
+            {
+              "kind": "function",
+              "name": "analyze_image_multimodal"
+            },
+            {
+              "kind": "function",
+              "name": "ground_in_data_store_principles"
+            },
+            {
+              "kind": "function",
+              "name": "generate_multimodal_embedding"
+            },
+            {
+              "kind": "function",
+              "name": "write_portfolio_entry_note"
+            }
+          ]
+        },
+        {
+          "kind": "agent",
+          "name": "mentor",
+          "tools": [
+            {
+              "kind": "function",
+              "name": "atlas_search_glass_box"
+            },
+            {
+              "kind": "function",
+              "name": "vector_search_similar_photos"
+            },
+            {
+              "kind": "function",
+              "name": "get_recent_portfolio_aggregates_by_time"
+            },
+            {
+              "kind": "function",
+              "name": "get_aesthetic_profile_summary_tool"
+            },
+            {
+              "kind": "function",
+              "name": "ground_in_data_store_principles"
+            }
+          ]
+        }
+      ]
+    },
+    "triage": {
+      "name": "triage",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Bulk portfolio triage with HITL pending approvals.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "cluster_portfolio_by_embedding"
+        },
+        {
+          "kind": "function",
+          "name": "propose_bulk_tag_application"
+        },
+        {
+          "kind": "function",
+          "name": "find_duplicate_portfolio_entries"
+        },
+        {
+          "kind": "function",
+          "name": "surface_top_scoring_untouched_photos"
+        },
+        {
+          "kind": "function",
+          "name": "propose_photo_deletion"
+        }
+      ]
+    },
+    "print_sales": {
+      "name": "print_sales",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Marketplace listing strategy and HITL publication proposals.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "get_print_sales_history"
+        },
+        {
+          "kind": "function",
+          "name": "vector_search_similar_to_top_sellers"
+        },
+        {
+          "kind": "function",
+          "name": "aggregate_roi_by_marketplace"
+        },
+        {
+          "kind": "function",
+          "name": "generate_listing_metadata"
+        },
+        {
+          "kind": "function",
+          "name": "propose_listing_publication"
+        },
+        {
+          "kind": "function",
+          "name": "get_aesthetic_profile_summary_tool"
+        }
+      ]
+    },
+    "visual_describer": {
+      "name": "visual_describer",
+      "model": "gemini-3.1-pro-preview",
+      "description": "Voice-first scene description and capture-session memory.",
+      "tools": [
+        {
+          "kind": "function",
+          "name": "analyze_frame_for_description"
+        },
+        {
+          "kind": "function",
+          "name": "compute_spatial_position"
+        },
+        {
+          "kind": "function",
+          "name": "trigger_haptic_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "narrate_capture_session"
+        },
+        {
+          "kind": "function",
+          "name": "atlas_search_scene_descriptions"
+        },
+        {
+          "kind": "function",
+          "name": "write_capture_session_event"
+        }
+      ]
+    }
+  },
+  "personas": {
+    "hobbyist": {
+      "orchestrator": "orchestrator",
+      "orchestrator_model": "gemini-3.1-pro-preview",
+      "delegated_agents": [
+        "coach",
+        "mentor",
+        "planner",
+        "reflection",
+        "field_coach",
+        "triage"
+      ],
+      "orchestrator_function_tools": [
+        "get_user_persona",
+        "get_session_context",
+        "get_active_assignment"
+      ]
+    },
+    "working_pro": {
+      "orchestrator": "orchestrator",
+      "orchestrator_model": "gemini-3.1-pro-preview",
+      "delegated_agents": [
+        "coach",
+        "mentor",
+        "planner",
+        "reflection",
+        "field_coach",
+        "triage",
+        "print_sales"
+      ],
+      "orchestrator_function_tools": [
+        "get_user_persona",
+        "get_session_context",
+        "get_active_assignment"
+      ]
+    },
+    "vision_impairment": {
+      "orchestrator": "orchestrator",
+      "orchestrator_model": "gemini-3.1-pro-preview",
+      "delegated_agents": [
+        "coach",
+        "mentor",
+        "planner",
+        "reflection",
+        "field_coach",
+        "visual_describer"
+      ],
+      "orchestrator_function_tools": [
+        "get_user_persona",
+        "get_session_context",
+        "get_active_assignment"
+      ]
+    }
+  }
+}

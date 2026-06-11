@@ -1,0 +1,30 @@
+ADK agent graph — 9 agents
+Framework: Google ADK (google.adk.agents.Agent / AgentTool)
+Entrypoint: app/agent.py:build_orchestrator_agent
+Orchestrator model: gemini-3.1-pro-preview
+
+Roster:
+  - orchestrator (root LlmAgent) — delegates via AgentTool
+  - coach · 4 tools — Multimodal photo critique, Glass Box reasoning, portfolio writes.
+  - field_coach · 5 tools — Field session orchestration; delegates to Coach/Mentor/Visual Describer.
+  - mentor · 5 tools — Multi-turn mentor; portfolio search and aesthetic synthesis.
+  - planner · 5 tools — Generates persona-aware practice assignments with HITL propose flow.
+  - print_sales · 6 tools — Marketplace listing strategy and HITL publication proposals.
+  - reflection · 5 tools — ISAR-style assignment reflection and skill delta.
+  - triage · 5 tools — Bulk portfolio triage with HITL pending approvals.
+  - visual_describer · 6 tools — Voice-first scene description and capture-session memory.
+
+Persona-filtered delegation (forbidden sub-agents omitted):
+  hobbyist: coach, mentor, planner, reflection, field_coach, triage
+  working_pro: coach, mentor, planner, reflection, field_coach, triage, print_sales
+  vision_impairment: coach, mentor, planner, reflection, field_coach, visual_describer
+
+Per-agent tools:
+  coach: analyze_image_multimodal, ground_in_data_store_principles, generate_multimodal_embedding, write_portfolio_entry_note
+  field_coach: get_session_state, update_session_state, start_capture_session, coach(), mentor()
+  mentor: atlas_search_glass_box, vector_search_similar_photos, get_recent_portfolio_aggregates_by_time, get_aesthetic_profile_summary_tool, ground_in_data_store_principles
+  planner: get_portfolio_aggregates_by_skill, get_active_assignment, write_practice_assignment, query_data_store_principles_for_assignment, query_client_outcomes
+  print_sales: get_print_sales_history, vector_search_similar_to_top_sellers, aggregate_roi_by_marketplace, generate_listing_metadata, propose_listing_publication, get_aesthetic_profile_summary_tool
+  reflection: get_shoot_photos_with_scores, compare_multimodal_embeddings, write_skill_delta_to_assignment, get_aesthetic_profile_summary_tool, get_active_assignment
+  triage: cluster_portfolio_by_embedding, propose_bulk_tag_application, find_duplicate_portfolio_entries, surface_top_scoring_untouched_photos, propose_photo_deletion
+  visual_describer: analyze_frame_for_description, compute_spatial_position, trigger_haptic_pattern, narrate_capture_session, atlas_search_scene_descriptions, write_capture_session_event
