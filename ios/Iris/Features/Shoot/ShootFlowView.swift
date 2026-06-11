@@ -41,6 +41,9 @@ struct ShootFlowView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .task {
+            try? await appState.refreshAssignmentsSnapshot()
+        }
     }
 
     private var contextualAssignment: Assignment? {

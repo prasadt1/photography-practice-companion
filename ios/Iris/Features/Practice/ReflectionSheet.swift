@@ -112,8 +112,8 @@ struct ReflectionSheet: View {
 
     private func deltaLabel(_ delta: Double) -> some View {
         let sign = delta >= 0 ? "+" : ""
-        let color: Color = delta > 0.15 ? .irisBrandLight : (delta < -0.15 ? .irisRose : .irisTextMuted)
-        return Text("\(sign)\(String(format: "%.2f", delta))")
+        let color: Color = delta > 0.4 ? .irisBrandLight : (delta < -0.4 ? .irisRose : .irisTextMuted)
+        return Text("\(sign)\(String(format: "%.1f", delta))")
             .font(IrisFont.sans(14, weight: .bold))
             .foregroundStyle(color)
             .monospacedDigit()

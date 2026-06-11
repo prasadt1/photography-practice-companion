@@ -86,7 +86,7 @@ final class LiveFieldCoachModel: ObservableObject {
         auth.ensureDemoUserId()
         boundCamera = camera
         persona = auth.persona == "working_pro" ? "working_pro" : "hobbyist"
-        assignmentBrief = appState.activeAssignment?.brief
+        assignmentBrief = await appState.assignmentBriefForShoot()
         APIClient.shared.userId = auth.userId.isEmpty ? nil : auth.userId
 
         guard !CameraSessionModel.isSimulator else { return }

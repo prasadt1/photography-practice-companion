@@ -97,4 +97,26 @@ final class AppState: ObservableObject {
         }
         return activeAssignment?.id
     }
+
+    /// Brief text for live coach + viewfinder — resolves from active or proposed list.
+    func assignmentBriefForShoot() async -> String? {
+        if let id = effectiveAssignmentIdForShoot(),
+           let active = activeAssignment, active.id == id {
+            return active.brief
+        }
+        do {
+            let data = try await practice.fetchAssignments()
+            if let id = effectiveAssignmentIdForShoot() {
+                if let match = data.active.first(where: { $0.id == id }) {
+                    return match.brief
+                }
+                if let match = data.proposed.first(where: { $0.id == id }) {
+                    return match.brief
+                }
+            }
+            return data.active.first?.brief
+        } catch {
+            return activeAssignment?.brief
+        }
+    }
 }

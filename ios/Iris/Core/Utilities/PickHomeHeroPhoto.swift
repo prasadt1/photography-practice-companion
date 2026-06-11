@@ -3,7 +3,7 @@ import Foundation
 enum PickHomeHeroPhoto {
     private static let tieEpsilon = 0.4
 
-    /// Score-first hero pick; composition heuristics break ties only (matches web).
+    /// Highest score wins; heuristics only break near-ties (matches web).
     static func pick(
         strongest: PortfolioListItem?,
         candidates: [PortfolioListItem]

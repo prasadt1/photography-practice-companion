@@ -22,7 +22,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     TARGETED_DEVICE_FAMILY: "1"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: P93883WKK6
     CODE_SIGN_STYLE: Automatic
 
 targets:
@@ -64,6 +64,7 @@ targets:
               - com.googleusercontent.apps.975418990849-oroknev6nmunjn5sc58rlkuj0tltphg8
     settings:
       base:
+        DEVELOPMENT_TEAM: P93883WKK6
         PRODUCT_BUNDLE_IDENTIFIER: com.prasadtilloo.practicecompanion
         INFOPLIST_KEY_CFBundleDisplayName: Iris
         INFOPLIST_KEY_NSCameraUsageDescription: "Iris uses the camera to capture photos for practice assignments and coaching."

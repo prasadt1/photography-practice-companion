@@ -21,6 +21,7 @@ struct FieldCaptureView: View {
     @State private var showResult = false
     @State private var pickerItem: PhotosPickerItem?
     @State private var tipRotationTask: Task<Void, Never>?
+    @State private var shootBrief: String?
 
     private let analyzeService = AnalyzeService()
     private let analyzeTips = [
@@ -127,6 +128,14 @@ struct FieldCaptureView: View {
                     .allowsHitTesting(true)
                 }
 
+                if let shootBrief, !shootBrief.isEmpty, !analyzing {
+                    assignmentBriefInViewfinder(shootBrief)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 12)
+                        .allowsHitTesting(false)
+                }
+
                 if analyzing {
                     analyzingOverlay(in: geo.size)
                         .allowsHitTesting(true)
@@ -173,6 +182,29 @@ struct FieldCaptureView: View {
                     )
             }
         }
+    }
+
+    private func assignmentBriefInViewfinder(_ brief: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("PRACTICE BRIEF")
+                .font(IrisFont.sans(10, weight: .semibold))
+                .foregroundStyle(Color.irisBrandLight)
+                .tracking(0.6)
+            Text(brief)
+                .font(IrisFont.sans(12, weight: .medium))
+                .foregroundStyle(Color.irisTextPrimary)
+                .lineLimit(3)
+                .lineSpacing(2)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: min(UIScreen.main.bounds.width - 48, 340), alignment: .leading)
+        .background(Color.black.opacity(0.68))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.irisBrand.opacity(0.5), lineWidth: 1)
+        )
     }
 
     private var zoomStepper: some View {
@@ -425,6 +457,7 @@ struct FieldCaptureView: View {
             return
         }
 
+        shootBrief = await appState.assignmentBriefForShoot()
         await liveCoach.start(camera: camera, auth: auth, appState: appState)
     }
 
